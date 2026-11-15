@@ -1,0 +1,7 @@
+--- a/crates/slot-store/src/slot_state.rs
++++ b/crates/slot-store/src/slot_state.rs
+@@ -448,3 +448,3 @@
+         match core {
+-            Core::Mgba | Core::Gpsp | Core::Gambatte => &Blending::ALL,
++            Core::Mgba | Core::Gpsp | Core::Gambatte | Core::Sameboy => &Blending::ALL,
+             #[cfg(feature = "nds")]
