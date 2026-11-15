@@ -39,3 +39,14 @@ The [GitHub Actions workflow](.github/workflows/build-h700.yml) downloads the ex
 ## History
 
 Earlier experiments integrated SameBoy and developed the Pocket Color/Pocket SGB hybrid shaders. Their patch history remains in `patches/`; the **current firmware selects mGBA and Gambatte**. Previously successful test artifacts are recorded in the GitHub Actions run history.
+
+
+## Current diagnostic: mGBA audio-queue drift and Authentic correction (2026-11-15)
+
+- Latest firmware: [successful ARM64 H700 build 43765871771](https://github.com/Sinastrax/slot-rgsp-mod/actions/runs/43765871771).
+- On physical RG SP, mGBA was reported to start smoothly, develop hiccups, temporarily recover on fast-forward, and get worse when automatic frameskip was disabled. Disabling rewind and Authentic ghosting did not solve it.
+- The previous `mgba_frameskip=disabled` experiment is therefore **reverted to `auto`** for GB/GBC.
+- Slot.'s audio ring buffers up to ~8 game frames and `push_blocking` may wait up to 50ms when full. mGBA GB/GBC now uses a wider **queue-dependent** audio drift correction (max ±5% instead of ±0.5%), without changing other cores' audio response. This is a hypothesis-driven test: **not yet a confirmed performance fix**.
+- The uncorrected RGB path for GBC/GBA Authentic now maps source values into the *same panel dark/light range* as corrected values before the common sparkle, LCD grid, pixel gaps, and glass pass. Corrected-on rendering remains unchanged. Monochrome Authentic models retain their historical physical LCD panel tint.
+- Update-only ZIP replaces **only `System/slot`** on SD2. Back up your existing executable and configuration, plus saves, before installing.
+- Compare a full normal-speed play session with Pocket Color versus Pocket SGB; check audio pitch/crackling and whether temporary fast-forward resets are still needed. The hardware behavior is currently unverified.
