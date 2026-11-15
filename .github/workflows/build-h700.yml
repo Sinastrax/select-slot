@@ -38,6 +38,8 @@ jobs:
           git apply ../patches/pocket-color-gbc-correction.patch
           git apply --check ../patches/sgb-pocket-pixel-separation.patch
           git apply ../patches/sgb-pocket-pixel-separation.patch
+          git apply --check ../patches/core-specific-gb-screen-sgb-correction-performance.patch
+          git apply ../patches/core-specific-gb-screen-sgb-correction-performance.patch
           echo "Exact-release patches applied"
 
       - name: Install required tools
