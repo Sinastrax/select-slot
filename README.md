@@ -1,41 +1,41 @@
 # Slot. RG SP custom Authentic build
 
-This repository contains a **source patch** for [pvaibhav's Slot. v1.15.3-pvaibhav.1](https://github.com/pvaibhav/slot). It is intended for the Anbernic RG SP (H700).
+Custom modifications based on [pvaibhav's Slot. v1.15.3-pvaibhav.1](https://github.com/pvaibhav/slot) for the Anbernic **RG SP (H700)**.
 
-## Changes
+## Latest: Gambatte + mGBA restored (experimental)
 
-- Authentic keeps its LCD ghosting during normal gameplay, but disables the additional frame blending when fast-forward is engaged.
-- GB games gain **Game Boy Color** as an additional Authentic screen model, with selectable GB color palettes.
-- The original calibrated panel profiles remain sourced from the same upstream release.
+The current [H700 build](../../actions/runs/43764469607) restores the original two GB/GBC emulator choices: **mGBA on the left**, **Gambatte on the right**. For GBA, the choices remain mGBA and gpSP.
 
-## Build
+- Previously saved GB/GBC choices marked `sameboy` are interpreted as mGBA. Existing Gambatte choices stay Gambatte.
+- Gambatte and mGBA have separate GB Authentic screen-model and color-correction profiles, including **Pocket Color** and **Pocket SGB**.
+- Pocket Color retains the Pocket-style separated LCD dots, shadows and GBC-style colors.
+- Pocket SGB on mGBA uses **Super Game Boy hardware**, with borders disabled, and supports the dynamic game-specific SGB color commands (where the game and core support them). Close and reopen a game after selecting Pocket SGB.
+- Authentic ghosting is disabled during fast-forward and retained at regular speed.
+- **mGBA GB/GBC automatic frameskip is now disabled**. Slot. previously forced `mgba_frameskip=auto`; this build explicitly sets `disabled` for GB/GBC, matching the bundled mGBA core's default. The GBA mGBA settings are unchanged.
+- This frameskip change is a **targeted performance experiment**, not an established fix. mGBA SGB emulation can still be demanding; frame pacing and audio sync remain unverified on the physical device.
+- The SameBoy experiment is **retired from the UI and the build package**, because it performed badly on the device. The source retains some dormant SameBoy integration code for the moment.
 
-The [Build custom Slot H700](../../actions/workflows/build-h700.yml) workflow downloads the exact upstream tag, applies [the patch](patches/rgsp-authentic-gbc.patch), compiles for H700, verifies the SD2 card tree, and uploads the `slot-rgsp-custom-h700` artifact.
+## Authentic color correction
 
-A successfully generated artifact contains `slot-rgsp-custom/`. **Copy the contents of that folder onto the existing Slot. SD2 card, not the containing folder**, after backing up the entire SD card. Do not use it until a workflow run has completed successfully. This remains an experimental, untested modification.
+When the RGB color-correction switch is off, the LCD grid, pixel gaps, shadows, grain, and glass rendering remain active. Turning it off bypasses the measured color-response conversion where applicable.
 
-**No ROMs, saves, or personal files are stored in this repository.**
+- **Pocket Color, Pocket SGB, GBC and GBA Authentic:** per-model correction setting (on/off).
+- **DMG, original Pocket and Light:** their panel tint is part of the screen simulation, not a separate RGB correction; it is not stripped away by the switch.
+- GB correction flags are stored independently for Gambatte and mGBA.
+- Select a model, then use **Quick Menu → Settings → Screen → Color Correction**.
 
-## SameBoy and individual Authentic color correction (experimental)
+## Install to SD2
 
-- GB/GBC cartridges can select **SameBoy (left)** or **Gambatte (right)** from the two-choice core picker. **mGBA remains available for GBA**.
-- Earlier GB/GBC cartridge choices for mGBA are migrated to SameBoy. Back up `Config/selected_core.txt` before installing.
-- Gambatte's existing Authentic/Pocket Color appearance and profile are retained. The alternate-core Authentic profile (previously used by mGBA for GB) is now used by SameBoy.
-- SameBoy sets `sameboy_model=Super Game Boy` when the **Pocket SGB** model is selected, allowing supported GB games such as Pokémon Yellow to use SGB commands for in-game palettes. Close and reopen the game after selecting the model.
-- SameBoy's custom border is disabled, so the same 160x144 pixel geometry remains compatible with the Pocket LCD shader. This is not an authentic SNES border display.
-- **Color Correction** is available even when Authentic is selected, with independent on/off memory for every GB Authentic model (DMG, Pocket, Pocket Color, Pocket SGB, Light, GBC) **for Gambatte and SameBoy separately**, plus GBC Authentic and GBA Authentic. In a game, use **Quick Menu → Settings → Screen → Color Correction**.
-- Default corrected appearance is **on**, preserving the prior Pocket Color profile. Disabling measured correction preserves the LCD pixel grid.
-- The firmware package must contain **both** `System/slot` and `System/sameboy_libretro.so`.
-- Always back up `System/slot`, `Config/slot.state`, `Config/selected_core.txt`, and saved games before installation. Save-state files are generally **not compatible between cores**.
-- SameBoy's frame pacing, SGB visual output and performance on the physical H700 RG SP have not yet been verified.
-- Firmware with SameBoy ARM64 and per-core correction persistence successfully built and SD-card tree validated: [GitHub Actions run 43761142559](https://github.com/Sinastrax/slot-rgsp-mod/actions/runs/43761142559).
+Back up `System/slot`, `System/mgba_libretro.so`, `Config/slot.state`, `Config/selected_core.txt`, and your saved games and states.
 
+A release/build artifact contains a `slot-rgsp-custom/` directory. **Copy the contents of that directory to the root of SD2, not the directory itself.** A minimal upgrade ZIP can contain only `System/slot` and `System/mgba_libretro.so`, which can be merged with the existing `System` folder.
 
-## Color correction vs. LCD filter (2026-11-15 follow-up)
+Do not load save states produced by another emulator core. In-game battery saves are different from save states and are generally more portable, but back them up regardless.
 
-- This revision corrects a UI/rendering mismatch: disabling `Color Correction` under Authentic previously changed the simulated grid/shadow/tint instead of only the underlying RGB transfer response.
-- **Pocket Color, Pocket SGB, GBC and GBA:** disabling correction now bypasses the measured RGB transfer calculation while keeping the same LCD gap, dot shadow, grain and glass passes. Correction **On** retains the established appearance.
-- **DMG, Pocket and Light:** these are monochrome LCD simulations; their green/olive/blue-green panel colors are part of the filter, *not* a separate measured RGB correction. The correction state can still be stored, but no longer strips the screen's historical panel tint. There is no independent RGB transform to toggle for those modes.
-- **Gambatte + Pocket SGB:** now requests Gambatte's built-in game-specific SGB palette instead of grayscale; it is a static preset, not live Super Game Boy commands.
-- **SameBoy performance is not fixed or verified** in this revision. If it stutters, use Gambatte.
-- Compiled firmware with correction/filter fix: [GitHub Actions run 43762885145](https://github.com/Sinastrax/slot-rgsp-mod/actions/runs/43762885145).
+The [GitHub Actions workflow](.github/workflows/build-h700.yml) downloads the exact upstream tag, applies the patches in order, builds the ARM64 firmware and validates the device file tree. The build can complete successfully even if a runtime performance issue remains.
+
+**No ROMs, games, personal saves or other copyrighted game content are included in this repository.**
+
+## History
+
+Earlier experiments integrated SameBoy and developed the Pocket Color/Pocket SGB hybrid shaders. Their patch history remains in `patches/`; the **current firmware selects mGBA and Gambatte**. Previously successful test artifacts are recorded in the GitHub Actions run history.
