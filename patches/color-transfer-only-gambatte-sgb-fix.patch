@@ -1,0 +1,70 @@
+--- a/crates/slot-gfx/src/shaders.rs
++++ b/crates/slot-gfx/src/shaders.rs
+@@ -176,30 +176,29 @@
+                 vec3 reflector = vec3(134.0, 140.0, 122.0) / 255.0;
+                 c = clamp(mix(panelRgb, reflector, gapShare) * shadowShare, 0.0, 1.0);
+             }
+-            // With correction off, keep the LCD dots and shading, but make the
+-            // historical monochrome panel grayscale instead of tinted.
+-            if (u_lcd.x < 1.5 && u_authentic_correction < 0.5) {
+-                c = vec3(dot(c, luma_coeff));
+-            }
++            // DMG, Pocket and Light are inherently monochrome LCD simulations.
++            // Preserve their historical panel colour and dot texture regardless of
++            // the colour-conversion switch; there is no independent RGB transfer
++            // matrix for a monochrome game to disable.
+         } else if (!inside) {
+             c = pow(u_light, vec3(1.0 / 2.2));
+         } else {
+             // Each 5-bit code's measured light, then the panel's colour response, then the
+             // reflector's white and the panel's black.
+-            c = texture2D(u_game, centre).rgb;
+-            if (u_authentic_correction < 0.5) {
+-                // Preserve the original RGB while retaining the LCD grid.
+-                float gapShade = max(gap.x * u_lcd.z, gap.y * u_lcd.w);
+-                c *= 1.0 - gapShade;
+-            } else {
+-            // The 5-bit code is each channel's top 5 bits, however the frame widened it to 8.
+-            vec3 code = (floor((c * 255.0 + 0.5) / 8.0) + 0.5) / 32.0;
+-            vec2 pick = vec2(1.0 - u_lcd.y, u_lcd.y);
+-            vec3 light = vec3(dot(texture2D(u_ramp, vec2(code.r, 0.5)).rg, pick),
+-                              dot(texture2D(u_ramp, vec2(code.g, 0.5)).rg, pick),
+-                              dot(texture2D(u_ramp, vec2(code.b, 0.5)).rg, pick));
+-            vec3 lin = clamp(u_response * pow(light, u_gamma), u_least, vec3(1.0));
+-            lin = mix(u_dark, u_light, lin);
++            vec3 rawColour = texture2D(u_game, centre).rgb;
++            vec3 lin = pow(rawColour, vec3(2.2));
++            if (u_authentic_correction > 0.5) {
++                // Only correct the RGB transfer response here. The grid,
++                // grain, gaps and reflective glass below are identical in both
++                // modes, so toggling correction cannot disable the LCD filter.
++                vec3 code = (floor((rawColour * 255.0 + 0.5) / 8.0) + 0.5) / 32.0;
++                vec2 pick = vec2(1.0 - u_lcd.y, u_lcd.y);
++                vec3 light = vec3(dot(texture2D(u_ramp, vec2(code.r, 0.5)).rg, pick),
++                                  dot(texture2D(u_ramp, vec2(code.g, 0.5)).rg, pick),
++                                  dot(texture2D(u_ramp, vec2(code.b, 0.5)).rg, pick));
++                lin = clamp(u_response * pow(light, u_gamma), u_least, vec3(1.0));
++                lin = mix(u_dark, u_light, lin);
++            }
+             // The measured colour is a whole pixel's: its cell and the dark grid around it.
+             // Light the cell so that the two together still average to it.
+             vec2 thin = min(1.0 / span, vec2(1.0));
+@@ -211,7 +210,6 @@
+             lin = min(u_dark + (lin - u_dark) * sparkle / (1.0 - grid), vec3(1.0));
+             lin = mix(lin, u_dark, max(gap.x * u_lcd.z, gap.y * u_lcd.w));
+             c = pow(lin, vec3(1.0 / 2.2));
+-            }
+         }
+         // The glass, as dmg-3x's border lays it over the screen: the room's light across the
+         // top right, and the shade of the bezel toward the bottom.
+--- a/crates/slot/src/app.rs
++++ b/crates/slot/src/app.rs
+@@ -5183,7 +5183,7 @@
+     /// The added GBC model instead displays the user's chosen GB palette.
+     pub fn core_gb_colors(&self) -> GbColors {
+         match self.gb_shader() {
+-            Shader::Authentic if matches!(self.core, Core::Mgba | Core::Sameboy) && self.gb_model() == GbModel::PocketSgb => GbColors::SgbAuto,
++            Shader::Authentic if self.gb_model() == GbModel::PocketSgb => GbColors::SgbAuto,
+             Shader::Authentic if !matches!(self.gb_model(), GbModel::Gbc | GbModel::PocketColor) => {
+                 GbColors::Palette(slot_store::GbPalette::GRAYSCALE)
+             }
