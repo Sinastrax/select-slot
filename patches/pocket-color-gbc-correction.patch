@@ -1,0 +1,70 @@
+--- a/crates/slot-gfx/src/authentic.rs
++++ b/crates/slot-gfx/src/authentic.rs
+@@ -201,9 +201,16 @@
+             Screen::Pocket => POCKET.look([keep(30.0), keep(10.0)]),
+             Screen::PocketColor => {
+                 let mut look = POCKET.look([keep(30.0), keep(10.0)]);
+-                // A separate shader mode keeps Pocket dot geometry, while allowing the
+-                // core-supplied GB palette to colorize the final pixel.
+-                look.lcd[0] = 2.0;
++                // The Pocket's dot geometry, response time and glass are retained.
++                // Supply the calibrated GBC colour-space response independently: the
++                // fragment shader applies it to the selected GB palette, then overlays
++                // only the Pocket's local dot/gap/shadow modulation.
++                let gbc = Screen::Gbc.look();
++                look.response = gbc.response;
++                look.gamma = gbc.gamma;
++                look.least = gbc.least;
++                look.lcd[0] = 2.0; // Pocket geometry + GBC colour-response hybrid
++                look.lcd[1] = 1.0; // select measured GBC ramp, not GBA
+                 look
+             },
+             Screen::Light => LIGHT.look([keep(30.0), keep(10.0)]),
+--- a/crates/slot-gfx/src/shaders.rs
++++ b/crates/slot-gfx/src/shaders.rs
+@@ -140,19 +140,32 @@
+                 + ink_near(from + vec2(0.5, -0.5) * texel, texel) + ink_near(from + vec2(-0.5, 0.5) * texel, texel);
+             shadow *= 0.25 * u_ink.w * (1.0 - 0.75 * a);
+             c = u_dark * a * (1.0 - u_glass.x * a * a) + u_light * (1.0 - shadow) * (u_glass.y - u_glass.z * a);
+-            if (u_lcd.x > 1.5) {
+-                // Pocket Color is a deliberate hybrid, not an original LCD model:
+-                // retain Pocket's dot/ink/shadow geometry and its luminance, but
+-                // take the hue and saturation from the emulated GB palette.
+-                // The brightest channel defines chroma, so dark blue/red shades
+-                // stay dark rather than becoming over-bright after normalization.
+-                vec3 palette = texture2D(u_game, centre).rgb;
+-                float peak = max(max(palette.r, palette.g), palette.b);
+-                vec3 chroma = palette / max(peak, 0.1);
+-                float pocketLuma = dot(c, luma_coeff);
+-                if (inside) {
+-                    c = clamp(chroma * pocketLuma, 0.0, 1.0);
+-                }
++            if (u_lcd.x > 1.5 && inside) {
++                // Pocket Color: the exact GBC Authentic colour-space response overlaid
++                // with the Pocket's dot edges and ink shadows. The prior version only
++                // borrowed the palette hue and skipped the GBC measured response.
++                // Calculate the unshadowed Pocket pixel so we can preserve its local
++                // pixel-grid/shadow contrast without applying its monochrome ink
++                // response a second time to the calibrated GBC pixel brightness.
++                float baseInk = ink(centre);
++                vec3 pocketBase = u_dark * baseInk * (1.0 - u_glass.x * baseInk * baseInk)
++                    + u_light * (u_glass.y - u_glass.z * baseInk);
++                float localShade = clamp(dot(c, luma_coeff) /
++                    max(dot(pocketBase, luma_coeff), 0.025), 0.0, 1.25);
++
++                vec3 raw = texture2D(u_game, centre).rgb;
++                vec3 code = (floor((raw * 255.0 + 0.5) / 8.0) + 0.5) / 32.0;
++                vec2 gbcPick = vec2(0.0, 1.0);
++                vec3 measured = vec3(
++                    dot(texture2D(u_ramp, vec2(code.r, 0.5)).rg, gbcPick),
++                    dot(texture2D(u_ramp, vec2(code.g, 0.5)).rg, gbcPick),
++                    dot(texture2D(u_ramp, vec2(code.b, 0.5)).rg, gbcPick));
++                vec3 response = clamp(u_response * pow(measured, u_gamma), u_least, vec3(1.0));
++                // Same BGB 'GBC reality' panel white and black as Screen::Gbc.
++                vec3 gbcWhite = pow(vec3(134.0, 140.0, 122.0) / 255.0, vec3(2.2));
++                vec3 gbcBlack = pow(vec3(14.0, 25.0, 28.0) / 255.0, vec3(2.2));
++                vec3 gbcRgb = pow(mix(gbcBlack, gbcWhite, response), vec3(1.0 / 2.2));
++                c = clamp(gbcRgb * localShade, 0.0, 1.0);
+             }
+         } else if (!inside) {
+             c = pow(u_light, vec3(1.0 / 2.2));
