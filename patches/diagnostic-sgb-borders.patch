@@ -1,0 +1,10 @@
+--- a/crates/slot/src/core.rs
++++ b/crates/slot/src/core.rs
+@@ -308,7 +308,10 @@
+     if which == Core::Mgba {
+-        core.set_option("mgba_sgb_borders", "OFF");
++        // Diagnostic only: when mGBA is asked to emulate a Super Game Boy, show
++        // the game's native SGB border to verify that the hardware model activated.
++        // This change is not in the normal performance-test build.
++        core.set_option("mgba_sgb_borders", if matches!(palette, Some(GbColors::SgbAuto)) { "ON" } else { "OFF" });
+         match palette {
