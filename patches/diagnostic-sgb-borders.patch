@@ -1,6 +1,6 @@
 --- a/crates/slot/src/core.rs
 +++ b/crates/slot/src/core.rs
-@@ -308,7 +308,10 @@
+@@ -308,3 +308,6 @@
      if which == Core::Mgba {
 -        core.set_option("mgba_sgb_borders", "OFF");
 +        // Diagnostic only: when mGBA is asked to emulate a Super Game Boy, show
