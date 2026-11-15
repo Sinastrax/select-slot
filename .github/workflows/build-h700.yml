@@ -52,6 +52,8 @@ jobs:
           git apply ../patches/restore-mgba-gb-and-disable-autoframeskip.patch
           git apply --check ../patches/mgba-drift-and-authentic-color-consistency.patch
           git apply ../patches/mgba-drift-and-authentic-color-consistency.patch
+          git apply --check ../patches/mgba-native-pitch-neutral-authentic-white.patch
+          git apply ../patches/mgba-native-pitch-neutral-authentic-white.patch
           echo "Exact-release patches applied"
 
       - name: Install required tools
