@@ -29,3 +29,13 @@ A successfully generated artifact contains `slot-rgsp-custom/`. **Copy the conte
 - Always back up `System/slot`, `Config/slot.state`, `Config/selected_core.txt`, and saved games before installation. Save-state files are generally **not compatible between cores**.
 - SameBoy's frame pacing, SGB visual output and performance on the physical H700 RG SP have not yet been verified.
 - Firmware with SameBoy ARM64 and per-core correction persistence successfully built and SD-card tree validated: [GitHub Actions run 43761142559](https://github.com/Sinastrax/slot-rgsp-mod/actions/runs/43761142559).
+
+
+## Color correction vs. LCD filter (2026-11-15 follow-up)
+
+- This revision corrects a UI/rendering mismatch: disabling `Color Correction` under Authentic previously changed the simulated grid/shadow/tint instead of only the underlying RGB transfer response.
+- **Pocket Color, Pocket SGB, GBC and GBA:** disabling correction now bypasses the measured RGB transfer calculation while keeping the same LCD gap, dot shadow, grain and glass passes. Correction **On** retains the established appearance.
+- **DMG, Pocket and Light:** these are monochrome LCD simulations; their green/olive/blue-green panel colors are part of the filter, *not* a separate measured RGB correction. The correction state can still be stored, but no longer strips the screen's historical panel tint. There is no independent RGB transform to toggle for those modes.
+- **Gambatte + Pocket SGB:** now requests Gambatte's built-in game-specific SGB palette instead of grayscale; it is a static preset, not live Super Game Boy commands.
+- **SameBoy performance is not fixed or verified** in this revision. If it stutters, use Gambatte.
+- Compiled firmware with correction/filter fix: [GitHub Actions run 43762885145](https://github.com/Sinastrax/slot-rgsp-mod/actions/runs/43762885145).
