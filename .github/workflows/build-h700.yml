@@ -46,6 +46,8 @@ jobs:
           git apply ../patches/sameboy-build-fixes.patch
           git apply --check ../patches/per-core-authentic-color-correction.patch
           git apply ../patches/per-core-authentic-color-correction.patch
+          git apply --check ../patches/color-transfer-only-gambatte-sgb-fix.patch
+          git apply ../patches/color-transfer-only-gambatte-sgb-fix.patch
           echo "Exact-release patches applied"
 
       - name: Install required tools
