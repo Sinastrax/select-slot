@@ -92,6 +92,7 @@ jobs:
             "https://github.com/LIJI32/SameBoy/archive/refs/tags/v1.0.5.tar.gz" -o /tmp/sameboy.tar.gz
           mkdir -p /tmp/sameboy
           tar -xzf /tmp/sameboy.tar.gz --strip-components=1 -C /tmp/sameboy
+          make -C /tmp/sameboy -j4 bootroms
           make -C /tmp/sameboy/libretro -j4 platform=unix
           file /tmp/sameboy/sameboy_libretro.so
           readelf -h /tmp/sameboy/sameboy_libretro.so | grep -q 'AArch64'
