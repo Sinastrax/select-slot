@@ -37,7 +37,7 @@ jobs:
           mkdir upstream
           tar -xzf /tmp/upstream-slot.tar.gz --strip-components=1 -C upstream
 
-      - name: Build earlier libretro mGBA with Slot patches
+      - name: Build older upstream mGBA libretro core
         working-directory: upstream
         shell: bash
         run: |
@@ -53,7 +53,7 @@ jobs:
           git -C target-device/mgba-old/source fetch -q --depth 1 https://github.com/libretro/mgba "$OLD_MGBA"
           git -C target-device/mgba-old/source checkout -q --detach FETCH_HEAD
           cmake -S target-device/mgba-old/source -B target-device/mgba-old/build \
-            -DLIBMGBA_ONLY=ON -DBUILD_LIBRETRO=ON -DCMAKE_BUILD_TYPE=Release \
+            -DLIBMGBA_ONLY=ON -DBUILD_LIBRETRO=ON -DENABLE_SCRIPTING=OFF -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_C_FLAGS="-flto=auto"
           cmake --build target-device/mgba-old/build --target mgba_libretro \
             --parallel "$(getconf _NPROCESSORS_ONLN)"
