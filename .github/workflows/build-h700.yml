@@ -56,6 +56,8 @@ jobs:
           git apply ../patches/mgba-native-pitch-neutral-authentic-white.patch
           git apply --check ../patches/mgba-audio-overflow-crossfade.patch
           git apply ../patches/mgba-audio-overflow-crossfade.patch
+          git apply --check ../patches/authentic-color-response-only.patch
+          git apply ../patches/authentic-color-response-only.patch
           echo "Exact-release patches applied"
 
       - name: Install required tools
