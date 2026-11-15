@@ -31,8 +31,8 @@ diff --git a/crates/slot/src/audio/ring.rs b/crates/slot/src/audio/ring.rs
      }
  
 -    pub fn push(&self, samples: &[i16]) {
-+    /// Switch GB/GBC mGBA into a slightly deeper jitter buffer without
-+    /// increasing latency or changing audio behaviour for other cores.
++    /// Switch GB/GBC mGBA into a deeper jitter buffer without
++    /// changing audio behaviour for other cores.
 +    /// This is called once when opening a game, never on an audio callback.
 +    pub fn configure_mgba_gb(&self, enabled: bool) {
 +        let previous = self.mgba_gb.swap(enabled, Ordering::Relaxed);
@@ -76,7 +76,7 @@ diff --git a/crates/slot/src/audio/ring.rs b/crates/slot/src/audio/ring.rs
          lay_pending(&mut i);
          let cap = i.buf.len();
 -        let holding = self.priming.load(Ordering::Relaxed) && cap > 0 && i.len < cap / 2;
-+        // The normal 50% refill can silence mGBA GB/GBC for ~100 ms
++        // The normal 50% refill can prolong mGBA GB/GBC silence
 +        // following a *brief* underrun. Resume after one ALSA period instead.
 +        let refill = if self.mgba_gb.load(Ordering::Relaxed) {
 +            out.len()
