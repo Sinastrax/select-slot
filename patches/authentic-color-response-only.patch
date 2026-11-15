@@ -1,0 +1,59 @@
+diff --git a/crates/slot-gfx/src/shaders.rs b/crates/slot-gfx/src/shaders.rs
+--- a/crates/slot-gfx/src/shaders.rs
++++ b/crates/slot-gfx/src/shaders.rs
+@@ -158,7 +158,13 @@
+                         dot(texture2D(u_ramp, vec2(code.g, 0.5)).rg, gbcPick),
+                         dot(texture2D(u_ramp, vec2(code.b, 0.5)).rg, gbcPick));
+                     vec3 response = clamp(u_response * pow(measured, u_gamma), u_least, vec3(1.0));
+-                    vec3 gbcWhite = pow(vec3(134.0, 140.0, 122.0) / 255.0, vec3(2.2));
+-                    vec3 gbcBlack = pow(vec3(14.0, 25.0, 28.0) / 255.0, vec3(2.2));
+-                    panelRgb = pow(mix(gbcBlack, gbcWhite, response), vec3(1.0 / 2.2));
++                    // Treat colour correction as a source-colour conversion only.
++                    // Preserve the source's luminance and neutral greys, including
++                    // white, rather than changing the simulated LCD white/black point.
++                    vec3 sourceLin = pow(raw, vec3(2.2));
++                    float sourceLuma = dot(sourceLin, luma_coeff);
++                    float convertedLuma = dot(response, luma_coeff);
++                    float chroma = max(max(raw.r, raw.g), raw.b) - min(min(raw.r, raw.g), raw.b);
++                    vec3 balanced = clamp(response * (sourceLuma / max(convertedLuma, 0.0001)), 0.0, 1.0);
++                    panelRgb = pow(mix(sourceLin, balanced, smoothstep(0.015, 0.075, chroma)), vec3(1.0 / 2.2));
+                 }
+@@ -173,10 +181,7 @@
+                 float gapShare = clamp((dotLuma - baseLuma) /
+                     max(panelLuma - baseLuma, 0.03), 0.0, 1.0);
+                 float shadowShare = clamp(dotLuma / max(baseLuma, 0.03), 0.0, 1.0);
+-                // The calibrated reflector is tinted. With correction OFF,
+-                // use neutral white instead; otherwise even an RGB (1,1,1)
+-                // source turns grey/blue within the visible Pocket pixel gaps.
+-                // gapShare, dot/shadow structure and glass remain identical.
+-                vec3 reflector = u_authentic_correction > 0.5
+-                    ? vec3(134.0, 140.0, 122.0) / 255.0 : vec3(1.0);
++                // Reflector and pixel gaps must be identical for both correction
++                // settings; do not switch panel tint when correction is toggled.
++                vec3 reflector = vec3(1.0);
+                 c = clamp(mix(panelRgb, reflector, gapShare) * shadowShare, 0.0, 1.0);
+@@ -192,5 +198,6 @@
+-            // The corrected panel uses its measured tinted white/black point;
+-            // correction OFF uses neutral 0..1 linear RGB so white stays white.
+-            // Both retain exactly the same LCD grid, grain and glass geometry.
++            // One neutral floor for either setting; the switch acts on source
++            // colour only, not panel brightness, contrast, or gap tint.
+-            vec3 panelDark = u_authentic_correction > 0.5 ? u_dark : vec3(0.0);
++            vec3 panelDark = vec3(0.0);
+             vec3 lin = pow(rawColour, vec3(2.2));
+             if (u_authentic_correction > 0.5) {
+@@ -209,5 +214,12 @@
+                                   dot(texture2D(u_ramp, vec2(code.g, 0.5)).rg, pick),
+                                   dot(texture2D(u_ramp, vec2(code.b, 0.5)).rg, pick));
+-                lin = clamp(u_response * pow(light, u_gamma), u_least, vec3(1.0));
+-                lin = mix(u_dark, u_light, lin);
++                vec3 response = clamp(u_response * pow(light, u_gamma), u_least, vec3(1.0));
++                // Keep luminance and neutral values identical to the uncorrected
++                // source; only the chromatic response is corrected.
++                float rawY = dot(lin, luma_coeff);
++                float correctedY = dot(response, luma_coeff);
++                float chroma = max(max(rawColour.r, rawColour.g), rawColour.b)
++                    - min(min(rawColour.r, rawColour.g), rawColour.b);
++                vec3 balanced = clamp(response * (rawY / max(correctedY, 0.0001)), 0.0, 1.0);
++                lin = mix(lin, balanced, smoothstep(0.015, 0.075, chroma));
+             }
