@@ -44,6 +44,8 @@ jobs:
           git apply ../patches/sameboy-authentic-correction.patch
           git apply --check ../patches/sameboy-build-fixes.patch
           git apply ../patches/sameboy-build-fixes.patch
+          git apply --check ../patches/per-core-authentic-color-correction.patch
+          git apply ../patches/per-core-authentic-color-correction.patch
           echo "Exact-release patches applied"
 
       - name: Install required tools
