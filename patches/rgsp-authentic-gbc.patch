@@ -1,0 +1,258 @@
+--- a/crates/slot-gfx/src/fbo.rs
++++ b/crates/slot-gfx/src/fbo.rs
+@@ -226,6 +226,10 @@
+         self.game.set_blend(blend, &self.quad);
+     }
+ 
++    pub fn set_authentic_fast_forward(&mut self, active: bool) {
++        self.game.set_authentic_fast_forward(active, &self.quad);
++    }
++
+     /// The game's picture jumped (another game, a state load, a reset): blend nothing of
+     /// what came before into the next frame.
+     pub fn cut_frame_blend(&mut self) {
+--- a/crates/slot-gfx/src/pipeline.rs
++++ b/crates/slot-gfx/src/pipeline.rs
+@@ -12,7 +12,7 @@
+ pub const WHOLE_TEXTURE: [f32; 4] = [0.0, 0.0, 1.0, 1.0];
+ 
+ /// How each new frame meets the ones before it, at the game's own size before any scaling.
+-/// Authentic always draws its LCD's response, whatever this is.
++/// Authentic draws its LCD response except during fast-forward.
+ #[derive(Copy, Clone, PartialEq, Eq, Debug, Default)]
+ pub enum FrameBlend {
+     #[default]
+@@ -34,6 +34,7 @@
+     /// How many of `game` hold frames of the picture now showing, up to both.
+     held: usize,
+     blend: FrameBlend,
++    authentic_fast_forward: bool,
+     u_rect: gl::types::GLint,
+     u_bright: gl::types::GLint,
+     u_uv: gl::types::GLint,
+@@ -139,6 +140,7 @@
+             at: 0,
+             held: 0,
+             blend: FrameBlend::Off,
++            authentic_fast_forward: false,
+             u_rect,
+             u_bright,
+             u_uv,
+@@ -248,6 +250,15 @@
+         }
+     }
+ 
++    /// Turn the LCD response off while fast-forwarding, retaining the Authentic
++    /// colour, pixel structure and glass rendering. Reset accumulated trails on change.
++    pub fn set_authentic_fast_forward(&mut self, active: bool, quad: &Quad) {
++        if self.authentic_fast_forward != active {
++            self.authentic_fast_forward = active;
++            self.reblend(quad);
++        }
++    }
++
+     /// Blend from the next frame on with nothing before it: the picture jumped.
+     pub fn cut(&mut self) {
+         self.held = 0;
+@@ -276,6 +287,7 @@
+ 
+     fn blend(&self) -> FrameBlend {
+         match self.effect {
++            ScreenEffect::Authentic if self.authentic_fast_forward => FrameBlend::Off,
+             ScreenEffect::Authentic => FrameBlend::Ghosting,
+             _ => self.blend,
+         }
+--- a/crates/slot-store/src/slot_state.rs
++++ b/crates/slot-store/src/slot_state.rs
+@@ -395,16 +395,18 @@
+     #[default]
+     Pocket,
+     Light,
++    Gbc,
+ }
+ 
+ impl GbModel {
+-    pub const ALL: [GbModel; 3] = [GbModel::Dmg, GbModel::Pocket, GbModel::Light];
++    pub const ALL: [GbModel; 4] = [GbModel::Dmg, GbModel::Pocket, GbModel::Light, GbModel::Gbc];
+ 
+     pub fn key(self) -> &'static str {
+         match self {
+             GbModel::Dmg => "dmg",
+             GbModel::Pocket => "pocket",
+             GbModel::Light => "light",
++            GbModel::Gbc => "gbc",
+         }
+     }
+ 
+@@ -414,7 +416,8 @@
+ 
+     pub fn step(self, right: bool) -> GbModel {
+         let at = GbModel::ALL.iter().position(|&m| m == self).unwrap_or(0);
+-        GbModel::ALL[(at + if right { 1 } else { 2 }) % 3]
++        let n = GbModel::ALL.len();
++        GbModel::ALL[(at + if right { 1 } else { n - 1 }) % n]
+     }
+ }
+ 
+--- a/crates/slot-ui/src/quick_menu.rs
++++ b/crates/slot-ui/src/quick_menu.rs
+@@ -996,6 +996,7 @@
+     Authentic,
+     GameBoy,
+     Pocket,
++    GameBoyColor,
+     Dark,
+     Light,
+     Show,
+@@ -1044,7 +1045,7 @@
+ }
+ 
+ impl QuickValue {
+-    pub const ALL: [QuickValue; 60] = [
++    pub const ALL: [QuickValue; 61] = [
+         QuickValue::Speed1_5,
+         QuickValue::Speed2,
+         QuickValue::Speed3,
+@@ -1060,6 +1061,7 @@
+         QuickValue::Authentic,
+         QuickValue::GameBoy,
+         QuickValue::Pocket,
++        QuickValue::GameBoyColor,
+         QuickValue::Dark,
+         QuickValue::Light,
+         QuickValue::Show,
+@@ -1156,6 +1158,7 @@
+             QuickValue::Authentic => "Authentic",
+             QuickValue::GameBoy => "Game Boy",
+             QuickValue::Pocket => "Pocket",
++            QuickValue::GameBoyColor => "Game Boy Color",
+             QuickValue::Dark => "Dark",
+             QuickValue::Light => "Light",
+             QuickValue::Show => "Show",
+--- a/crates/slot-ui/src/toast.rs
++++ b/crates/slot-ui/src/toast.rs
+@@ -32,6 +32,7 @@
+     ModelGameBoy,
+     ModelPocket,
+     ModelLight,
++    ModelColor,
+     CardUnwritable,
+     CardRepair,
+     CardRepairCharge,
+@@ -49,7 +50,7 @@
+ }
+ 
+ impl Toast {
+-    const FIXED: [Toast; 36] = [
++    const FIXED: [Toast; 37] = [
+         Toast::StateSaved,
+         Toast::StateLoaded,
+         Toast::GameReset,
+@@ -74,6 +75,7 @@
+         Toast::ModelGameBoy,
+         Toast::ModelPocket,
+         Toast::ModelLight,
++        Toast::ModelColor,
+         Toast::CardUnwritable,
+         Toast::CardRepair,
+         Toast::CardRepairCharge,
+@@ -177,6 +179,7 @@
+             Toast::ModelGameBoy => "Game Boy",
+             Toast::ModelPocket => "Game Boy Pocket",
+             Toast::ModelLight => "Game Boy Light",
++            Toast::ModelColor => "Game Boy Color",
+             Toast::CardUnwritable => "Can't write to SD card",
+             Toast::CardRepair | Toast::CardRepairCharge => "Can't write to SD card",
+             Toast::CardRepaired => "SD card repaired",
+--- a/crates/slot/src/app.rs
++++ b/crates/slot/src/app.rs
+@@ -2773,6 +2773,7 @@
+                 GbModel::Dmg => QuickValue::GameBoy,
+                 GbModel::Pocket => QuickValue::Pocket,
+                 GbModel::Light => QuickValue::Light,
++                GbModel::Gbc => QuickValue::GameBoyColor,
+             }),
+             QuickRow::Shader
+             | QuickRow::ColourCorrection
+@@ -3673,6 +3674,10 @@
+                 hidden.extend_from_slice(rows);
+             }
+         }
++        // A GB cartridge on the GBC Authentic screen may use real GBC colour palettes.
++        if self.authentic(Platform::Gb) && self.state.gb_model == GbModel::Gbc {
++            hidden.retain(|row| *row != QuickRow::GbPalette);
++        }
+         if !self.authentic(Platform::Gb) {
+             hidden.push(QuickRow::GbModel);
+         }
+@@ -5140,11 +5145,13 @@
+         self.state.gb_colors()
+     }
+ 
+-    /// The colours the core draws a Game Boy game in: grey under the Authentic shader, which
+-    /// lays its own screen over the grey.
++    /// On the original monochrome Authentic GB models the shader colours grayscale pixels.
++    /// The added GBC model instead displays the user's chosen GB palette.
+     pub fn core_gb_colors(&self) -> GbColors {
+         match self.state.shader_gb {
+-            Shader::Authentic => GbColors::Palette(slot_store::GbPalette::GRAYSCALE),
++            Shader::Authentic if self.state.gb_model != GbModel::Gbc => {
++                GbColors::Palette(slot_store::GbPalette::GRAYSCALE)
++            }
+             _ => self.state.gb_colors(),
+         }
+     }
+@@ -6022,6 +6029,7 @@
+         }
+         if let QuickRow::GbModel | QuickRow::Model = row {
+             self.state.gb_model = self.state.gb_model.step(right);
++            self.palette_pending = Some(self.state.gb_colors());
+             self.persist();
+             return;
+         }
+@@ -6377,11 +6385,13 @@
+             let playing = matches!(self.phase, Phase::Playing { .. });
+             if playing && self.authentic(Platform::Gb) && self.playing_platform() == Platform::Gb {
+                 self.state.gb_model = self.state.gb_model.step(action == Action::PaletteNext);
++                self.palette_pending = Some(self.state.gb_colors());
+                 self.persist();
+                 let said = match self.state.gb_model {
+                     GbModel::Dmg => Toast::ModelGameBoy,
+                     GbModel::Pocket => Toast::ModelPocket,
+                     GbModel::Light => Toast::ModelLight,
++                    GbModel::Gbc => Toast::ModelColor,
+                 };
+                 self.hud.toast(said, self.now());
+                 return true;
+--- a/crates/slot/src/frontend.rs
++++ b/crates/slot/src/frontend.rs
+@@ -1205,6 +1205,8 @@
+         compositor.set_screen_effect(self.session.app().screen_effect());
+         compositor.set_authentic_screen(authentic_screen(self.session.app()));
+         compositor.set_frame_blend(self.session.app().frame_blend());
++        // Authentic uses its regular LCD response except while fast-forwarding.
++        compositor.set_authentic_fast_forward(self.session.fast_forwarding());
+         compositor.set_shake(self.session.app().screen_shake());
+         compositor.set_screen_power(self.session.app().screen_power());
+         compositor.set_screen_footer(self.session.app().screen_footer());
+@@ -1656,6 +1658,7 @@
+             slot_store::GbModel::Dmg => slot_gfx::Screen::Dmg,
+             slot_store::GbModel::Pocket => slot_gfx::Screen::Pocket,
+             slot_store::GbModel::Light => slot_gfx::Screen::Light,
++            slot_store::GbModel::Gbc => slot_gfx::Screen::Gbc,
+         },
+         Console::Gbc => slot_gfx::Screen::Gbc,
+         Console::Gba | Console::Gbav => slot_gfx::Screen::Gba,
+--- a/crates/slot/src/session.rs
++++ b/crates/slot/src/session.rs
+@@ -536,6 +536,10 @@
+ 
+     fn actually_rewinding(&self) -> bool {
+         self.rewinding && self.playing() && self.app.may_rewind()
++    }
++
++    pub fn fast_forwarding(&self) -> bool {
++        self.actually_fast_forwarding()
+     }
+ 
+     fn actually_fast_forwarding(&self) -> bool {
