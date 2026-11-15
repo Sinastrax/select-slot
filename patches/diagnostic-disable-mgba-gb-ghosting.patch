@@ -1,7 +1,7 @@
 diff --git a/crates/slot/src/frontend.rs b/crates/slot/src/frontend.rs
 --- a/crates/slot/src/frontend.rs
 +++ b/crates/slot/src/frontend.rs
-@@ -1205,8 +1205,13 @@
+@@ -1205,6 +1205,11 @@
          compositor.set_screen_effect(self.session.app().screen_effect());
          compositor.set_authentic_screen(authentic_screen(self.session.app()));
          compositor.set_frame_blend(self.session.app().frame_blend());
