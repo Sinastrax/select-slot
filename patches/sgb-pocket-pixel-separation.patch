@@ -1,0 +1,314 @@
+--- a/crates/slot-gfx/src/authentic.rs
++++ b/crates/slot-gfx/src/authentic.rs
+@@ -33,6 +33,8 @@
+     Pocket,
+     /// The Pocket LCD dot geometry, colorized with the selected GB/GBC palette.
+     PocketColor,
++    /// Super Game Boy colours through the Pocket's separated LCD dots.
++    PocketSgb,
+     /// The Game Boy Light's panel, lit from behind in blue-green.
+     Light,
+     Gbc,
+@@ -211,6 +213,13 @@
+                 look.least = gbc.least;
+                 look.lcd[0] = 2.0; // Pocket geometry + GBC colour-response hybrid
+                 look.lcd[1] = 1.0; // select measured GBC ramp, not GBA
++                look
++            },
++            Screen::PocketSgb => {
++                let mut look = POCKET.look([keep(30.0), keep(10.0)]);
++                // Use the same Pocket dot and shadow geometry; SGB colours are already
++                // provided by mGBA's emulated SNES. Do not apply GBC panel calibration.
++                look.lcd[0] = 3.0;
+                 look
+             },
+             Screen::Light => LIGHT.look([keep(30.0), keep(10.0)]),
+--- a/crates/slot-gfx/src/shaders.rs
++++ b/crates/slot-gfx/src/shaders.rs
+@@ -141,31 +141,39 @@
+             shadow *= 0.25 * u_ink.w * (1.0 - 0.75 * a);
+             c = u_dark * a * (1.0 - u_glass.x * a * a) + u_light * (1.0 - shadow) * (u_glass.y - u_glass.z * a);
+             if (u_lcd.x > 1.5 && inside) {
+-                // Pocket Color: the exact GBC Authentic colour-space response overlaid
+-                // with the Pocket's dot edges and ink shadows. The prior version only
+-                // borrowed the palette hue and skipped the GBC measured response.
+-                // Calculate the unshadowed Pocket pixel so we can preserve its local
+-                // pixel-grid/shadow contrast without applying its monochrome ink
+-                // response a second time to the calibrated GBC pixel brightness.
++                // Convert the source into the GBC's measured response for Pocket Color,
++                // or leave Super Game Boy/SNES colours unchanged for Pocket SGB.
++                vec3 raw = texture2D(u_game, centre).rgb;
++                vec3 panelRgb = raw;
++                if (u_lcd.x < 2.5) {
++                    vec3 code = (floor((raw * 255.0 + 0.5) / 8.0) + 0.5) / 32.0;
++                    vec2 gbcPick = vec2(0.0, 1.0);
++                    vec3 measured = vec3(
++                        dot(texture2D(u_ramp, vec2(code.r, 0.5)).rg, gbcPick),
++                        dot(texture2D(u_ramp, vec2(code.g, 0.5)).rg, gbcPick),
++                        dot(texture2D(u_ramp, vec2(code.b, 0.5)).rg, gbcPick));
++                    vec3 response = clamp(u_response * pow(measured, u_gamma), u_least, vec3(1.0));
++                    vec3 gbcWhite = pow(vec3(134.0, 140.0, 122.0) / 255.0, vec3(2.2));
++                    vec3 gbcBlack = pow(vec3(14.0, 25.0, 28.0) / 255.0, vec3(2.2));
++                    panelRgb = pow(mix(gbcBlack, gbcWhite, response), vec3(1.0 / 2.2));
++                }
++
++                // The previous hybrid multiplied colour by a brightness ratio capped
++                // at 1.25. That flattened Pocket's ink-free dot gaps, so pixels ran
++                // together. Use the ACTUAL Pocket dot/shadow luminance before colour.
++                // The ink-free reflector becomes visible in gaps, just as for Pocket.
+                 float baseInk = ink(centre);
+                 vec3 pocketBase = u_dark * baseInk * (1.0 - u_glass.x * baseInk * baseInk)
+                     + u_light * (u_glass.y - u_glass.z * baseInk);
+-                float localShade = clamp(dot(c, luma_coeff) /
+-                    max(dot(pocketBase, luma_coeff), 0.025), 0.0, 1.25);
+-
+-                vec3 raw = texture2D(u_game, centre).rgb;
+-                vec3 code = (floor((raw * 255.0 + 0.5) / 8.0) + 0.5) / 32.0;
+-                vec2 gbcPick = vec2(0.0, 1.0);
+-                vec3 measured = vec3(
+-                    dot(texture2D(u_ramp, vec2(code.r, 0.5)).rg, gbcPick),
+-                    dot(texture2D(u_ramp, vec2(code.g, 0.5)).rg, gbcPick),
+-                    dot(texture2D(u_ramp, vec2(code.b, 0.5)).rg, gbcPick));
+-                vec3 response = clamp(u_response * pow(measured, u_gamma), u_least, vec3(1.0));
+-                // Same BGB 'GBC reality' panel white and black as Screen::Gbc.
+-                vec3 gbcWhite = pow(vec3(134.0, 140.0, 122.0) / 255.0, vec3(2.2));
+-                vec3 gbcBlack = pow(vec3(14.0, 25.0, 28.0) / 255.0, vec3(2.2));
+-                vec3 gbcRgb = pow(mix(gbcBlack, gbcWhite, response), vec3(1.0 / 2.2));
+-                c = clamp(gbcRgb * localShade, 0.0, 1.0);
++                float baseLuma = dot(pocketBase, luma_coeff);
++                float dotLuma = dot(c, luma_coeff);
++                float panelLuma = dot(u_light * u_glass.y, luma_coeff);
++                float gapShare = clamp((dotLuma - baseLuma) /
++                    max(panelLuma - baseLuma, 0.03), 0.0, 1.0);
++                float shadowShare = clamp(dotLuma / max(baseLuma, 0.03), 0.0, 1.0);
++                vec3 reflector = u_lcd.x < 2.5 ? vec3(134.0, 140.0, 122.0) / 255.0
++                    : vec3(0.90);
++                c = clamp(mix(panelRgb, reflector, gapShare) * shadowShare, 0.0, 1.0);
+             }
+         } else if (!inside) {
+             c = pow(u_light, vec3(1.0 / 2.2));
+--- a/crates/slot-store/src/gb_palette.rs
++++ b/crates/slot-store/src/gb_palette.rs
+@@ -125,6 +125,9 @@
+ #[derive(Copy, Clone, PartialEq, Eq, Debug)]
+ pub enum GbColors {
+     Auto,
++    /// Internal directive: launch the Super Game Boy hardware model in mGBA.
++    /// Selected by the Pocket SGB screen model, not a separately stored palette.
++    SgbAuto,
+     Palette(GbPalette),
+ }
+ 
+@@ -135,14 +138,14 @@
+ 
+     pub fn index(self) -> usize {
+         match self {
+-            GbColors::Auto => 0,
++            GbColors::Auto | GbColors::SgbAuto => 0,
+             GbColors::Palette(p) => p.index() + 1,
+         }
+     }
+ 
+     pub fn next(self) -> GbColors {
+         match self {
+-            GbColors::Auto => GbColors::Palette(GbPalette(0)),
++            GbColors::Auto | GbColors::SgbAuto => GbColors::Palette(GbPalette(0)),
+             GbColors::Palette(p) if p.index() + 1 == GbPalette::COUNT => GbColors::Auto,
+             GbColors::Palette(p) => GbColors::Palette(p.next()),
+         }
+@@ -150,7 +153,7 @@
+ 
+     pub fn prev(self) -> GbColors {
+         match self {
+-            GbColors::Auto => GbColors::Palette(GbPalette((GbPalette::COUNT - 1) as u8)),
++            GbColors::Auto | GbColors::SgbAuto => GbColors::Palette(GbPalette((GbPalette::COUNT - 1) as u8)),
+             GbColors::Palette(p) if p.index() == 0 => GbColors::Auto,
+             GbColors::Palette(p) => GbColors::Palette(p.prev()),
+         }
+@@ -159,13 +162,14 @@
+     pub fn label(self) -> &'static str {
+         match self {
+             GbColors::Auto => "Auto",
++            GbColors::SgbAuto => "Super Game Boy",
+             GbColors::Palette(p) => p.label(),
+         }
+     }
+ 
+     pub fn core_name(self) -> &'static str {
+         match self {
+-            GbColors::Auto => "Auto",
++            GbColors::Auto | GbColors::SgbAuto => "Auto",
+             GbColors::Palette(p) => p.core_name(),
+         }
+     }
+--- a/crates/slot-store/src/slot_state.rs
++++ b/crates/slot-store/src/slot_state.rs
+@@ -395,13 +395,15 @@
+     #[default]
+     Pocket,
+     PocketColor,
++    PocketSgb,
+     Light,
+     Gbc,
+ }
+ 
+ impl GbModel {
+-    pub const ALL: [GbModel; 5] = [
+-        GbModel::Dmg, GbModel::Pocket, GbModel::PocketColor, GbModel::Light, GbModel::Gbc,
++    pub const ALL: [GbModel; 6] = [
++        GbModel::Dmg, GbModel::Pocket, GbModel::PocketColor, GbModel::PocketSgb,
++        GbModel::Light, GbModel::Gbc,
+     ];
+ 
+     pub fn key(self) -> &'static str {
+@@ -409,6 +411,7 @@
+             GbModel::Dmg => "dmg",
+             GbModel::Pocket => "pocket",
+             GbModel::PocketColor => "pocket-color",
++            GbModel::PocketSgb => "pocket-sgb",
+             GbModel::Light => "light",
+             GbModel::Gbc => "gbc",
+         }
+@@ -554,7 +557,7 @@
+ 
+     pub fn set_gb_colors(&mut self, to: GbColors) {
+         match to {
+-            GbColors::Auto => self.gb_palettes = false,
++            GbColors::Auto | GbColors::SgbAuto => self.gb_palettes = false,
+             GbColors::Palette(p) => {
+                 self.gb_palettes = true;
+                 self.gb_palette = p;
+--- a/crates/slot-ui/src/quick_menu.rs
++++ b/crates/slot-ui/src/quick_menu.rs
+@@ -997,6 +997,7 @@
+     GameBoy,
+     Pocket,
+     PocketColor,
++    PocketSgb,
+     GameBoyColor,
+     Dark,
+     Light,
+@@ -1046,7 +1047,7 @@
+ }
+ 
+ impl QuickValue {
+-    pub const ALL: [QuickValue; 62] = [
++    pub const ALL: [QuickValue; 63] = [
+         QuickValue::Speed1_5,
+         QuickValue::Speed2,
+         QuickValue::Speed3,
+@@ -1063,6 +1064,7 @@
+         QuickValue::GameBoy,
+         QuickValue::Pocket,
+         QuickValue::PocketColor,
++        QuickValue::PocketSgb,
+         QuickValue::GameBoyColor,
+         QuickValue::Dark,
+         QuickValue::Light,
+@@ -1161,6 +1163,7 @@
+             QuickValue::GameBoy => "Game Boy",
+             QuickValue::Pocket => "Pocket",
+             QuickValue::PocketColor => "Pocket Color",
++            QuickValue::PocketSgb => "Pocket SGB",
+             QuickValue::GameBoyColor => "Game Boy Color",
+             QuickValue::Dark => "Dark",
+             QuickValue::Light => "Light",
+--- a/crates/slot-ui/src/toast.rs
++++ b/crates/slot-ui/src/toast.rs
+@@ -32,6 +32,7 @@
+     ModelGameBoy,
+     ModelPocket,
+     ModelPocketColor,
++    ModelPocketSgb,
+     ModelLight,
+     ModelColor,
+     CardUnwritable,
+@@ -51,7 +52,7 @@
+ }
+ 
+ impl Toast {
+-    const FIXED: [Toast; 38] = [
++    const FIXED: [Toast; 39] = [
+         Toast::StateSaved,
+         Toast::StateLoaded,
+         Toast::GameReset,
+@@ -76,6 +77,7 @@
+         Toast::ModelGameBoy,
+         Toast::ModelPocket,
+         Toast::ModelPocketColor,
++        Toast::ModelPocketSgb,
+         Toast::ModelLight,
+         Toast::ModelColor,
+         Toast::CardUnwritable,
+@@ -181,6 +183,7 @@
+             Toast::ModelGameBoy => "Game Boy",
+             Toast::ModelPocket => "Game Boy Pocket",
+             Toast::ModelPocketColor => "Game Boy Pocket Color",
++            Toast::ModelPocketSgb => "Game Boy Pocket SGB (restart)",
+             Toast::ModelLight => "Game Boy Light",
+             Toast::ModelColor => "Game Boy Color",
+             Toast::CardUnwritable => "Can't write to SD card",
+--- a/crates/slot/src/app.rs
++++ b/crates/slot/src/app.rs
+@@ -2773,6 +2773,7 @@
+                 GbModel::Dmg => QuickValue::GameBoy,
+                 GbModel::Pocket => QuickValue::Pocket,
+                 GbModel::PocketColor => QuickValue::PocketColor,
++                GbModel::PocketSgb => QuickValue::PocketSgb,
+                 GbModel::Light => QuickValue::Light,
+                 GbModel::Gbc => QuickValue::GameBoyColor,
+             }),
+@@ -5150,6 +5151,7 @@
+     /// The added GBC model instead displays the user's chosen GB palette.
+     pub fn core_gb_colors(&self) -> GbColors {
+         match self.state.shader_gb {
++            Shader::Authentic if self.state.gb_model == GbModel::PocketSgb => GbColors::SgbAuto,
+             Shader::Authentic if !matches!(self.state.gb_model, GbModel::Gbc | GbModel::PocketColor) => {
+                 GbColors::Palette(slot_store::GbPalette::GRAYSCALE)
+             }
+@@ -6392,6 +6394,7 @@
+                     GbModel::Dmg => Toast::ModelGameBoy,
+                     GbModel::Pocket => Toast::ModelPocket,
+                     GbModel::PocketColor => Toast::ModelPocketColor,
++                    GbModel::PocketSgb => Toast::ModelPocketSgb,
+                     GbModel::Light => Toast::ModelLight,
+                     GbModel::Gbc => Toast::ModelColor,
+                 };
+--- a/crates/slot/src/core.rs
++++ b/crates/slot/src/core.rs
+@@ -279,6 +279,11 @@
+             ("gambatte_gb_internal_palette", p.gambatte_name()),
+         ],
+         (Core::Gambatte, GbColors::Auto) => vec![("gambatte_gb_colorization", "GBC")],
++        (Core::Gambatte, GbColors::SgbAuto) => vec![("gambatte_gb_colorization", "SGB")],
++        (Core::Mgba, GbColors::SgbAuto) => vec![
++            ("mgba_gb_model", "Super Game Boy"),
++            ("mgba_gb_colors_preset", "2"),
++        ],
+         _ => vec![("mgba_gb_colors", colors.core_name())],
+     }
+ }
+@@ -308,6 +313,13 @@
+     if which == Core::Mgba {
+         core.set_option("mgba_sgb_borders", "OFF");
+         match palette {
++            Some(GbColors::SgbAuto) => {
++                // Super Game Boy mode accepts in-game SGB palette commands and
++                // uses SNES-specific per-game presets (border remains disabled).
++                core.set_option("mgba_gb_model", "Super Game Boy");
++                core.set_option("mgba_gb_colors_preset", "2");
++                core.set_option("mgba_gb_colors", "Auto");
++            }
+             Some(p) => {
+                 core.set_option("mgba_gb_model", "Game Boy");
+                 core.set_option("mgba_gb_colors_preset", "0");
+--- a/crates/slot/src/frontend.rs
++++ b/crates/slot/src/frontend.rs
+@@ -1658,6 +1658,7 @@
+             slot_store::GbModel::Dmg => slot_gfx::Screen::Dmg,
+             slot_store::GbModel::Pocket => slot_gfx::Screen::Pocket,
+             slot_store::GbModel::PocketColor => slot_gfx::Screen::PocketColor,
++            slot_store::GbModel::PocketSgb => slot_gfx::Screen::PocketSgb,
+             slot_store::GbModel::Light => slot_gfx::Screen::Light,
+             slot_store::GbModel::Gbc => slot_gfx::Screen::Gbc,
+         },
