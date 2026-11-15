@@ -1,0 +1,84 @@
+diff --git a/crates/slot-store/src/slot_state.rs b/crates/slot-store/src/slot_state.rs
+--- a/crates/slot-store/src/slot_state.rs
++++ b/crates/slot-store/src/slot_state.rs
+@@ -496,6 +496,8 @@
+     pub colour_correction_gbc: bool,
+     /// Individual Authentic GB model correction bits, DMG through GBC.
+     pub authentic_gb_correction: u32,
++    /// Independent correction flags for SameBoy Authentic GB models.
++    pub authentic_gb_correction_sameboy: u32,
+     pub authentic_gbc_correction: bool,
+     pub authentic_gba_correction: bool,
+     pub shader_gba: Shader,
+@@ -712,6 +714,7 @@
+             colour_correction_gb: false,
+             colour_correction_gbc: false,
+             authentic_gb_correction: 0x3f,
++            authentic_gb_correction_sameboy: 0x3f,
+             authentic_gbc_correction: true,
+             authentic_gba_correction: true,
+             shader_gba: Shader::Grid,
+@@ -852,6 +855,7 @@
+     ));
+     text.push_str(&format!("shader_gbc={}\n", s.shader_gbc.name()));
+     text.push_str(&format!("authentic_gb_correction={}\n", s.authentic_gb_correction));
++    text.push_str(&format!("authentic_gb_correction_sameboy={}\n", s.authentic_gb_correction_sameboy));
+     text.push_str(&format!("authentic_gbc_correction={}\n", s.authentic_gbc_correction as u8));
+     text.push_str(&format!("authentic_gba_correction={}\n", s.authentic_gba_correction as u8));
+     text.push_str(&format!("shader_gb_mgba={}\n", s.shader_gb_mgba.name()));
+@@ -965,6 +969,7 @@
+     let mut ghosting_gb = None;
+     let mut ghosting_gbc = None;
+     let mut authentic_gb_correction = None;
++    let mut authentic_gb_correction_sameboy = None;
+     let mut authentic_gbc_correction = None;
+     let mut authentic_gba_correction = None;
+     let mut shader_gba = None;
+@@ -1101,6 +1106,7 @@
+             "shader_gb_mgba" => shader_gb_mgba = Shader::parse(value).filter(|s| Shader::GB.contains(s)),
+             "shader_gbc" => shader_gbc = Shader::parse(value).filter(|s| Shader::GB.contains(s)),
+             "authentic_gb_correction" => authentic_gb_correction = value.parse::<u32>().ok().map(|n| n & 0x3f),
++            "authentic_gb_correction_sameboy" => authentic_gb_correction_sameboy = value.parse::<u32>().ok().map(|n| n & 0x3f),
+             "authentic_gbc_correction" => authentic_gbc_correction = flag(value),
+             "authentic_gba_correction" => authentic_gba_correction = flag(value),
+             _ => {}
+@@ -1142,6 +1148,7 @@
+             .or(colour_correction)
+             .unwrap_or(fallback.colour_correction_gbc),
+         authentic_gb_correction: authentic_gb_correction.unwrap_or(fallback.authentic_gb_correction),
++        authentic_gb_correction_sameboy: authentic_gb_correction_sameboy.or(authentic_gb_correction).unwrap_or(fallback.authentic_gb_correction_sameboy),
+         authentic_gbc_correction: authentic_gbc_correction.unwrap_or(fallback.authentic_gbc_correction),
+         authentic_gba_correction: authentic_gba_correction.unwrap_or(fallback.authentic_gba_correction),
+         shader_gba: shader_gba.unwrap_or(fallback.shader_gba),
+diff --git a/crates/slot/src/app.rs b/crates/slot/src/app.rs
+--- a/crates/slot/src/app.rs
++++ b/crates/slot/src/app.rs
+@@ -4946,7 +4946,14 @@
+         if self.authentic(platform) {
+             return match platform {
+                 Platform::Gba | Platform::Gbav => self.state.authentic_gba_correction,
+-                Platform::Gb => (self.state.authentic_gb_correction & (1 << (self.gb_model() as u32))) != 0,
++                Platform::Gb => {
++                    let bits = if matches!(self.core, Core::Sameboy | Core::Mgba) {
++                        self.state.authentic_gb_correction_sameboy
++                    } else {
++                        self.state.authentic_gb_correction
++                    };
++                    (bits & (1 << (self.gb_model() as u32))) != 0
++                },
+                 Platform::Gbc => self.state.authentic_gbc_correction,
+                 #[cfg(feature = "nds")]
+                 Platform::Nds => false,
+@@ -6185,7 +6192,11 @@
+                 let active = if self.core == Core::Sameboy || self.core == Core::Mgba { s.shader_gb_mgba } else { s.shader_gb };
+                 if active == Shader::Authentic {
+                     let model = if self.core == Core::Sameboy || self.core == Core::Mgba { s.gb_model_mgba } else { s.gb_model };
+-                    s.authentic_gb_correction ^= 1 << (model as u32);
++                    if matches!(self.core, Core::Sameboy | Core::Mgba) {
++                        s.authentic_gb_correction_sameboy ^= 1 << (model as u32);
++                    } else {
++                        s.authentic_gb_correction ^= 1 << (model as u32);
++                    }
+                 } else {
+                     s.colour_correction_gb = !s.colour_correction_gb;
+                 }
