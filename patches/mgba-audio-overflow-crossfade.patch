@@ -1,24 +1,24 @@
 --- a/crates/slot/src/audio/ring.rs
 +++ b/crates/slot/src/audio/ring.rs
-@@ -18,6 +18,8 @@
+@@ -18,4 +18,6 @@
      placed: usize,
      pending_at: u64,
      drained: u64,
 +    /// Last stereo sample consumed by ALSA, for smoothing rare overflow splices.
 +    last_played: [i16; 2],
  }
-@@ -48,6 +50,7 @@
+@@ -48,4 +50,5 @@
                  placed: 0,
                  pending_at: 0,
                  drained: 0,
 +                last_played: [0, 0],
              }),
-@@ -76,6 +79,7 @@
+@@ -76,3 +79,4 @@
          i.pending_at = 0;
          i.drained = 0;
 +        i.last_played = [0, 0];
          i.len = drc_target(frames) * 2;
-@@ -117,6 +121,25 @@
+@@ -117,4 +121,24 @@
          let extra = write_into(&mut i, fresh);
          debug_assert!(extra.is_empty());
 +        if overflow > 0 {
