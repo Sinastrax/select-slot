@@ -1,0 +1,84 @@
+name: Build custom Slot H700
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "patches/**"
+      - ".github/workflows/build-h700.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-h700:
+    runs-on: ubuntu-24.04-arm
+    container:
+      image: rust:1-bullseye
+    timeout-minutes: 120
+    steps:
+      - name: Checkout modifications
+        uses: actions/checkout@v4
+
+      - name: Fetch the exact upstream Slot release and apply modifications
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 5 --retry-all-errors \
+            "https://github.com/pvaibhav/slot/archive/refs/tags/v1.15.3-pvaibhav.1.tar.gz" \
+            -o /tmp/upstream-slot.tar.gz
+          mkdir upstream
+          tar -xzf /tmp/upstream-slot.tar.gz --strip-components=1 -C upstream
+          cd upstream
+          git apply --check ../patches/rgsp-authentic-gbc.patch
+          git apply ../patches/rgsp-authentic-gbc.patch
+          echo "Exact-release patch applied"
+
+      - name: Install required tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          sed -i '/bullseye-security/d' /etc/apt/sources.list
+          apt-get -o Acquire::Check-Valid-Until=false update
+          apt-get install -y --no-install-recommends zip unzip cmake file curl ca-certificates git
+          task_tgz=task_linux_arm64.tar.gz
+          curl -fsSLO --http1.1 --retry 5 --retry-delay 10 --retry-all-errors \
+            "https://github.com/go-task/task/releases/download/v3.54.0/$task_tgz"
+          echo "d7189d439d4a6058e39e1b2acd7c8b27acd4856691b408f23b242e4294e1df5b  $task_tgz" | sha256sum -c -
+          tar -xzf "$task_tgz" -C /usr/local/bin task
+          rm "$task_tgz"
+          for attempt in 1 2 3 4 5; do
+            if curl -fsSL --retry 5 --retry-all-errors https://bun.sh/install \
+              | BUN_INSTALL=/usr/local bash -s "bun-v1.2.6"; then
+              break
+            fi
+            if [ "$attempt" = 5 ]; then exit 1; fi
+            sleep 10
+          done
+
+      - name: Verify Rust formatting
+        working-directory: upstream
+        shell: bash
+        run: cargo fmt --all -- --check
+
+      - name: Build the H700 device tree
+        working-directory: upstream
+        shell: bash
+        run: task dist:device OUT=slot-rgsp-custom
+
+      - name: Verify the build artifacts
+        working-directory: upstream
+        shell: bash
+        run: sh tools/check-card-tree.sh slot-rgsp-custom
+
+      - name: Package the SD2 update
+        working-directory: upstream
+        shell: bash
+        run: zip -qry ../slot-rgsp-custom-h700.zip slot-rgsp-custom
+
+      - name: Upload firmware artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: slot-rgsp-custom-h700
+          path: slot-rgsp-custom-h700.zip
+          if-no-files-found: error
