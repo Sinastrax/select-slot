@@ -32,7 +32,7 @@ diff --git a/crates/slot-gfx/src/shaders.rs b/crates/slot-gfx/src/shaders.rs
 +                // settings; do not switch panel tint when correction is toggled.
 +                vec3 reflector = vec3(1.0);
                  c = clamp(mix(panelRgb, reflector, gapShare) * shadowShare, 0.0, 1.0);
-@@ -192,5 +198,6 @@
+@@ -192,6 +198,5 @@
 -            // The corrected panel uses its measured tinted white/black point;
 -            // correction OFF uses neutral 0..1 linear RGB so white stays white.
 -            // Both retain exactly the same LCD grid, grain and glass geometry.
