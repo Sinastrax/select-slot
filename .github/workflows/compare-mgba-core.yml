@@ -60,9 +60,9 @@ jobs:
           from pathlib import Path
           path = Path("target-device/mgba-old/source/src/core/CMakeLists.txt")
           src = path.read_text()
-          old = "rewind.c\\n\\tscripting.c\\n\\tsync.c"
+          old = "rewind.c\n\tscripting.c\n\tsync.c"
           assert old in src, "2025 core source layout changed"
-          path.write_text(src.replace(old, "rewind.c\\n\\tsync.c", 1))
+          path.write_text(src.replace(old, "rewind.c\n\tsync.c", 1))
           PY
           cmake -S target-device/mgba-old/source -B target-device/mgba-old/build \
             -DLIBMGBA_ONLY=ON -DBUILD_LIBRETRO=ON -DENABLE_SCRIPTING=OFF -DCMAKE_BUILD_TYPE=Release \
