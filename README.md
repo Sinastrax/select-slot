@@ -28,3 +28,4 @@ A successfully generated artifact contains `slot-rgsp-custom/`. **Copy the conte
 - The firmware package must contain **both** `System/slot` and `System/sameboy_libretro.so`.
 - Always back up `System/slot`, `Config/slot.state`, `Config/selected_core.txt`, and saved games before installation. Save-state files are generally **not compatible between cores**.
 - SameBoy's frame pacing, SGB visual output and performance on the physical H700 RG SP have not yet been verified.
+- Firmware with SameBoy ARM64 successfully built and SD-card tree validated: [GitHub Actions run 43757690270](https://github.com/Sinastrax/slot-rgsp-mod/actions/runs/43757690270).
