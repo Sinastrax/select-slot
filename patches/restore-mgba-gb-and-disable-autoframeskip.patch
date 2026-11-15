@@ -1,0 +1,119 @@
+--- a/crates/slot-store/src/core.rs
++++ b/crates/slot-store/src/core.rs
+@@ -18,9 +18,9 @@
+ 
+ impl Core {
+     #[cfg(not(feature = "nds"))]
+-    pub const ALL: [Core; 4] = [Core::Mgba, Core::Gpsp, Core::Gambatte, Core::Sameboy];
++    pub const ALL: [Core; 3] = [Core::Mgba, Core::Gpsp, Core::Gambatte];
+     #[cfg(feature = "nds")]
+-    pub const ALL: [Core; 5] = [Core::Mgba, Core::Gpsp, Core::Gambatte, Core::Sameboy, Core::Dsperate];
++    pub const ALL: [Core; 4] = [Core::Mgba, Core::Gpsp, Core::Gambatte, Core::Dsperate];
+ 
+     pub fn as_str(&self) -> &'static str {
+         match self {
+@@ -53,7 +53,8 @@
+             "mgba" => Some(Core::Mgba),
+             "gpsp" => Some(Core::Gpsp),
+             "gambatte" => Some(Core::Gambatte),
+-            "sameboy" => Some(Core::Sameboy),
++            // Migrate cartridge choices made while SameBoy was the alternate core.
++            "sameboy" => Some(Core::Mgba),
+             #[cfg(feature = "nds")]
+             "dsperate" => Some(Core::Dsperate),
+             _ => None,
+@@ -75,7 +76,7 @@
+     pub fn pair(platform: Platform) -> [Core; 2] {
+         match platform {
+             Platform::Gba | Platform::Gbav => [Core::Mgba, Core::Gpsp],
+-            Platform::Gb | Platform::Gbc => [Core::Sameboy, Core::Gambatte],
++            Platform::Gb | Platform::Gbc => [Core::Mgba, Core::Gambatte],
+             #[cfg(feature = "nds")]
+             Platform::Nds => [Core::Dsperate, Core::Dsperate],
+         }
+@@ -96,13 +97,10 @@
+         .or_else(|| lines.remove(stem))
+         .as_deref()
+         .and_then(Core::parse)
+-        // An old GB/GBC cartridge assignment to mGBA now selects SameBoy.
+-        // mGBA remains unchanged for GBA cartridges.
+-        .map(|core| if matches!(platform, Platform::Gb | Platform::Gbc) && core == Core::Mgba { Core::Sameboy } else { core })
+         .filter(|core| core.runs(platform))
+         .unwrap_or_else(|| match platform {
+             Platform::Gb | Platform::Gbc if gb_core == Core::Gambatte => Core::Gambatte,
+-            Platform::Gb | Platform::Gbc if gb_core == Core::Sameboy => Core::Sameboy,
++            Platform::Gb | Platform::Gbc if matches!(gb_core, Core::Mgba | Core::Sameboy) => Core::Mgba,
+             Platform::Gb | Platform::Gbc => Core::Gambatte,
+             #[cfg(feature = "nds")]
+             Platform::Nds => Core::Dsperate,
+--- a/crates/slot/src/core.rs
++++ b/crates/slot/src/core.rs
+@@ -315,7 +315,13 @@
+     colour: bool,
+     palette: Option<GbColors>,
+ ) {
+-    if matches!(which, Core::Mgba | Core::Gpsp) {
++    if which == Core::Mgba && matches!(platform, Platform::Gb | Platform::Gbc) {
++        // The mGBA libretro core defaults to no automatic frameskip. Slot
++        // previously forced Auto, which can skip frames when its audio-buffer
++        // callback reports low occupancy. Disable that variable for GB/GBC
++        // to investigate intermittent visual hiccups at normal speed.
++        core.set_option("mgba_frameskip", "disabled");
++    } else if matches!(which, Core::Mgba | Core::Gpsp) {
+         core.set_option(&format!("{}_frameskip", which.as_str()), "auto");
+     }
+     if which == Core::Mgba {
+--- a/crates/slot/tests/core_picker.rs
++++ b/crates/slot/tests/core_picker.rs
+@@ -3,7 +3,7 @@
+ use slot_ui::Millis;
+ 
+ const GBA: [Core; 2] = [Core::Mgba, Core::Gpsp];
+-const GB: [Core; 2] = [Core::Sameboy, Core::Gambatte];
++const GB: [Core; 2] = [Core::Mgba, Core::Gambatte];
+ 
+ fn opened(seat: Core, at: Millis) -> CorePicker {
+     opened_on(GBA, seat, at)
+@@ -206,7 +206,7 @@
+ 
+ #[test]
+ fn a_game_boy_pair_hops_right_to_gambatte() {
+-    let mut p = opened_on(Core::pair(Platform::Gb), Core::Sameboy, 0);
++    let mut p = opened_on(Core::pair(Platform::Gb), Core::Mgba, 0);
+     assert_eq!(p.press(Press::Right, 400), Outcome::Nothing);
+     assert_eq!(p.seat(), Core::Gambatte);
+     let mid = p.chip(400 + HOP_MS / 2);
+@@ -222,10 +222,10 @@
+ }
+ 
+ #[test]
+-fn a_game_boy_pair_refuses_left_from_sameboy() {
+-    let mut p = opened_on(Core::pair(Platform::Gbc), Core::Sameboy, 0);
++fn a_game_boy_pair_refuses_left_from_mgba() {
++    let mut p = opened_on(Core::pair(Platform::Gbc), Core::Mgba, 0);
+     assert_eq!(p.press(Press::Left, 400), Outcome::Refused);
+-    assert_eq!(p.seat(), Core::Sameboy);
++    assert_eq!(p.seat(), Core::Mgba);
+     assert_ne!(p.chip(400).shake, 0.0);
+ }
+ 
+@@ -246,16 +246,16 @@
+     let gambatte = opened_on(GB, Core::Gambatte, 0).chip(0);
+     assert_eq!(gambatte.seated, Some(Core::Gambatte));
+     assert_eq!(gambatte.across, 1.0);
+-    assert_eq!(opened_on(GB, Core::Sameboy, 0).chip(0).across, 0.0);
++    assert_eq!(opened_on(GB, Core::Mgba, 0).chip(0).across, 0.0);
+     assert_eq!(opened_on(GBA, Core::Gpsp, 0).chip(0).across, 1.0);
+ }
+ 
+ #[test]
+-fn back_mid_hop_on_a_game_boy_pair_turns_back_to_sameboy() {
++fn back_mid_hop_on_a_game_boy_pair_turns_back_to_mgba() {
+     let mut p = opened_on(GB, Core::Gambatte, 0);
+     p.press(Press::Left, 400);
+     let mid = p.chip(400 + HOP_MS / 2);
+     assert!(mid.tip < 0.0, "a chip moving left should lean left");
+-    assert_eq!(p.chip(400 + HOP_MS).seated, Some(Core::Sameboy));
++    assert_eq!(p.chip(400 + HOP_MS).seated, Some(Core::Mgba));
+     assert_eq!(p.chip(400 + HOP_MS).across, 0.0);
+ }
