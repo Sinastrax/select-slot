@@ -1,0 +1,134 @@
+--- a/crates/slot/src/core.rs
++++ b/crates/slot/src/core.rs
+@@ -315,13 +315,9 @@
+     colour: bool,
+     palette: Option<GbColors>,
+ ) {
+-    if which == Core::Mgba && matches!(platform, Platform::Gb | Platform::Gbc) {
+-        // The mGBA libretro core defaults to no automatic frameskip. Slot
+-        // previously forced Auto, which can skip frames when its audio-buffer
+-        // callback reports low occupancy. Disable that variable for GB/GBC
+-        // to investigate intermittent visual hiccups at normal speed.
+-        core.set_option("mgba_frameskip", "disabled");
+-    } else if matches!(which, Core::Mgba | Core::Gpsp) {
++    // Revert the no-frameskip test: it increased stutter on real H700 hardware.
++    // mGBA can use audio-buffer-informed frameskip to recover from underruns.
++    if matches!(which, Core::Mgba | Core::Gpsp) {
+         core.set_option(&format!("{}_frameskip", which.as_str()), "auto");
+     }
+     if which == Core::Mgba {
+--- a/crates/slot/src/drc.rs
++++ b/crates/slot/src/drc.rs
+@@ -1,12 +1,20 @@
+ const MAX_CORRECTION: f64 = 0.005;
+ 
+ pub fn drc_ratio(queued_frames: usize, target_frames: usize) -> f64 {
++    drc_ratio_limited(queued_frames, target_frames, MAX_CORRECTION)
++}
++
++/// A larger correction range is useful when a libretro core's nominal audio
++/// production rate is not quite aligned with its actual video rate. The queue
++/// target remains unchanged, and no correction happens at the target level.
++pub fn drc_ratio_limited(queued_frames: usize, target_frames: usize, max: f64) -> f64 {
+     if target_frames == 0 {
+         return 1.0;
+     }
++    let max = max.clamp(0.0, 0.05);
+     let error = target_frames as f64 - queued_frames as f64;
+-    let ratio = 1.0 + MAX_CORRECTION * error / target_frames as f64;
+-    ratio.clamp(1.0 - MAX_CORRECTION, 1.0 + MAX_CORRECTION)
++    let ratio = 1.0 + max * error / target_frames as f64;
++    ratio.clamp(1.0 - max, 1.0 + max)
+ }
+ 
+ pub fn drc_target(capacity_frames: usize) -> usize {
+--- a/crates/slot/src/emu.rs
++++ b/crates/slot/src/emu.rs
+@@ -9,7 +9,7 @@
+ use slot_retro::{mask_for, ButtonMask, Link, LinkChannel, RetroCore, Rumble, NETPACKET_RELIABLE};
+ 
+ use crate::audio::Ring;
+-use crate::drc::{drc_ratio, drc_target};
++use crate::drc::{drc_ratio, drc_ratio_limited, drc_target};
+ use crate::frames::{FrameRef, Frames};
+ use crate::link_state;
+ use crate::pacing::{native_period, FrameClock};
+@@ -101,6 +101,8 @@
+     volume: AtomicU8,
+     fast_quarters: AtomicU32,
+     ff_sound: AtomicBool,
++    /// mGBA GB/GBC audio may drift beyond the standard 0.5% resampler range.
++    mgba_gb_audio: AtomicBool,
+     published: AtomicU64,
+     /// How many times the game has jumped to another moment or been redrawn (a state load,
+     /// a reset, a refresh). Each frame carries it, so the frames after one blend with
+@@ -184,6 +186,7 @@
+             volume: AtomicU8::new(100),
+             fast_quarters: AtomicU32::new(FAST_STEPS * 4),
+             ff_sound: AtomicBool::new(false),
++            mgba_gb_audio: AtomicBool::new(false),
+             published: AtomicU64::new(0),
+             cuts: AtomicU64::new(0),
+             resume_refused: AtomicBool::new(false),
+@@ -410,6 +413,12 @@
+ 
+     pub fn ff_sound(&self) -> bool {
+         self.shared.ff_sound.load(Ordering::Relaxed)
++    }
++
++    /// Allow the audio resampler a wider, queue-dependent drift correction for
++    /// mGBA GB/GBC only. Other emulators retain the original 0.5% range.
++    pub fn set_mgba_gb_audio(&self, on: bool) {
++        self.shared.mgba_gb_audio.store(on, Ordering::Relaxed);
+     }
+ 
+     pub fn set_rewinding(&self, on: bool) {
+@@ -954,7 +963,17 @@
+                     } else {
+                         1.0
+                     };
+-                    resampler.set_ratio(drc_ratio(queued, target) * duration_ratio);
++                    let correction = if self.shared.mgba_gb_audio.load(Ordering::Relaxed) {
++                        // In mGBA SGB mode audio can drift enough that the 8-frame
++                        // ring fills. push_blocking then stalls the emulation thread
++                        // for up to 50ms; fast-forward mutes/drains the ring and
++                        // temporarily clears the hitch. Try correcting up to 5%
++                        // *before* reaching that blocking threshold.
++                        drc_ratio_limited(queued, target, 0.05)
++                    } else {
++                        drc_ratio(queued, target)
++                    };
++                    resampler.set_ratio(correction * duration_ratio);
+                     resampler.process(&audio, &mut out);
+                     crate::audio::volume::apply(
+                         &mut out,
+--- a/crates/slot/src/session.rs
++++ b/crates/slot/src/session.rs
+@@ -730,10 +730,13 @@
+             loaded.opened.core
+         };
+         let (core, rom, sav, resume) = (core, loaded.rom, sav.flatten(), resume.flatten());
++        let mgba_gb_audio = self.app.core() == Core::Mgba
++            && matches!(loaded.platform, Platform::Gb | Platform::Gbc);
+         let emu = match loaded.player.filter(|_| loaded.platform == Platform::Gba) {
+             Some(p) => EmuHandle::spawn_linked(core, rom, ring, sav, resume, p),
+             None => EmuHandle::spawn(core, rom, ring, sav, resume),
+         };
++        emu.set_mgba_gb_audio(mgba_gb_audio);
+         if sav_unread {
+             emu.refuse_save_ram();
+         }
+--- a/crates/slot-gfx/src/shaders.rs
++++ b/crates/slot-gfx/src/shaders.rs
+@@ -186,7 +186,10 @@
+             // Each 5-bit code's measured light, then the panel's colour response, then the
+             // reflector's white and the panel's black.
+             vec3 rawColour = texture2D(u_game, centre).rgb;
+-            vec3 lin = pow(rawColour, vec3(2.2));
++            // Both states use the same physical panel gamut, dark floor, cell
++            // compensation, gap width, sparkle and glass. The switch changes
++            // only the RGB response curve, not which LCD rendering is applied.
++            vec3 lin = mix(u_dark, u_light, pow(rawColour, vec3(2.2)));
+             if (u_authentic_correction > 0.5) {
+                 // Only correct the RGB transfer response here. The grid,
+                 // grain, gaps and reflective glass below are identical in both
