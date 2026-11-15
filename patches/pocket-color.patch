@@ -1,0 +1,203 @@
+diff --git a/crates/slot-gfx/src/authentic.rs b/crates/slot-gfx/src/authentic.rs
+index 8ca73ed..620c94a 100644
+--- a/crates/slot-gfx/src/authentic.rs
++++ b/crates/slot-gfx/src/authentic.rs
+@@ -31,6 +31,8 @@ pub enum Screen {
+     Dmg,
+     /// The Game Boy Pocket's grey-olive panel.
+     Pocket,
++    /// The Pocket LCD dot geometry, colorized with the selected GB/GBC palette.
++    PocketColor,
+     /// The Game Boy Light's panel, lit from behind in blue-green.
+     Light,
+     Gbc,
+@@ -197,6 +199,13 @@ impl Screen {
+             // the Pocket's and the Light's answer about twice as fast. Nobody has measured them.
+             Screen::Dmg => DMG.look([keep(61.0), keep(21.0)]),
+             Screen::Pocket => POCKET.look([keep(30.0), keep(10.0)]),
++            Screen::PocketColor => {
++                let mut look = POCKET.look([keep(30.0), keep(10.0)]);
++                // A separate shader mode keeps Pocket dot geometry, while allowing the
++                // core-supplied GB palette to colorize the final pixel.
++                look.lcd[0] = 2.0;
++                look
++            },
+             Screen::Light => LIGHT.look([keep(30.0), keep(10.0)]),
+             // BGB's GBC reality white and black. Its blue lies outside sRGB, and BGB draws
+             // the red in it darker than the black level, as the screen's own red is.
+diff --git a/crates/slot-gfx/src/shaders.rs b/crates/slot-gfx/src/shaders.rs
+index 49c3061..97c0994 100644
+--- a/crates/slot-gfx/src/shaders.rs
++++ b/crates/slot-gfx/src/shaders.rs
+@@ -140,6 +140,20 @@ void main() {
+                 + ink_near(from + vec2(0.5, -0.5) * texel, texel) + ink_near(from + vec2(-0.5, 0.5) * texel, texel);
+             shadow *= 0.25 * u_ink.w * (1.0 - 0.75 * a);
+             c = u_dark * a * (1.0 - u_glass.x * a * a) + u_light * (1.0 - shadow) * (u_glass.y - u_glass.z * a);
++            if (u_lcd.x > 1.5) {
++                // Pocket Color is a deliberate hybrid, not an original LCD model:
++                // retain Pocket's dot/ink/shadow geometry and its luminance, but
++                // take the hue and saturation from the emulated GB palette.
++                // The brightest channel defines chroma, so dark blue/red shades
++                // stay dark rather than becoming over-bright after normalization.
++                vec3 palette = texture2D(u_game, centre).rgb;
++                float peak = max(max(palette.r, palette.g), palette.b);
++                vec3 chroma = palette / max(peak, 0.1);
++                float pocketLuma = dot(c, luma_coeff);
++                if (inside) {
++                    c = clamp(chroma * pocketLuma, 0.0, 1.0);
++                }
++            }
+         } else if (!inside) {
+             c = pow(u_light, vec3(1.0 / 2.2));
+         } else {
+diff --git a/crates/slot-store/src/slot_state.rs b/crates/slot-store/src/slot_state.rs
+index 7f10aca..adeee16 100644
+--- a/crates/slot-store/src/slot_state.rs
++++ b/crates/slot-store/src/slot_state.rs
+@@ -394,17 +394,21 @@ pub enum GbModel {
+     Dmg,
+     #[default]
+     Pocket,
++    PocketColor,
+     Light,
+     Gbc,
+ }
+ 
+ impl GbModel {
+-    pub const ALL: [GbModel; 4] = [GbModel::Dmg, GbModel::Pocket, GbModel::Light, GbModel::Gbc];
++    pub const ALL: [GbModel; 5] = [
++        GbModel::Dmg, GbModel::Pocket, GbModel::PocketColor, GbModel::Light, GbModel::Gbc,
++    ];
+ 
+     pub fn key(self) -> &'static str {
+         match self {
+             GbModel::Dmg => "dmg",
+             GbModel::Pocket => "pocket",
++            GbModel::PocketColor => "pocket-color",
+             GbModel::Light => "light",
+             GbModel::Gbc => "gbc",
+         }
+diff --git a/crates/slot-ui/src/quick_menu.rs b/crates/slot-ui/src/quick_menu.rs
+index 94efcd5..5d99613 100644
+--- a/crates/slot-ui/src/quick_menu.rs
++++ b/crates/slot-ui/src/quick_menu.rs
+@@ -996,6 +996,7 @@ pub enum QuickValue {
+     Authentic,
+     GameBoy,
+     Pocket,
++    PocketColor,
+     GameBoyColor,
+     Dark,
+     Light,
+@@ -1045,7 +1046,7 @@ pub enum QuickValue {
+ }
+ 
+ impl QuickValue {
+-    pub const ALL: [QuickValue; 61] = [
++    pub const ALL: [QuickValue; 62] = [
+         QuickValue::Speed1_5,
+         QuickValue::Speed2,
+         QuickValue::Speed3,
+@@ -1061,6 +1062,7 @@ impl QuickValue {
+         QuickValue::Authentic,
+         QuickValue::GameBoy,
+         QuickValue::Pocket,
++        QuickValue::PocketColor,
+         QuickValue::GameBoyColor,
+         QuickValue::Dark,
+         QuickValue::Light,
+@@ -1158,6 +1160,7 @@ impl QuickValue {
+             QuickValue::Authentic => "Authentic",
+             QuickValue::GameBoy => "Game Boy",
+             QuickValue::Pocket => "Pocket",
++            QuickValue::PocketColor => "Pocket Color",
+             QuickValue::GameBoyColor => "Game Boy Color",
+             QuickValue::Dark => "Dark",
+             QuickValue::Light => "Light",
+diff --git a/crates/slot-ui/src/toast.rs b/crates/slot-ui/src/toast.rs
+index a8413bd..24d9730 100644
+--- a/crates/slot-ui/src/toast.rs
++++ b/crates/slot-ui/src/toast.rs
+@@ -31,6 +31,7 @@ pub enum Toast {
+     ShaderAuthentic,
+     ModelGameBoy,
+     ModelPocket,
++    ModelPocketColor,
+     ModelLight,
+     ModelColor,
+     CardUnwritable,
+@@ -50,7 +51,7 @@ pub enum Toast {
+ }
+ 
+ impl Toast {
+-    const FIXED: [Toast; 37] = [
++    const FIXED: [Toast; 38] = [
+         Toast::StateSaved,
+         Toast::StateLoaded,
+         Toast::GameReset,
+@@ -74,6 +75,7 @@ impl Toast {
+         Toast::ShaderAuthentic,
+         Toast::ModelGameBoy,
+         Toast::ModelPocket,
++        Toast::ModelPocketColor,
+         Toast::ModelLight,
+         Toast::ModelColor,
+         Toast::CardUnwritable,
+@@ -178,6 +180,7 @@ impl Toast {
+             Toast::ShaderAuthentic => "Shader: Authentic",
+             Toast::ModelGameBoy => "Game Boy",
+             Toast::ModelPocket => "Game Boy Pocket",
++            Toast::ModelPocketColor => "Game Boy Pocket Color",
+             Toast::ModelLight => "Game Boy Light",
+             Toast::ModelColor => "Game Boy Color",
+             Toast::CardUnwritable => "Can't write to SD card",
+diff --git a/crates/slot/src/app.rs b/crates/slot/src/app.rs
+index 26720f5..a4d917f 100644
+--- a/crates/slot/src/app.rs
++++ b/crates/slot/src/app.rs
+@@ -2772,6 +2772,7 @@ impl App {
+             QuickRow::GbModel | QuickRow::Model => Some(match self.state.gb_model {
+                 GbModel::Dmg => QuickValue::GameBoy,
+                 GbModel::Pocket => QuickValue::Pocket,
++                GbModel::PocketColor => QuickValue::PocketColor,
+                 GbModel::Light => QuickValue::Light,
+                 GbModel::Gbc => QuickValue::GameBoyColor,
+             }),
+@@ -3675,7 +3676,7 @@ impl App {
+             }
+         }
+         // A GB cartridge on the GBC Authentic screen may use real GBC colour palettes.
+-        if self.authentic(Platform::Gb) && self.state.gb_model == GbModel::Gbc {
++        if self.authentic(Platform::Gb) && matches!(self.state.gb_model, GbModel::Gbc | GbModel::PocketColor) {
+             hidden.retain(|row| *row != QuickRow::GbPalette);
+         }
+         if !self.authentic(Platform::Gb) {
+@@ -5149,7 +5150,7 @@ impl App {
+     /// The added GBC model instead displays the user's chosen GB palette.
+     pub fn core_gb_colors(&self) -> GbColors {
+         match self.state.shader_gb {
+-            Shader::Authentic if self.state.gb_model != GbModel::Gbc => {
++            Shader::Authentic if !matches!(self.state.gb_model, GbModel::Gbc | GbModel::PocketColor) => {
+                 GbColors::Palette(slot_store::GbPalette::GRAYSCALE)
+             }
+             _ => self.state.gb_colors(),
+@@ -6390,6 +6391,7 @@ impl App {
+                 let said = match self.state.gb_model {
+                     GbModel::Dmg => Toast::ModelGameBoy,
+                     GbModel::Pocket => Toast::ModelPocket,
++                    GbModel::PocketColor => Toast::ModelPocketColor,
+                     GbModel::Light => Toast::ModelLight,
+                     GbModel::Gbc => Toast::ModelColor,
+                 };
+diff --git a/crates/slot/src/frontend.rs b/crates/slot/src/frontend.rs
+index 1d0da6f..62c4baf 100644
+--- a/crates/slot/src/frontend.rs
++++ b/crates/slot/src/frontend.rs
+@@ -1657,6 +1657,7 @@ fn authentic_screen(app: &App) -> slot_gfx::Screen {
+         Console::Gb => match app.gb_model() {
+             slot_store::GbModel::Dmg => slot_gfx::Screen::Dmg,
+             slot_store::GbModel::Pocket => slot_gfx::Screen::Pocket,
++            slot_store::GbModel::PocketColor => slot_gfx::Screen::PocketColor,
+             slot_store::GbModel::Light => slot_gfx::Screen::Light,
+             slot_store::GbModel::Gbc => slot_gfx::Screen::Gbc,
+         },
