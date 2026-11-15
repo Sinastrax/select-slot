@@ -50,3 +50,14 @@ Earlier experiments integrated SameBoy and developed the Pocket Color/Pocket SGB
 - The uncorrected RGB path for GBC/GBA Authentic now maps source values into the *same panel dark/light range* as corrected values before the common sparkle, LCD grid, pixel gaps, and glass pass. Corrected-on rendering remains unchanged. Monochrome Authentic models retain their historical physical LCD panel tint.
 - Update-only ZIP replaces **only `System/slot`** on SD2. Back up your existing executable and configuration, plus saves, before installing.
 - Compare a full normal-speed play session with Pocket Color versus Pocket SGB; check audio pitch/crackling and whether temporary fast-forward resets are still needed. The hardware behavior is currently unverified.
+
+
+## Latest test: native-pitch mGBA audio and neutral Authentic whites
+
+[H700 build 43767324185](https://github.com/Sinastrax/slot-rgsp-mod/actions/runs/43767324185) passed patching, Rust formatting, ARM64 compilation, device tree validation and artifact upload.
+
+- Previous ±5% mGBA GB/GBC resampler drift correction produced smooth video but audibly wrong music/audio. New test returns to the normal ±0.5% resampler limit.
+- For GB/GBC **mGBA only**, audio pushes no longer block the emulation thread when the ring fills: stale samples are dropped from the queue instead. This preserves nominal sample playback pitch but can occasionally click or skip sound. Gambatte and GBA behavior are unchanged.
+- With Authentic **Color Correction Off**, Pocket Color/Pocket SGB use neutral reflector white, and GBC/GBA shader branches use neutral (0,0,0) grid/black instead of calibrated panel tint. Pixel-gap geometry, grain, glass and LCD response timings are not changed. With correction **On**, the established calibrated/tinted look is unchanged.
+- The supplied minimal update contains only `System/slot`. Back up the old executable, `Config/slot.state`, and saves before replacing it.
+- **Physical hardware testing is required.** If sound clicks persist, the queue's overflow counters need measurement instead of increasing the resampler pitch deviation again.
