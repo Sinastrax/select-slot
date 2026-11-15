@@ -36,6 +36,8 @@ jobs:
           git apply ../patches/pocket-color.patch
           git apply --check ../patches/pocket-color-gbc-correction.patch
           git apply ../patches/pocket-color-gbc-correction.patch
+          git apply --check ../patches/sgb-pocket-pixel-separation.patch
+          git apply ../patches/sgb-pocket-pixel-separation.patch
           echo "Exact-release patches applied"
 
       - name: Install required tools
