@@ -48,6 +48,8 @@ jobs:
           git apply ../patches/per-core-authentic-color-correction.patch
           git apply --check ../patches/color-transfer-only-gambatte-sgb-fix.patch
           git apply ../patches/color-transfer-only-gambatte-sgb-fix.patch
+          git apply --check ../patches/restore-mgba-gb-and-disable-autoframeskip.patch
+          git apply ../patches/restore-mgba-gb-and-disable-autoframeskip.patch
           echo "Exact-release patches applied"
 
       - name: Install required tools
@@ -77,39 +79,18 @@ jobs:
         shell: bash
         run: cargo fmt --all
 
-      - name: Build the actual SameBoy ARM64 libretro core
-        shell: bash
-        run: |
-          set -euo pipefail
-          curl -fsSL --retry 5 --retry-all-errors \
-            "https://github.com/gbdev/rgbds/archive/refs/tags/v1.0.3.tar.gz" -o /tmp/rgbds.tar.gz
-          mkdir -p /tmp/rgbds
-          tar -xzf /tmp/rgbds.tar.gz --strip-components=1 -C /tmp/rgbds
-          make -C /tmp/rgbds -j4
-          make -C /tmp/rgbds install
-          curl -fsSL --retry 5 --retry-all-errors \
-            "https://github.com/LIJI32/SameBoy/archive/refs/tags/v1.0.5.tar.gz" -o /tmp/sameboy.tar.gz
-          mkdir -p /tmp/sameboy
-          tar -xzf /tmp/sameboy.tar.gz --strip-components=1 -C /tmp/sameboy
-          make -C /tmp/sameboy -j4 bootroms
-          make -C /tmp/sameboy -j4 CC=gcc libretro
-          file /tmp/sameboy/build/bin/sameboy_libretro.so
-          readelf -h /tmp/sameboy/build/bin/sameboy_libretro.so | grep -q 'AArch64'
-
       - name: Build the H700 device tree
         working-directory: upstream
         shell: bash
         run: task dist:device OUT=slot-rgsp-custom
 
-      - name: Install SameBoy on the SD2 device tree
-        shell: bash
-        run: |
-          install -m 0644 /tmp/sameboy/build/bin/sameboy_libretro.so upstream/slot-rgsp-custom/System/sameboy_libretro.so
-
       - name: Verify the build artifacts
         working-directory: upstream
         shell: bash
-        run: sh tools/check-card-tree.sh slot-rgsp-custom
+        run: |
+          sh tools/check-card-tree.sh slot-rgsp-custom
+          test -f slot-rgsp-custom/System/mgba_libretro.so
+          test ! -f slot-rgsp-custom/System/sameboy_libretro.so
 
       - name: Package the SD2 update
         working-directory: upstream
