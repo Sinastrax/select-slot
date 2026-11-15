@@ -73,11 +73,6 @@ jobs:
         shell: bash
         run: cargo fmt --all
 
-      - name: Build the H700 device tree
-        working-directory: upstream
-        shell: bash
-        run: task dist:device OUT=slot-rgsp-custom
-
       - name: Build the actual SameBoy ARM64 libretro core
         shell: bash
         run: |
@@ -93,10 +88,19 @@ jobs:
           mkdir -p /tmp/sameboy
           tar -xzf /tmp/sameboy.tar.gz --strip-components=1 -C /tmp/sameboy
           make -C /tmp/sameboy -j4 bootroms
-          make -C /tmp/sameboy/libretro -j4 platform=unix
-          file /tmp/sameboy/sameboy_libretro.so
-          readelf -h /tmp/sameboy/sameboy_libretro.so | grep -q 'AArch64'
-          install -m 0644 /tmp/sameboy/sameboy_libretro.so upstream/slot-rgsp-custom/System/sameboy_libretro.so
+          make -C /tmp/sameboy -j4 CC=gcc libretro
+          file /tmp/sameboy/build/bin/sameboy_libretro.so
+          readelf -h /tmp/sameboy/build/bin/sameboy_libretro.so | grep -q 'AArch64'
+
+      - name: Build the H700 device tree
+        working-directory: upstream
+        shell: bash
+        run: task dist:device OUT=slot-rgsp-custom
+
+      - name: Install SameBoy on the SD2 device tree
+        shell: bash
+        run: |
+          install -m 0644 /tmp/sameboy/build/bin/sameboy_libretro.so upstream/slot-rgsp-custom/System/sameboy_libretro.so
 
       - name: Verify the build artifacts
         working-directory: upstream
