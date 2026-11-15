@@ -16,12 +16,15 @@ A successfully generated artifact contains `slot-rgsp-custom/`. **Copy the conte
 
 **No ROMs, saves, or personal files are stored in this repository.**
 
-## Core-specific GB screen profiles (2026-11-15)
+## SameBoy and individual Authentic color correction (experimental)
 
-- GB **Gambatte** retains its existing `shader_gb` and `gb_model` settings (e.g. Authentic / Pocket Color).
-- GB **mGBA** stores `shader_gb_mgba` and `gb_model_mgba` independently (e.g. Authentic / Pocket SGB).
-- The core is selected **per GB cartridge** with START on its shelf entry (left: mGBA; right: Gambatte). Changing the core does not change the other core's screen profile.
-- Pocket SGB uses mGBA's SGB palette and applies GBC-style measured colour response while retaining the Pocket dot/gap geometry. It is a *deliberate hybrid*, not accurate original SGB hardware colorimetry.
-- When GB/GBC games are running with mGBA, Slot requests the Performance CPU governor; power draw and temperature can rise, and full speed is not guaranteed.
-- Back up `Config/slot.state` along with `System/slot` before testing. In-game saves remain shared and save states remain core-specific.
-- Current device build: [Actions run 43749935909](https://github.com/Sinastrax/slot-rgsp-mod/actions/runs/43749935909). Build/SD-tree validation passed, physical RG SP tests still needed.
+- GB/GBC cartridges can select **SameBoy (left)** or **Gambatte (right)** from the two-choice core picker. **mGBA remains available for GBA**.
+- Earlier GB/GBC cartridge choices for mGBA are migrated to SameBoy. Back up `Config/selected_core.txt` before installing.
+- Gambatte's existing Authentic/Pocket Color appearance and profile are retained. The alternate-core Authentic profile (previously used by mGBA for GB) is now used by SameBoy.
+- SameBoy sets `sameboy_model=Super Game Boy` when the **Pocket SGB** model is selected, allowing supported GB games such as Pokémon Yellow to use SGB commands for in-game palettes. Close and reopen the game after selecting the model.
+- SameBoy's custom border is disabled, so the same 160x144 pixel geometry remains compatible with the Pocket LCD shader. This is not an authentic SNES border display.
+- **Color Correction** is available even when Authentic is selected, with independent on/off memory for every GB Authentic model (DMG, Pocket, Pocket Color, Pocket SGB, Light, GBC), plus GBC Authentic and GBA Authentic.
+- Default corrected appearance is **on**, preserving the prior Pocket Color profile. Disabling measured correction preserves the LCD pixel grid.
+- The firmware package must contain **both** `System/slot` and `System/sameboy_libretro.so`.
+- Always back up `System/slot`, `Config/slot.state`, `Config/selected_core.txt`, and saved games before installation. Save-state files are generally **not compatible between cores**.
+- SameBoy's frame pacing, SGB visual output and performance on the physical H700 RG SP have not yet been verified.
