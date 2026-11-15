@@ -40,8 +40,8 @@ jobs:
           git apply ../patches/sgb-pocket-pixel-separation.patch
           git apply --check ../patches/core-specific-gb-screen-sgb-correction-performance.patch
           git apply ../patches/core-specific-gb-screen-sgb-correction-performance.patch
-          git apply --check ../patches/diagnostic-disable-mgba-gb-ghosting.patch
-          git apply ../patches/diagnostic-disable-mgba-gb-ghosting.patch
+          git apply --check ../patches/sameboy-authentic-correction.patch
+          git apply ../patches/sameboy-authentic-correction.patch
           echo "Exact-release patches applied"
 
       - name: Install required tools
@@ -50,7 +50,7 @@ jobs:
           set -euo pipefail
           sed -i '/bullseye-security/d' /etc/apt/sources.list
           apt-get -o Acquire::Check-Valid-Until=false update
-          apt-get install -y --no-install-recommends zip unzip cmake file curl ca-certificates git
+          apt-get install -y --no-install-recommends zip unzip cmake file curl ca-certificates git build-essential pkg-config libpng-dev bison flex bsdextrautils
           task_tgz=task_linux_arm64.tar.gz
           curl -fsSLO --http1.1 --retry 5 --retry-delay 10 --retry-all-errors \
             "https://github.com/go-task/task/releases/download/v3.54.0/$task_tgz"
@@ -75,6 +75,25 @@ jobs:
         working-directory: upstream
         shell: bash
         run: task dist:device OUT=slot-rgsp-custom
+
+      - name: Build the actual SameBoy ARM64 libretro core
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 5 --retry-all-errors \
+            "https://github.com/gbdev/rgbds/archive/refs/tags/v1.0.3.tar.gz" -o /tmp/rgbds.tar.gz
+          mkdir -p /tmp/rgbds
+          tar -xzf /tmp/rgbds.tar.gz --strip-components=1 -C /tmp/rgbds
+          make -C /tmp/rgbds -j4
+          make -C /tmp/rgbds install
+          curl -fsSL --retry 5 --retry-all-errors \
+            "https://github.com/LIJI32/SameBoy/archive/refs/tags/v1.0.5.tar.gz" -o /tmp/sameboy.tar.gz
+          mkdir -p /tmp/sameboy
+          tar -xzf /tmp/sameboy.tar.gz --strip-components=1 -C /tmp/sameboy
+          make -C /tmp/sameboy/libretro -j4 platform=unix
+          file /tmp/sameboy/sameboy_libretro.so
+          readelf -h /tmp/sameboy/sameboy_libretro.so | grep -q 'AArch64'
+          install -m 0644 /tmp/sameboy/sameboy_libretro.so upstream/slot-rgsp-custom/System/sameboy_libretro.so
 
       - name: Verify the build artifacts
         working-directory: upstream
