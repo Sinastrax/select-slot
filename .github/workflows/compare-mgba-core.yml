@@ -52,6 +52,18 @@ jobs:
           git -C target-device/mgba-old/source init -q
           git -C target-device/mgba-old/source fetch -q --depth 1 https://github.com/libretro/mgba "$OLD_MGBA"
           git -C target-device/mgba-old/source checkout -q --detach FETCH_HEAD
+          # The 2025 CMake list incorrectly adds scripting.c to the
+          # minimal libretro source set even when scripting is disabled.
+          # Exclude that optional module rather than enabling unsupported
+          # directory/scripting APIs just to satisfy the compiler.
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("target-device/mgba-old/source/src/core/CMakeLists.txt")
+          src = path.read_text()
+          old = "rewind.c\\n\\tscripting.c\\n\\tsync.c"
+          assert old in src, "2025 core source layout changed"
+          path.write_text(src.replace(old, "rewind.c\\n\\tsync.c", 1))
+          PY
           cmake -S target-device/mgba-old/source -B target-device/mgba-old/build \
             -DLIBMGBA_ONLY=ON -DBUILD_LIBRETRO=ON -DENABLE_SCRIPTING=OFF -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_C_FLAGS="-flto=auto"
