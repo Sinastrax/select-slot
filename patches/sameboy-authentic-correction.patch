@@ -1,0 +1,615 @@
+diff --git a/crates/slot-gfx/src/fbo.rs b/crates/slot-gfx/src/fbo.rs
+index d8d718e..f046ef3 100644
+--- a/crates/slot-gfx/src/fbo.rs
++++ b/crates/slot-gfx/src/fbo.rs
+@@ -236,6 +236,10 @@ impl Compositor {
+         self.game.cut();
+     }
+ 
++    pub fn set_authentic_colour_correction(&mut self, enabled: bool) {
++        self.game.set_authentic_colour_correction(enabled);
++    }
++
+     pub fn set_authentic_screen(&mut self, screen: crate::Screen) {
+         self.game.set_screen(screen);
+     }
+diff --git a/crates/slot-gfx/src/pipeline.rs b/crates/slot-gfx/src/pipeline.rs
+index e52ceec..d26ed07 100644
+--- a/crates/slot-gfx/src/pipeline.rs
++++ b/crates/slot-gfx/src/pipeline.rs
+@@ -35,6 +35,7 @@ pub struct GamePass {
+     held: usize,
+     blend: FrameBlend,
+     authentic_fast_forward: bool,
++    authentic_colour_correction: bool,
+     u_rect: gl::types::GLint,
+     u_bright: gl::types::GLint,
+     u_uv: gl::types::GLint,
+@@ -53,6 +54,7 @@ pub struct GamePass {
+     u_least: gl::types::GLint,
+     u_grain: gl::types::GLint,
+     u_lcd: gl::types::GLint,
++    u_authentic_correction: gl::types::GLint,
+     u_ink: gl::types::GLint,
+     u_glass: gl::types::GLint,
+     u_sheen: gl::types::GLint,
+@@ -98,6 +100,7 @@ impl GamePass {
+         let (u_rect, u_bright, u_uv, u_mode, u_paper_size, u_pic, u_fbo, u_origin);
+         let (u_light, u_dark, u_response, u_gamma, u_least, u_grain, u_lcd, u_ink, u_glass);
+         let u_sheen;
++        let u_authentic_correction;
+         unsafe {
+             gl::UseProgram(prog);
+             gl::Uniform1i(crate::gl::uniform_location(prog, "u_game"), 0);
+@@ -128,6 +131,7 @@ impl GamePass {
+             u_grain = crate::gl::uniform_location(prog, "u_grain");
+             gl::Uniform1i(crate::gl::uniform_location(prog, "u_ramp"), 2);
+             u_lcd = crate::gl::uniform_location(prog, "u_lcd");
++            u_authentic_correction = crate::gl::uniform_location(prog, "u_authentic_correction");
+             u_ink = crate::gl::uniform_location(prog, "u_ink");
+             u_glass = crate::gl::uniform_location(prog, "u_glass");
+             u_sheen = crate::gl::uniform_location(prog, "u_sheen");
+@@ -141,6 +145,7 @@ impl GamePass {
+             held: 0,
+             blend: FrameBlend::Off,
+             authentic_fast_forward: false,
++            authentic_colour_correction: true,
+             u_rect,
+             u_bright,
+             u_uv,
+@@ -159,6 +164,7 @@ impl GamePass {
+             u_least,
+             u_grain,
+             u_lcd,
++            u_authentic_correction,
+             u_ink,
+             u_glass,
+             u_sheen,
+@@ -293,6 +299,10 @@ impl GamePass {
+         }
+     }
+ 
++    pub fn set_authentic_colour_correction(&mut self, enabled: bool) {
++        self.authentic_colour_correction = enabled;
++    }
++
+     pub fn set_glass(&mut self, sheen: bool, shade: bool) {
+         self.sheen = [sheen, shade].map(|on| if on { 1.0 } else { 0.0 });
+     }
+@@ -399,6 +409,7 @@ impl GamePass {
+             gl::Uniform4f(self.u_uv, src[0], src[1], src[2], src[3]);
+             gl::Uniform1f(self.u_bright, bright);
+             gl::Uniform1f(self.u_mode, self.effect.mode());
++            gl::Uniform1f(self.u_authentic_correction, if self.authentic_colour_correction { 1.0 } else { 0.0 });
+             gl::Uniform1f(self.u_paper_size, self.paper_size);
+             gl::Uniform2f(self.u_fbo, self.fbo_scale[0], self.fbo_scale[1]);
+             gl::Uniform2f(self.u_origin, self.origin[0], self.origin[1]);
+diff --git a/crates/slot-gfx/src/shaders.rs b/crates/slot-gfx/src/shaders.rs
+index 4a9b80a..58ad1d7 100644
+--- a/crates/slot-gfx/src/shaders.rs
++++ b/crates/slot-gfx/src/shaders.rs
+@@ -78,6 +78,7 @@ uniform vec3 u_gamma;
+ uniform vec3 u_least;
+ uniform float u_grain;
+ uniform vec4 u_lcd;
++uniform float u_authentic_correction;
+ uniform vec4 u_ink;
+ uniform vec3 u_glass;
+ uniform vec2 u_sheen;
+@@ -146,7 +147,7 @@ void main() {
+                 // intentional hybrid, not historically accurate SGB colorimetry.
+                 vec3 raw = texture2D(u_game, centre).rgb;
+                 vec3 panelRgb = raw;
+-                if (u_lcd.x < 3.5) {
++                if (u_authentic_correction > 0.5) {
+                     vec3 code = (floor((raw * 255.0 + 0.5) / 8.0) + 0.5) / 32.0;
+                     vec2 gbcPick = vec2(0.0, 1.0);
+                     vec3 measured = vec3(
+@@ -175,12 +176,22 @@ void main() {
+                 vec3 reflector = vec3(134.0, 140.0, 122.0) / 255.0;
+                 c = clamp(mix(panelRgb, reflector, gapShare) * shadowShare, 0.0, 1.0);
+             }
++            // With correction off, keep the LCD dots and shading, but make the
++            // historical monochrome panel grayscale instead of tinted.
++            if (u_lcd.x < 1.5 && u_authentic_correction < 0.5) {
++                c = vec3(dot(c, luma_coeff));
++            }
+         } else if (!inside) {
+             c = pow(u_light, vec3(1.0 / 2.2));
+         } else {
+             // Each 5-bit code's measured light, then the panel's colour response, then the
+             // reflector's white and the panel's black.
+             c = texture2D(u_game, centre).rgb;
++            if (u_authentic_correction < 0.5) {
++                // Preserve the original RGB while retaining the LCD grid.
++                float gapShade = max(gap.x * u_lcd.z, gap.y * u_lcd.w);
++                c *= 1.0 - gapShade;
++            } else {
+             // The 5-bit code is each channel's top 5 bits, however the frame widened it to 8.
+             vec3 code = (floor((c * 255.0 + 0.5) / 8.0) + 0.5) / 32.0;
+             vec2 pick = vec2(1.0 - u_lcd.y, u_lcd.y);
+@@ -200,6 +211,7 @@ void main() {
+             lin = min(u_dark + (lin - u_dark) * sparkle / (1.0 - grid), vec3(1.0));
+             lin = mix(lin, u_dark, max(gap.x * u_lcd.z, gap.y * u_lcd.w));
+             c = pow(lin, vec3(1.0 / 2.2));
++            }
+         }
+         // The glass, as dmg-3x's border lays it over the screen: the room's light across the
+         // top right, and the shade of the bezel toward the bottom.
+diff --git a/crates/slot-store/src/core.rs b/crates/slot-store/src/core.rs
+index 4d219cb..380f1f7 100644
+--- a/crates/slot-store/src/core.rs
++++ b/crates/slot-store/src/core.rs
+@@ -11,21 +11,23 @@ pub enum Core {
+     Mgba,
+     Gpsp,
+     Gambatte,
++    Sameboy,
+     #[cfg(feature = "nds")]
+     Dsperate,
+ }
+ 
+ impl Core {
+     #[cfg(not(feature = "nds"))]
+-    pub const ALL: [Core; 3] = [Core::Mgba, Core::Gpsp, Core::Gambatte];
++    pub const ALL: [Core; 4] = [Core::Mgba, Core::Gpsp, Core::Gambatte, Core::Sameboy];
+     #[cfg(feature = "nds")]
+-    pub const ALL: [Core; 4] = [Core::Mgba, Core::Gpsp, Core::Gambatte, Core::Dsperate];
++    pub const ALL: [Core; 5] = [Core::Mgba, Core::Gpsp, Core::Gambatte, Core::Sameboy, Core::Dsperate];
+ 
+     pub fn as_str(&self) -> &'static str {
+         match self {
+             Core::Mgba => "mgba",
+             Core::Gpsp => "gpsp",
+             Core::Gambatte => "gambatte",
++            Core::Sameboy => "sameboy",
+             #[cfg(feature = "nds")]
+             Core::Dsperate => "dsperate",
+         }
+@@ -40,6 +42,7 @@ impl Core {
+             Core::Mgba => "mGBA",
+             Core::Gpsp => "gpSP",
+             Core::Gambatte => "Gambatte",
++            Core::Sameboy => "SameBoy",
+             #[cfg(feature = "nds")]
+             Core::Dsperate => "DSperate",
+         }
+@@ -50,6 +53,7 @@ impl Core {
+             "mgba" => Some(Core::Mgba),
+             "gpsp" => Some(Core::Gpsp),
+             "gambatte" => Some(Core::Gambatte),
++            "sameboy" => Some(Core::Sameboy),
+             #[cfg(feature = "nds")]
+             "dsperate" => Some(Core::Dsperate),
+             _ => None,
+@@ -62,7 +66,7 @@ impl Core {
+             _ if platform == Platform::Nds => self == Core::Dsperate,
+             Core::Mgba => true,
+             Core::Gpsp => platform.hardware() == Platform::Gba,
+-            Core::Gambatte => matches!(platform, Platform::Gb | Platform::Gbc),
++            Core::Gambatte | Core::Sameboy => matches!(platform, Platform::Gb | Platform::Gbc),
+             #[cfg(feature = "nds")]
+             Core::Dsperate => false,
+         }
+@@ -71,7 +75,7 @@ impl Core {
+     pub fn pair(platform: Platform) -> [Core; 2] {
+         match platform {
+             Platform::Gba | Platform::Gbav => [Core::Mgba, Core::Gpsp],
+-            Platform::Gb | Platform::Gbc => [Core::Mgba, Core::Gambatte],
++            Platform::Gb | Platform::Gbc => [Core::Sameboy, Core::Gambatte],
+             #[cfg(feature = "nds")]
+             Platform::Nds => [Core::Dsperate, Core::Dsperate],
+         }
+@@ -92,9 +96,14 @@ pub fn core_for_platform(root: &Path, stem: &str, platform: Platform, gb_core: C
+         .or_else(|| lines.remove(stem))
+         .as_deref()
+         .and_then(Core::parse)
++        // An old GB/GBC cartridge assignment to mGBA now selects SameBoy.
++        // mGBA remains unchanged for GBA cartridges.
++        .map(|core| if matches!(platform, Platform::Gb | Platform::Gbc) && core == Core::Mgba { Core::Sameboy } else { core })
+         .filter(|core| core.runs(platform))
+         .unwrap_or_else(|| match platform {
+-            Platform::Gb | Platform::Gbc if gb_core.runs(platform) => gb_core,
++            Platform::Gb | Platform::Gbc if gb_core == Core::Gambatte => Core::Gambatte,
++            Platform::Gb | Platform::Gbc if gb_core == Core::Sameboy => Core::Sameboy,
++            Platform::Gb | Platform::Gbc => Core::Gambatte,
+             #[cfg(feature = "nds")]
+             Platform::Nds => Core::Dsperate,
+             _ => Core::Mgba,
+diff --git a/crates/slot-store/src/slot_state.rs b/crates/slot-store/src/slot_state.rs
+index 79fc0b8..c3c13fb 100644
+--- a/crates/slot-store/src/slot_state.rs
++++ b/crates/slot-store/src/slot_state.rs
+@@ -494,6 +494,10 @@ pub struct SlotState {
+     pub colour_correction_gba: bool,
+     pub colour_correction_gb: bool,
+     pub colour_correction_gbc: bool,
++    /// Individual Authentic GB model correction bits, DMG through GBC.
++    pub authentic_gb_correction: u32,
++    pub authentic_gbc_correction: bool,
++    pub authentic_gba_correction: bool,
+     pub shader_gba: Shader,
+     pub shader_gb: Shader,
+     /// Independently selectable GB shader for games running in mGBA.
+@@ -707,6 +711,9 @@ impl Default for SlotState {
+             colour_correction_gba: false,
+             colour_correction_gb: false,
+             colour_correction_gbc: false,
++            authentic_gb_correction: 0x3f,
++            authentic_gbc_correction: true,
++            authentic_gba_correction: true,
+             shader_gba: Shader::Grid,
+             shader_gb: Shader::Simpletex,
+             shader_gb_mgba: Shader::Simpletex,
+@@ -844,6 +851,9 @@ pub fn write_slot_state(root: &Path, s: &SlotState) -> std::io::Result<()> {
+         s.colour_correction_gbc as u8
+     ));
+     text.push_str(&format!("shader_gbc={}\n", s.shader_gbc.name()));
++    text.push_str(&format!("authentic_gb_correction={}\n", s.authentic_gb_correction));
++    text.push_str(&format!("authentic_gbc_correction={}\n", s.authentic_gbc_correction as u8));
++    text.push_str(&format!("authentic_gba_correction={}\n", s.authentic_gba_correction as u8));
+     text.push_str(&format!("shader_gb_mgba={}\n", s.shader_gb_mgba.name()));
+     text.push_str(&format!("dim={}\n", s.dim));
+     text.push_str(&format!("saturation={}\n", s.saturation));
+@@ -954,6 +964,9 @@ fn parse(text: &str) -> Option<SlotState> {
+     let mut ghosting_gba = None;
+     let mut ghosting_gb = None;
+     let mut ghosting_gbc = None;
++    let mut authentic_gb_correction = None;
++    let mut authentic_gbc_correction = None;
++    let mut authentic_gba_correction = None;
+     let mut shader_gba = None;
+     let mut shader_gb = None;
+     let mut shader_gb_mgba = None;
+@@ -1087,6 +1100,9 @@ fn parse(text: &str) -> Option<SlotState> {
+             "shader_gb" => shader_gb = Shader::parse(value).filter(|s| Shader::GB.contains(s)),
+             "shader_gb_mgba" => shader_gb_mgba = Shader::parse(value).filter(|s| Shader::GB.contains(s)),
+             "shader_gbc" => shader_gbc = Shader::parse(value).filter(|s| Shader::GB.contains(s)),
++            "authentic_gb_correction" => authentic_gb_correction = value.parse::<u32>().ok().map(|n| n & 0x3f),
++            "authentic_gbc_correction" => authentic_gbc_correction = flag(value),
++            "authentic_gba_correction" => authentic_gba_correction = flag(value),
+             _ => {}
+         }
+     }
+@@ -1125,6 +1141,9 @@ fn parse(text: &str) -> Option<SlotState> {
+             .or(colour_correction_gb)
+             .or(colour_correction)
+             .unwrap_or(fallback.colour_correction_gbc),
++        authentic_gb_correction: authentic_gb_correction.unwrap_or(fallback.authentic_gb_correction),
++        authentic_gbc_correction: authentic_gbc_correction.unwrap_or(fallback.authentic_gbc_correction),
++        authentic_gba_correction: authentic_gba_correction.unwrap_or(fallback.authentic_gba_correction),
+         shader_gba: shader_gba.unwrap_or(fallback.shader_gba),
+         shader_gb: shader_gb.unwrap_or(fallback.shader_gb),
+         shader_gb_mgba: shader_gb_mgba.or(shader_gb).unwrap_or(fallback.shader_gb_mgba),
+diff --git a/crates/slot/src/app.rs b/crates/slot/src/app.rs
+index e577616..20fe71e 100644
+--- a/crates/slot/src/app.rs
++++ b/crates/slot/src/app.rs
+@@ -2594,11 +2594,8 @@ impl App {
+         // Authentic draws the chosen model's colours and ghosting, which these would fight.
+         let platform = self.playing_platform();
+         if self.authentic(platform) {
+-            hidden.extend([
+-                QuickRow::ColourCorrection,
+-                QuickRow::Blending,
+-                QuickRow::Palette,
+-            ]);
++            // Color correction remains selectable for every Authentic screen.
++            hidden.extend([QuickRow::Blending, QuickRow::Palette]);
+         }
+         if !(self.authentic(platform) && platform == Platform::Gb) {
+             hidden.push(QuickRow::Model);
+@@ -2818,11 +2815,11 @@ impl App {
+             QuickRow::FastForward => QuickValue::speed(self.state.ff_speed),
+             QuickRow::FastForwardSound => Some(QuickValue::flag(self.state.ff_sound)),
+             QuickRow::GbaColourCorrection => {
+-                Some(QuickValue::flag(self.state.colour_correction_gba))
++                Some(QuickValue::flag(self.colour_correction_for(Platform::Gba)))
+             }
+-            QuickRow::GbColourCorrection => Some(QuickValue::flag(self.state.colour_correction_gb)),
++            QuickRow::GbColourCorrection => Some(QuickValue::flag(self.colour_correction_for(Platform::Gb))),
+             QuickRow::GbcColourCorrection => {
+-                Some(QuickValue::flag(self.state.colour_correction_gbc))
++                Some(QuickValue::flag(self.colour_correction_for(Platform::Gbc)))
+             }
+             QuickRow::GbaShader => Some(shader_value(self.gba_shader())),
+             QuickRow::GbShader => Some(shader_value(self.gb_shader())),
+@@ -3657,16 +3654,15 @@ impl App {
+         for (platform, rows) in [
+             (
+                 Platform::Gba,
+-                &[QuickRow::GbaColourCorrection, QuickRow::GbaBlending][..],
++                &[QuickRow::GbaBlending][..],
+             ),
+             (
+                 Platform::Gbc,
+-                &[QuickRow::GbcColourCorrection, QuickRow::GbcBlending][..],
++                &[QuickRow::GbcBlending][..],
+             ),
+             (
+                 Platform::Gb,
+                 &[
+-                    QuickRow::GbColourCorrection,
+                     QuickRow::GbBlending,
+                     QuickRow::GbPalette,
+                 ][..],
+@@ -4910,7 +4906,7 @@ impl App {
+ 
+     fn gb_shader(&self) -> Shader {
+         match self.core {
+-            Core::Mgba => self.state.shader_gb_mgba,
++            Core::Sameboy | Core::Mgba => self.state.shader_gb_mgba,
+             _ => self.state.shader_gb,
+         }
+     }
+@@ -4947,6 +4943,15 @@ impl App {
+     }
+ 
+     pub fn colour_correction_for(&self, platform: Platform) -> bool {
++        if self.authentic(platform) {
++            return match platform {
++                Platform::Gba | Platform::Gbav => self.state.authentic_gba_correction,
++                Platform::Gb => (self.state.authentic_gb_correction & (1 << (self.gb_model() as u32))) != 0,
++                Platform::Gbc => self.state.authentic_gbc_correction,
++                #[cfg(feature = "nds")]
++                Platform::Nds => false,
++            };
++        }
+         match platform {
+             Platform::Gba | Platform::Gbav => self.state.colour_correction_gba,
+             #[cfg(feature = "nds")]
+@@ -4980,6 +4985,12 @@ impl App {
+ 
+     /// What the core is asked for. Under Authentic the shader draws the screen's colours
+     /// itself, so the core's correction stays off. The core never blends frames: the GPU does.
++    /// Authentic colour correction is in the GPU shader, independently saved
++    /// for every GB model, plus GBC and GBA.
++    pub fn authentic_colour_correction(&self) -> bool {
++        self.colour_correction_for(self.playing_platform())
++    }
++
+     pub fn core_colour_correction_for(&self, platform: Platform) -> bool {
+         self.colour_correction_for(platform) && !self.authentic(platform)
+     }
+@@ -4988,7 +4999,7 @@ impl App {
+     /// Existing saved gb_model continues to belong to Gambatte.
+     pub fn gb_model(&self) -> GbModel {
+         match self.core {
+-            Core::Mgba => self.state.gb_model_mgba,
++            Core::Sameboy | Core::Mgba => self.state.gb_model_mgba,
+             _ => self.state.gb_model,
+         }
+     }
+@@ -4996,7 +5007,7 @@ impl App {
+     fn step_gb_model(&mut self, right: bool) -> GbModel {
+         let to = self.gb_model().step(right);
+         match self.core {
+-            Core::Mgba => self.state.gb_model_mgba = to,
++            Core::Sameboy | Core::Mgba => self.state.gb_model_mgba = to,
+             _ => self.state.gb_model = to,
+         }
+         to
+@@ -5172,7 +5183,7 @@ impl App {
+     /// The added GBC model instead displays the user's chosen GB palette.
+     pub fn core_gb_colors(&self) -> GbColors {
+         match self.gb_shader() {
+-            Shader::Authentic if self.core == Core::Mgba && self.gb_model() == GbModel::PocketSgb => GbColors::SgbAuto,
++            Shader::Authentic if matches!(self.core, Core::Mgba | Core::Sameboy) && self.gb_model() == GbModel::PocketSgb => GbColors::SgbAuto,
+             Shader::Authentic if !matches!(self.gb_model(), GbModel::Gbc | GbModel::PocketColor) => {
+                 GbColors::Palette(slot_store::GbPalette::GRAYSCALE)
+             }
+@@ -6163,15 +6174,29 @@ impl App {
+             }
+             QuickRow::FastForwardSound => s.ff_sound = !s.ff_sound,
+             QuickRow::GbaColourCorrection => {
+-                s.colour_correction_gba = !s.colour_correction_gba;
++                if s.shader_gba == Shader::Authentic {
++                    s.authentic_gba_correction = !s.authentic_gba_correction;
++                } else {
++                    s.colour_correction_gba = !s.colour_correction_gba;
++                }
+                 self.colour_pending = Some(self.colour_correction());
+             }
+             QuickRow::GbColourCorrection => {
+-                s.colour_correction_gb = !s.colour_correction_gb;
++                let active = if self.core == Core::Sameboy || self.core == Core::Mgba { s.shader_gb_mgba } else { s.shader_gb };
++                if active == Shader::Authentic {
++                    let model = if self.core == Core::Sameboy || self.core == Core::Mgba { s.gb_model_mgba } else { s.gb_model };
++                    s.authentic_gb_correction ^= 1 << (model as u32);
++                } else {
++                    s.colour_correction_gb = !s.colour_correction_gb;
++                }
+                 self.colour_pending = Some(self.colour_correction());
+             }
+             QuickRow::GbcColourCorrection => {
+-                s.colour_correction_gbc = !s.colour_correction_gbc;
++                if s.shader_gbc == Shader::Authentic {
++                    s.authentic_gbc_correction = !s.authentic_gbc_correction;
++                } else {
++                    s.colour_correction_gbc = !s.colour_correction_gbc;
++                }
+                 self.colour_pending = Some(self.colour_correction());
+             }
+             QuickRow::GbaShader => {
+@@ -6183,7 +6208,7 @@ impl App {
+                 self.core_options_pending();
+             }
+             QuickRow::GbShader => {
+-                let slot = if self.core == Core::Mgba {
++                let slot = if matches!(self.core, Core::Mgba | Core::Sameboy) {
+                     &mut s.shader_gb_mgba
+                 } else {
+                     &mut s.shader_gb
+@@ -6372,7 +6397,7 @@ impl App {
+             #[cfg(feature = "nds")]
+             Platform::Nds => (&mut self.state.shader_gba, gba_shaders),
+             Platform::Gb => (
+-                if self.core == Core::Mgba {
++                if matches!(self.core, Core::Mgba | Core::Sameboy) {
+                     &mut self.state.shader_gb_mgba
+                 } else {
+                     &mut self.state.shader_gb
+@@ -10398,7 +10423,7 @@ impl App {
+             self.hud.toast(Toast::NoWifi, self.now());
+             return;
+         }
+-        if self.core == Core::Gambatte {
++        if matches!(self.core, Core::Gambatte | Core::Sameboy) {
+             self.hud.toast(Toast::NeedsMgba, self.now());
+             return;
+         }
+diff --git a/crates/slot/src/core.rs b/crates/slot/src/core.rs
+index 97d326f..b5c1856 100644
+--- a/crates/slot/src/core.rs
++++ b/crates/slot/src/core.rs
+@@ -212,6 +212,10 @@ pub fn colour_option(
+             "gpsp_color_correction",
+             if on { "enabled" } else { "disabled" },
+         )),
++        Core::Sameboy => Some((
++            "sameboy_color_correction_mode",
++            if on { "emulate hardware" } else { "off" },
++        )),
+         Core::Gambatte => Some((
+             "gambatte_gbc_color_correction",
+             if !on {
+@@ -253,12 +257,15 @@ pub fn blending_off(which: Core) -> (&'static str, &'static str) {
+         Core::Mgba => ("mgba_interframe_blending", "OFF"),
+         Core::Gpsp => ("gpsp_frame_mixing", "disabled"),
+         Core::Gambatte => ("gambatte_mix_frames", "disabled"),
++        Core::Sameboy => ("sameboy_interframe_blending", "off"),
+         #[cfg(feature = "nds")]
+         Core::Dsperate => ("dsperate_blending", "off"),
+     }
+ }
+ 
+ pub fn apply_blending_off(core: &mut LibretroCore, which: Core) {
++    // SameBoy has no interframe-blending core option.
++    if which == Core::Sameboy { return; }
+     let (key, value) = blending_off(which);
+     core.set_option(key, value);
+ }
+@@ -280,6 +287,7 @@ pub fn palette_options(which: Core, colors: GbColors) -> Vec<(&'static str, &'st
+         ],
+         (Core::Gambatte, GbColors::Auto) => vec![("gambatte_gb_colorization", "GBC")],
+         (Core::Gambatte, GbColors::SgbAuto) => vec![("gambatte_gb_colorization", "SGB")],
++        (Core::Sameboy, _) => Vec::new(),
+         (Core::Mgba, GbColors::SgbAuto) => vec![
+             ("mgba_gb_model", "Super Game Boy"),
+             ("mgba_gb_colors_preset", "2"),
+@@ -307,7 +315,7 @@ pub fn apply_core_options(
+     colour: bool,
+     palette: Option<GbColors>,
+ ) {
+-    if which != Core::Gambatte {
++    if matches!(which, Core::Mgba | Core::Gpsp) {
+         core.set_option(&format!("{}_frameskip", which.as_str()), "auto");
+     }
+     if which == Core::Mgba {
+@@ -335,6 +343,16 @@ pub fn apply_core_options(
+             core.set_option(key, value);
+         }
+     }
++    if which == Core::Sameboy {
++        // Real SGB hardware handles games such as Pokemon Yellow dynamically.
++        // Without Pocket SGB choose the normal GB/GBC autodetection.
++        core.set_option("sameboy_model", if matches!(palette, Some(GbColors::SgbAuto)) {
++            "Super Game Boy"
++        } else { "Auto" });
++        core.set_option("sameboy_border", "never");
++        core.set_option("sameboy_mono_palette", "greyscale");
++        core.set_option("sameboy_color_correction_mode", if colour { "emulate hardware" } else { "off" });
++    }
+     if which == Core::Gambatte {
+         core.set_option("gambatte_gb_hwmode", "Auto");
+         for (key, value) in palette_options(which, palette.unwrap_or(GbColors::Auto)) {
+diff --git a/crates/slot/src/frontend.rs b/crates/slot/src/frontend.rs
+index 4a9336f..e5a04aa 100644
+--- a/crates/slot/src/frontend.rs
++++ b/crates/slot/src/frontend.rs
+@@ -1204,6 +1204,7 @@ impl Frontend {
+         compositor.set_picture(self.session.app().picture_rect());
+         compositor.set_screen_effect(self.session.app().screen_effect());
+         compositor.set_authentic_screen(authentic_screen(self.session.app()));
++        compositor.set_authentic_colour_correction(self.session.app().authentic_colour_correction());
+         compositor.set_frame_blend(self.session.app().frame_blend());
+         // Authentic uses its regular LCD response except while fast-forwarding.
+         compositor.set_authentic_fast_forward(self.session.fast_forwarding());
+diff --git a/crates/slot/src/session.rs b/crates/slot/src/session.rs
+index 4f766e2..4a3b3c9 100644
+--- a/crates/slot/src/session.rs
++++ b/crates/slot/src/session.rs
+@@ -686,7 +686,7 @@ impl Session {
+                 // cheats are not wired up yet.
+                 let cheats = match core {
+                     Core::Mgba => crate::cheats::load(&root, platform, &stem, &rom),
+-                    Core::Gpsp | Core::Gambatte => Vec::new(),
++                    Core::Gpsp | Core::Gambatte | Core::Sameboy => Vec::new(),
+                     #[cfg(feature = "nds")]
+                     Core::Dsperate => Vec::new(),
+                 };
+@@ -823,7 +823,7 @@ fn launch(step: &str) {
+ fn governor_for(core: Core, platform: Platform, running: bool) -> slot_power::CpuGovernor {
+     // mGBA's Super Game Boy hardware mode costs more CPU than Gambatte.
+     // Do not let CPU frequency scaling throttle GB/GBC mGBA gameplay.
+-    if running && core == Core::Mgba {
++    if running && matches!(core, Core::Mgba | Core::Sameboy) {
+         slot_power::CpuGovernor::Performance
+     } else {
+         slot_power::CpuGovernor::Schedutil
+diff --git a/crates/slot/tests/core_picker.rs b/crates/slot/tests/core_picker.rs
+index a9e3335..be95cae 100644
+--- a/crates/slot/tests/core_picker.rs
++++ b/crates/slot/tests/core_picker.rs
+@@ -3,7 +3,7 @@ use slot_store::{Core, Platform};
+ use slot_ui::Millis;
+ 
+ const GBA: [Core; 2] = [Core::Mgba, Core::Gpsp];
+-const GB: [Core; 2] = [Core::Mgba, Core::Gambatte];
++const GB: [Core; 2] = [Core::Sameboy, Core::Gambatte];
+ 
+ fn opened(seat: Core, at: Millis) -> CorePicker {
+     opened_on(GBA, seat, at)
+@@ -206,7 +206,7 @@ fn the_arrows_do_nothing_while_the_picker_waits() {
+ 
+ #[test]
+ fn a_game_boy_pair_hops_right_to_gambatte() {
+-    let mut p = opened_on(Core::pair(Platform::Gb), Core::Mgba, 0);
++    let mut p = opened_on(Core::pair(Platform::Gb), Core::Sameboy, 0);
+     assert_eq!(p.press(Press::Right, 400), Outcome::Nothing);
+     assert_eq!(p.seat(), Core::Gambatte);
+     let mid = p.chip(400 + HOP_MS / 2);
+@@ -222,10 +222,10 @@ fn a_game_boy_pair_hops_right_to_gambatte() {
+ }
+ 
+ #[test]
+-fn a_game_boy_pair_refuses_left_from_mgba() {
+-    let mut p = opened_on(Core::pair(Platform::Gbc), Core::Mgba, 0);
++fn a_game_boy_pair_refuses_left_from_sameboy() {
++    let mut p = opened_on(Core::pair(Platform::Gbc), Core::Sameboy, 0);
+     assert_eq!(p.press(Press::Left, 400), Outcome::Refused);
+-    assert_eq!(p.seat(), Core::Mgba);
++    assert_eq!(p.seat(), Core::Sameboy);
+     assert_ne!(p.chip(400).shake, 0.0);
+ }
+ 
+@@ -246,16 +246,16 @@ fn the_chip_rests_by_place_in_the_pair() {
+     let gambatte = opened_on(GB, Core::Gambatte, 0).chip(0);
+     assert_eq!(gambatte.seated, Some(Core::Gambatte));
+     assert_eq!(gambatte.across, 1.0);
+-    assert_eq!(opened_on(GB, Core::Mgba, 0).chip(0).across, 0.0);
++    assert_eq!(opened_on(GB, Core::Sameboy, 0).chip(0).across, 0.0);
+     assert_eq!(opened_on(GBA, Core::Gpsp, 0).chip(0).across, 1.0);
+ }
+ 
+ #[test]
+-fn back_mid_hop_on_a_game_boy_pair_turns_back_to_mgba() {
++fn back_mid_hop_on_a_game_boy_pair_turns_back_to_sameboy() {
+     let mut p = opened_on(GB, Core::Gambatte, 0);
+     p.press(Press::Left, 400);
+     let mid = p.chip(400 + HOP_MS / 2);
+     assert!(mid.tip < 0.0, "a chip moving left should lean left");
+-    assert_eq!(p.chip(400 + HOP_MS).seated, Some(Core::Mgba));
++    assert_eq!(p.chip(400 + HOP_MS).seated, Some(Core::Sameboy));
+     assert_eq!(p.chip(400 + HOP_MS).across, 0.0);
+ }
