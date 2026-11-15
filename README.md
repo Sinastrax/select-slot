@@ -23,9 +23,9 @@ A successfully generated artifact contains `slot-rgsp-custom/`. **Copy the conte
 - Gambatte's existing Authentic/Pocket Color appearance and profile are retained. The alternate-core Authentic profile (previously used by mGBA for GB) is now used by SameBoy.
 - SameBoy sets `sameboy_model=Super Game Boy` when the **Pocket SGB** model is selected, allowing supported GB games such as Pokémon Yellow to use SGB commands for in-game palettes. Close and reopen the game after selecting the model.
 - SameBoy's custom border is disabled, so the same 160x144 pixel geometry remains compatible with the Pocket LCD shader. This is not an authentic SNES border display.
-- **Color Correction** is available even when Authentic is selected, with independent on/off memory for every GB Authentic model (DMG, Pocket, Pocket Color, Pocket SGB, Light, GBC), plus GBC Authentic and GBA Authentic.
+- **Color Correction** is available even when Authentic is selected, with independent on/off memory for every GB Authentic model (DMG, Pocket, Pocket Color, Pocket SGB, Light, GBC) **for Gambatte and SameBoy separately**, plus GBC Authentic and GBA Authentic. In a game, use **Quick Menu → Settings → Screen → Color Correction**.
 - Default corrected appearance is **on**, preserving the prior Pocket Color profile. Disabling measured correction preserves the LCD pixel grid.
 - The firmware package must contain **both** `System/slot` and `System/sameboy_libretro.so`.
 - Always back up `System/slot`, `Config/slot.state`, `Config/selected_core.txt`, and saved games before installation. Save-state files are generally **not compatible between cores**.
 - SameBoy's frame pacing, SGB visual output and performance on the physical H700 RG SP have not yet been verified.
-- Firmware with SameBoy ARM64 successfully built and SD-card tree validated: [GitHub Actions run 43757690270](https://github.com/Sinastrax/slot-rgsp-mod/actions/runs/43757690270).
+- Firmware with SameBoy ARM64 and per-core correction persistence successfully built and SD-card tree validated: [GitHub Actions run 43761142559](https://github.com/Sinastrax/slot-rgsp-mod/actions/runs/43761142559).
