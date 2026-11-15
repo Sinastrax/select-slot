@@ -63,6 +63,21 @@ jobs:
           old = "rewind.c\n\tscripting.c\n\tsync.c"
           assert old in src, "2025 core source layout changed"
           path.write_text(src.replace(old, "rewind.c\n\tsync.c", 1))
+          # The older libretro target also links duplicate compatibility
+          # functions and version constants. Remove redundant definitions only.
+          retro = Path("target-device/mgba-old/source/src/platform/libretro/libretro.c")
+          text = retro.read_text()
+          for duplicate in ('const char* const projectVersion = "0.11-dev" GIT_VERSION;\n',
+                            'const char* const projectName = "mGBA";\n'):
+              assert duplicate in text
+              text = text.replace(duplicate, "", 1)
+          retro.write_text(text)
+          root = Path("target-device/mgba-old/source/CMakeLists.txt")
+          cmake = root.read_text()
+          marker = "file(GLOB RETRO_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/platform/libretro/*.c)"
+          assert marker in cmake
+          cmake = cmake.replace(marker, marker + '\n\tlist(REMOVE_ITEM RETRO_SRC "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/libretro/memory.c")', 1)
+          root.write_text(cmake)
           PY
           cmake -S target-device/mgba-old/source -B target-device/mgba-old/build \
             -DLIBMGBA_ONLY=ON -DBUILD_LIBRETRO=ON -DENABLE_SCRIPTING=OFF -DCMAKE_BUILD_TYPE=Release \
