@@ -1,0 +1,55 @@
+--- a/crates/slot/src/audio/ring.rs
++++ b/crates/slot/src/audio/ring.rs
+@@ -18,6 +18,8 @@
+     placed: usize,
+     pending_at: u64,
+     drained: u64,
++    /// Last stereo sample consumed by ALSA, for smoothing rare overflow splices.
++    last_played: [i16; 2],
+ }
+@@ -48,6 +50,7 @@
+                 placed: 0,
+                 pending_at: 0,
+                 drained: 0,
++                last_played: [0, 0],
+             }),
+@@ -76,6 +79,7 @@
+         i.pending_at = 0;
+         i.drained = 0;
++        i.last_played = [0, 0];
+         i.len = drc_target(frames) * 2;
+@@ -117,6 +121,25 @@
+         let extra = write_into(&mut i, fresh);
+         debug_assert!(extra.is_empty());
++        if overflow > 0 {
++            // An instantaneous jump to a later music sample produces an
++            // audible pop. Crossfade the first ~2ms of the surviving stream
++            // from the last stereo sample the device actually played. This
++            // keeps the nonblocking video pacing and does not change pitch.
++            // A discarded segment can still be audible as a short skip.
++            let fade_frames = (self.sample_rate() as usize / 500)
++                .clamp(16, 128)
++                .min(i.len / 2);
++            let last = i.last_played;
++            for frame in 0..fade_frames {
++                let mix = (frame + 1) as f32 / fade_frames as f32;
++                for ch in 0..2 {
++                    let at = (i.head + frame * 2 + ch) % cap;
++                    let incoming = i.buf[at] as f32;
++                    let blended = f32::from(last[ch]) * (1.0 - mix) + incoming * mix;
++                    i.buf[at] = blended.round().clamp(-32768.0, 32767.0) as i16;
++                }
++            }
++        }
+         self.queued.store(i.len, Ordering::Relaxed);
+     }
+@@ -184,6 +207,9 @@
+         let n = if holding { 0 } else { out.len().min(i.len) };
+         if cap > 0 && !holding {
+             let first = n.min(cap - i.head);
+             out[..first].copy_from_slice(&i.buf[i.head..i.head + first]);
+             out[first..n].copy_from_slice(&i.buf[..n - first]);
++            if n >= 2 {
++                i.last_played = [out[n - 2], out[n - 1]];
++            }
+             i.head = (i.head + n) % cap;
