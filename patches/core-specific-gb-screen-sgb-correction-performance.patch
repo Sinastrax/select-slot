@@ -131,7 +131,7 @@ index 14527e2..79fc0b8 100644
              "shelf" => shelf = Some(value.to_string()).filter(|v| !v.is_empty()),
              "shelf_cart" => recent_value(value),
 @@ -1073,6 +1085,7 @@ fn parse(text: &str) -> Option<SlotState> {
-             "collection" => collection = Some(value.to_string()).filter(|v| !value.is_empty()),
+             "collection" => collection = Some(value.to_string()).filter(|v| !v.is_empty()),
              "gba_video" => gba_video = flag(value),
              "shader_gb" => shader_gb = Shader::parse(value).filter(|s| Shader::GB.contains(s)),
 +            "shader_gb_mgba" => shader_gb_mgba = Shader::parse(value).filter(|s| Shader::GB.contains(s)),
