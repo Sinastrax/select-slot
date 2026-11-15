@@ -42,6 +42,8 @@ jobs:
           git apply ../patches/core-specific-gb-screen-sgb-correction-performance.patch
           git apply --check ../patches/diagnostic-disable-mgba-gb-ghosting.patch
           git apply ../patches/diagnostic-disable-mgba-gb-ghosting.patch
+          git apply --check ../patches/diagnostic-sgb-borders.patch
+          git apply ../patches/diagnostic-sgb-borders.patch
           echo "Exact-release patches applied"
 
       - name: Install required tools
