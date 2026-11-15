@@ -91,26 +91,7 @@ jobs:
             --parallel "$(getconf _NPROCESSORS_ONLN)"
           cp target-device/mgba-old/build/mgba_libretro.so ../older-mgba/System/mgba_libretro.so
           # Refuse to ship a core with undefined symbols the frontend cannot provide.
-          if nm -D -u ../older-mgba/System/mgba_libretro.so | grep -E ' U (VFileOpenFD|VFileFromFD)
-          file ../older-mgba/System/mgba_libretro.so | grep -E "ARM aarch64|ARM64|aarch64"
-          sha256sum ../older-mgba/System/mgba_libretro.so > ../older-mgba/mgba.sha256
-          echo "$OLD_MGBA" > ../older-mgba/mgba-commit.txt
-
-      - name: Package old-core-only test
-        shell: bash
-        run: |
-          set -euo pipefail
-          cd older-mgba
-          zip -qry ../Slot_RGSP_Older_mGBA_Core_Only.zip System
-          unzip -l ../Slot_RGSP_Older_mGBA_Core_Only.zip
-
-      - name: Upload old-core-only update
-        uses: actions/upload-artifact@v4
-        with:
-          name: slot-rgsp-older-mgba-core-only
-          path: Slot_RGSP_Older_mGBA_Core_Only.zip
-          if-no-files-found: error
-; then
+          if nm -D -u ../older-mgba/System/mgba_libretro.so | grep -E ' U (VFileOpenFD|VFileFromFD)$'; then
             echo "Legacy libretro core still lacks its own VFS implementation" >&2
             exit 1
           fi
