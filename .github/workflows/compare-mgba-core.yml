@@ -45,8 +45,19 @@ jobs:
           # The October 2025 core reported to work without the newer SGB timing bug.
           OLD_MGBA=c758314a639aa0066e7b65a8341448181b73c804
           mkdir -p ../older-mgba/System
-          sh cores/mgba/build.sh build "$OLD_MGBA" \
-            target-device/mgba-old ../older-mgba/System/mgba_libretro.so
+          # Build the older upstream core without later Slot-specific mGBA patches:
+          # several patches target newer GB memory-controller code and cannot
+          # be transplanted without independently porting and testing them.
+          mkdir -p target-device/mgba-old/source
+          git -C target-device/mgba-old/source init -q
+          git -C target-device/mgba-old/source fetch -q --depth 1 https://github.com/libretro/mgba "$OLD_MGBA"
+          git -C target-device/mgba-old/source checkout -q --detach FETCH_HEAD
+          cmake -S target-device/mgba-old/source -B target-device/mgba-old/build \
+            -DLIBMGBA_ONLY=ON -DBUILD_LIBRETRO=ON -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_C_FLAGS="-flto=auto"
+          cmake --build target-device/mgba-old/build --target mgba_libretro \
+            --parallel "$(getconf _NPROCESSORS_ONLN)"
+          cp target-device/mgba-old/build/mgba_libretro.so ../older-mgba/System/mgba_libretro.so
           file ../older-mgba/System/mgba_libretro.so | grep -E "ARM aarch64|ARM64|aarch64"
           sha256sum ../older-mgba/System/mgba_libretro.so > ../older-mgba/mgba.sha256
           echo "$OLD_MGBA" > ../older-mgba/mgba-commit.txt
