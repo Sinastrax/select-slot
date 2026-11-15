@@ -77,6 +77,11 @@ jobs:
           marker = "file(GLOB RETRO_SRC ${CMAKE_CURRENT_SOURCE_DIR}/src/platform/libretro/*.c)"
           assert marker in cmake
           cmake = cmake.replace(marker, marker + '\n\tlist(REMOVE_ITEM RETRO_SRC "${CMAKE_CURRENT_SOURCE_DIR}/src/platform/libretro/memory.c")', 1)
+          target = 'add_library(${BINARY_NAME}_libretro SHARED ${CORE_SRC} ${RETRO_SRC} ${CORE_VFS_SRC})'
+          assert target in cmake
+          # The legacy libretro target uses VFileOpenFD but omits its
+          # implementation from CORE_VFS_SRC. Add only that source.
+          cmake = cmake.replace(target, target + '\n\ttarget_sources(${BINARY_NAME}_libretro PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src/util/vfs/vfs-fd.c)', 1)
           root.write_text(cmake)
           PY
           cmake -S target-device/mgba-old/source -B target-device/mgba-old/build \
@@ -85,6 +90,30 @@ jobs:
           cmake --build target-device/mgba-old/build --target mgba_libretro \
             --parallel "$(getconf _NPROCESSORS_ONLN)"
           cp target-device/mgba-old/build/mgba_libretro.so ../older-mgba/System/mgba_libretro.so
+          # Refuse to ship a core with undefined symbols the frontend cannot provide.
+          if nm -D -u ../older-mgba/System/mgba_libretro.so | grep -E ' U (VFileOpenFD|VFileFromFD)
+          file ../older-mgba/System/mgba_libretro.so | grep -E "ARM aarch64|ARM64|aarch64"
+          sha256sum ../older-mgba/System/mgba_libretro.so > ../older-mgba/mgba.sha256
+          echo "$OLD_MGBA" > ../older-mgba/mgba-commit.txt
+
+      - name: Package old-core-only test
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd older-mgba
+          zip -qry ../Slot_RGSP_Older_mGBA_Core_Only.zip System
+          unzip -l ../Slot_RGSP_Older_mGBA_Core_Only.zip
+
+      - name: Upload old-core-only update
+        uses: actions/upload-artifact@v4
+        with:
+          name: slot-rgsp-older-mgba-core-only
+          path: Slot_RGSP_Older_mGBA_Core_Only.zip
+          if-no-files-found: error
+; then
+            echo "Legacy libretro core still lacks its own VFS implementation" >&2
+            exit 1
+          fi
           file ../older-mgba/System/mgba_libretro.so | grep -E "ARM aarch64|ARM64|aarch64"
           sha256sum ../older-mgba/System/mgba_libretro.so > ../older-mgba/mgba.sha256
           echo "$OLD_MGBA" > ../older-mgba/mgba-commit.txt
