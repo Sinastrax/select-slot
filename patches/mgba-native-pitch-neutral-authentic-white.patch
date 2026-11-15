@@ -1,0 +1,148 @@
+--- a/crates/slot/src/emu.rs
++++ b/crates/slot/src/emu.rs
+@@ -9,7 +9,7 @@
+ use slot_retro::{mask_for, ButtonMask, Link, LinkChannel, RetroCore, Rumble, NETPACKET_RELIABLE};
+ 
+ use crate::audio::Ring;
+-use crate::drc::{drc_ratio, drc_ratio_limited, drc_target};
++use crate::drc::{drc_ratio, drc_target};
+ use crate::frames::{FrameRef, Frames};
+ use crate::link_state;
+ use crate::pacing::{native_period, FrameClock};
+@@ -101,7 +101,7 @@
+     volume: AtomicU8,
+     fast_quarters: AtomicU32,
+     ff_sound: AtomicBool,
+-    /// mGBA GB/GBC audio may drift beyond the standard 0.5% resampler range.
++    /// Avoid frame stalls caused by full mGBA GB/GBC audio queues.
+     mgba_gb_audio: AtomicBool,
+     published: AtomicU64,
+     /// How many times the game has jumped to another moment or been redrawn (a state load,
+@@ -415,8 +415,8 @@
+         self.shared.ff_sound.load(Ordering::Relaxed)
+     }
+ 
+-    /// Allow the audio resampler a wider, queue-dependent drift correction for
+-    /// mGBA GB/GBC only. Other emulators retain the original 0.5% range.
++    /// Keep mGBA GB/GBC pacing independent of a saturated audio ring.
++    /// Other cores retain normal blocking audio behavior.
+     pub fn set_mgba_gb_audio(&self, on: bool) {
+         self.shared.mgba_gb_audio.store(on, Ordering::Relaxed);
+     }
+@@ -963,23 +963,24 @@
+                     } else {
+                         1.0
+                     };
+-                    let correction = if self.shared.mgba_gb_audio.load(Ordering::Relaxed) {
+-                        // In mGBA SGB mode audio can drift enough that the 8-frame
+-                        // ring fills. push_blocking then stalls the emulation thread
+-                        // for up to 50ms; fast-forward mutes/drains the ring and
+-                        // temporarily clears the hitch. Try correcting up to 5%
+-                        // *before* reaching that blocking threshold.
+-                        drc_ratio_limited(queued, target, 0.05)
+-                    } else {
+-                        drc_ratio(queued, target)
+-                    };
+-                    resampler.set_ratio(correction * duration_ratio);
++                    // Keep audio near its native pitch. The previous ±5% buffer
++                    // correction improved frame pacing but noticeably altered pitch.
++                    resampler.set_ratio(drc_ratio(queued, target) * duration_ratio);
+                     resampler.process(&audio, &mut out);
+                     crate::audio::volume::apply(
+                         &mut out,
+                         self.shared.volume.load(Ordering::Relaxed),
+                     );
+-                    ring.push_blocking(&out);
++                    if self.shared.mgba_gb_audio.load(Ordering::Relaxed)
++                        && speed == Speed::Normal
++                    {
++                        // Do not hold the emulation thread up to 50ms when the
++                        // audio ring is full. Discard the oldest buffered audio
++                        // instead; samples that survive play at native pitch.
++                        ring.push_drop_oldest(&out);
++                    } else {
++                        ring.push_blocking(&out);
++                    }
+                     paced += 1;
+                     if crate::session::trace() && paced.is_multiple_of(TRACE_EVERY) {
+                         let (dropped, starved) = (ring.overruns(), ring.underruns());
+--- a/crates/slot/src/audio/ring.rs
++++ b/crates/slot/src/audio/ring.rs
+@@ -93,6 +93,34 @@
+         }
+     }
+ 
++    /// Nonblocking producer for cores whose audio stream can drift ahead of the
++    /// device clock. Preserve the resampling rate (and therefore music pitch)
++    /// instead of blocking the emulator thread when the ring reaches capacity.
++    /// Keep the freshest samples and report any skipped old audio as an overrun.
++    pub fn push_drop_oldest(&self, samples: &[i16]) {
++        if self.muted() || self.capacity_frames() == 0 {
++            self.push(samples);
++            return;
++        }
++        let mut i = self.lock();
++        let cap = i.buf.len();
++        if cap == 0 || samples.is_empty() {
++            return;
++        }
++        // Stereo samples; this method does not change their order or frequency.
++        let fresh = &samples[samples.len().saturating_sub(cap)..];
++        let overflow = i.len.saturating_add(fresh.len()).saturating_sub(cap);
++        if overflow > 0 {
++            i.head = (i.head + overflow) % cap;
++            i.len -= overflow;
++            i.drained += overflow as u64;
++            self.overruns.fetch_add(overflow as u64, Ordering::Relaxed);
++        }
++        let extra = write_into(&mut i, fresh);
++        debug_assert!(extra.is_empty());
++        self.queued.store(i.len, Ordering::Relaxed);
++    }
++
+     pub fn push_blocking(&self, samples: &[i16]) {
+         if self.muted() || self.capacity_frames() == 0 || !self.consuming.load(Ordering::Relaxed) {
+             self.push(samples);
+--- a/crates/slot-gfx/src/shaders.rs
++++ b/crates/slot-gfx/src/shaders.rs
+@@ -173,7 +173,12 @@
+                 float gapShare = clamp((dotLuma - baseLuma) /
+                     max(panelLuma - baseLuma, 0.03), 0.0, 1.0);
+                 float shadowShare = clamp(dotLuma / max(baseLuma, 0.03), 0.0, 1.0);
+-                vec3 reflector = vec3(134.0, 140.0, 122.0) / 255.0;
++                // The calibrated reflector is tinted. With correction OFF,
++                // use neutral white instead; otherwise even an RGB (1,1,1)
++                // source turns grey/blue within the visible Pocket pixel gaps.
++                // gapShare, dot/shadow structure and glass remain identical.
++                vec3 reflector = u_authentic_correction > 0.5
++                    ? vec3(134.0, 140.0, 122.0) / 255.0 : vec3(1.0);
+                 c = clamp(mix(panelRgb, reflector, gapShare) * shadowShare, 0.0, 1.0);
+             }
+             // DMG, Pocket and Light are inherently monochrome LCD simulations.
+@@ -186,10 +191,11 @@
+             // Each 5-bit code's measured light, then the panel's colour response, then the
+             // reflector's white and the panel's black.
+             vec3 rawColour = texture2D(u_game, centre).rgb;
+-            // Both states use the same physical panel gamut, dark floor, cell
+-            // compensation, gap width, sparkle and glass. The switch changes
+-            // only the RGB response curve, not which LCD rendering is applied.
+-            vec3 lin = mix(u_dark, u_light, pow(rawColour, vec3(2.2)));
++            // The corrected panel uses its measured tinted white/black point;
++            // correction OFF uses neutral 0..1 linear RGB so white stays white.
++            // Both retain exactly the same LCD grid, grain and glass geometry.
++            vec3 panelDark = u_authentic_correction > 0.5 ? u_dark : vec3(0.0);
++            vec3 lin = pow(rawColour, vec3(2.2));
+             if (u_authentic_correction > 0.5) {
+                 // Only correct the RGB transfer response here. The grid,
+                 // grain, gaps and reflective glass below are identical in both
+@@ -210,8 +216,8 @@
+             // The reflector shows through the colour filter as a fine sparkle.
+             float speck = fract(sin(dot(floor(gl_FragCoord.xy), vec2(12.9898, 78.233))) * 43758.5453);
+             float sparkle = 1.0 + u_grain * (step(0.9, speck) * 10.0 - 1.0);
+-            lin = min(u_dark + (lin - u_dark) * sparkle / (1.0 - grid), vec3(1.0));
+-            lin = mix(lin, u_dark, max(gap.x * u_lcd.z, gap.y * u_lcd.w));
++            lin = min(panelDark + (lin - panelDark) * sparkle / (1.0 - grid), vec3(1.0));
++            lin = mix(lin, panelDark, max(gap.x * u_lcd.z, gap.y * u_lcd.w));
+             c = pow(lin, vec3(1.0 / 2.2));
+         }
+         // The glass, as dmg-3x's border lays it over the screen: the room's light across the
