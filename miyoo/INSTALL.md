@@ -1,6 +1,20 @@
-# select. slot. 1.8.1 Ver. 24 — Miyoo Mini family
+# select. slot. 1.8.1 Ver. 25 — Miyoo Mini family
 
 **Experimental, offline-capable Miyoo Mini / Mini Plus / Mini Flip application.** This is not the Anbernic H700 firmware. Built from the pinned [deanmarano/slot-miyoo](https://github.com/deanmarano/slot-miyoo) ARMv7 port and Slot 1.8.1. Its releases are separate from the H700 update channel.
+
+## Ver. 25 — individual GB, GBC and GBA scaling defaults
+
+Moved the shelf-menu scaling setting out of **Screen → General** and into each system's own page:
+
+- **Screen → Game Boy → Scaling**
+- **Screen → Game Boy Color → Scaling**
+- **Screen → Game Boy Advance → Scaling**
+
+Each choice is saved independently to `Config/video_mode.txt` under `default_gb`, `default_gbc` or `default_gba`. The modes are unchanged: Original, Integer, Aspect Fit, Fill/Crop and Full Stretch. Choosing a default affects games of that system which do not have an individual setting; existing per-game overrides still take priority.
+
+If Ver. 24 previously saved a single `default` value, it remains a read-only fallback until each system receives its own setting. This avoids resetting your scaling choices on upgrade and does not delete any existing entry.
+
+**No other functionality was changed:** the Ver. 24 power/Screen Off handling, OnionOS and stock autoboot ZIP variants, timers, brightness 1–9, shaders disabled, emulator choices and save/resume handling are retained.
 
 ## Ver. 24 — persistent menu Scaling and power-transition regression fix
 
@@ -18,9 +32,9 @@ The OnionOS keymon and boot-screen process share the device with Slot, so exact 
 
 | Download | What happens after extracting at the SD root |
 | --- | --- |
-| `select-slot-1.8.1-ver24-miyoo-onion-autoboot.zip` | **OnionOS 4.3+ (Mini / Mini Plus):** starts select. slot. automatically after OnionOS has initialized its screen, audio and key monitor. Installs only `.tmp_update/startup/select-slot.sh`. It does **not** replace OnionOS's own `.tmp_update/runtime.sh` or any theme files. |
-| `select-slot-1.8.1-ver24-miyoo-stock-autoboot.zip` | **Stock Miyoo firmware only:** starts select. slot. instead of stock MainUI. It installs `.tmp_update/runtime.sh`, the stock firmware's boot hook, based on the original slot-miyoo port. |
-| `select-slot-1.8.1-ver24-miyoo.zip` | **App-only:** does not enable autoboot. Slot remains available from the normal launcher in stock, OnionOS and supported Allium setups. |
+| `select-slot-1.8.1-ver25-miyoo-onion-autoboot.zip` | **OnionOS 4.3+ (Mini / Mini Plus):** starts select. slot. automatically after OnionOS has initialized its screen, audio and key monitor. Installs only `.tmp_update/startup/select-slot.sh`. It does **not** replace OnionOS's own `.tmp_update/runtime.sh` or any theme files. |
+| `select-slot-1.8.1-ver25-miyoo-stock-autoboot.zip` | **Stock Miyoo firmware only:** starts select. slot. instead of stock MainUI. It installs `.tmp_update/runtime.sh`, the stock firmware's boot hook, based on the original slot-miyoo port. |
+| `select-slot-1.8.1-ver25-miyoo.zip` | **App-only:** does not enable autoboot. Slot remains available from the normal launcher in stock, OnionOS and supported Allium setups. |
 
 **Important: Never extract the Stock Autoboot ZIP on OnionOS or Allium.** They use `.tmp_update/runtime.sh` to boot their own software, and overwriting that file would damage the SD-card operating-system installation. Back up the card before using *any* variant. Do not overwrite an existing `.tmp_update/runtime.sh` even on a stock-labeled card unless you have confirmed it is genuinely stock with no other boot manager.
 
