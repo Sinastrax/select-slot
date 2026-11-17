@@ -1,9 +1,9 @@
-# select. slot. 1.16.0 Ver. 11
+# select. slot. 1.16.0 Ver. 12
 
-## Changes since select. slot. 1.16.0 Ver. 10
+## Changes since select. slot. 1.16.0 Ver. 11
 
-- **Pocket SGB now actually looks like Pocket Color:** removed the visually different SGB-only shader that used arbitrary gap multipliers and a simplified neighboring-dot shadow. Pocket SGB uses Pocket Color's exact LCD pixel-gap, ink, 4-tap shadow, reflector, glass and fractional Fit calculations. Both modes use the same physical LCD settings and ghosting.
-- **Only the colors differ:** Pocket Color retains its measured GBC color response. Pocket SGB takes the SGB colors directly from mGBA, bypassing GBC calibration; its Color Correction Off preserves the core's RGB, and On uses the existing SNES CRT gamma ramp.
-- Added exact source-level checks for the common optical rendering path and its individual palette transforms. Retained the full OTA installation package and previous compatible update identifiers.
+- **mGBA Pocket SGB visual regression:** Ver. 11 passed pre-colorized SGB pixels through Pocket Color's grayscale-ink-based reflector blend; saturated source colors could become dominated by the neutral reflector. The SGB path now preserves each dot's SGB RGB and uses the Pocket LCD's actual fractional/int-indexed separator coverage for its reflector instead of computing SGB color coverage from brightness. The original Pocket Color palette, physical optical model and other GB/GBA shaders are unchanged.
+- **Visible Fit pixel separation:** SGB uses the same integer-reference dot-gap geometry as Pocket Color, analytically integrated at fractional Fit sizes. Color Correction Off/On, mGBA hardware/palette settings, and reflection controls remain independent and unchanged.
+- Added source and analytical tests of SGB source-RGB conservation at pixel interiors, gap visibility and mGBA routing. Firmware is built and published as a full OTA-compatible update.
 
-**Hardware verification required:** sharing Pocket Color's complete shader may increase SGB graphics cost compared with the previous simplified fast path; the CI build checks compilation and packaging, not measured on-device FPS. Real RG35XX H SGB appearance and performance need confirmation.
+**Hardware verification required:** CI can prove the GLSL compiles and the SGB path preserves chromatic pixel interiors and geometric LCD gaps, but cannot verify the precise screen appearance or mGBA FPS on physical RG35XX H hardware.
