@@ -1,0 +1,63 @@
+name: Build Custom slot Miyoo preview
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - feature/custom-slot-miyoo-mini
+    paths:
+      - "miyoo/**"
+      - ".github/workflows/build-miyoo.yml"
+  pull_request:
+    paths:
+      - "miyoo/**"
+      - ".github/workflows/build-miyoo.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-miyoo:
+    name: Miyoo Mini / Mini Plus / Flip (ARMv7)
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Check out Custom slot sources
+        uses: actions/checkout@v4
+
+      - name: Install Task
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL https://taskfile.dev/install.sh | sh -s -- -b "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Build port with Miyoo-specific custom patch
+        shell: bash
+        run: bash miyoo/build.sh
+
+      - name: Verify the release is a card-root install, not H700 firmware
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive=$(find .build/miyoo -maxdepth 1 -name 'custom-slot-*-miyoo.zip' -print -quit)
+          test -n "$archive"
+          unzip -t "$archive" | tail -1
+          unzip -Z1 "$archive" | grep -qx "App/Slot/config.json"
+          unzip -Z1 "$archive" | grep -qx "Apps/slot.pak/config.json"
+          unzip -Z1 "$archive" | grep -qx "System/slot"
+          unzip -Z1 "$archive" | grep -qx "System/custom-slot-version.txt"
+          unzip -Z1 "$archive" | grep -qx "System/licenses/build-info.txt"
+          sha256sum -c "$archive.sha256"
+
+      - name: Upload experimental ZIP and checksum (do not publish a release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: custom-slot-miyoo-preview
+          path: |
+            .build/miyoo/custom-slot-*-miyoo.zip
+            .build/miyoo/custom-slot-*-miyoo.zip.sha256
+          if-no-files-found: error
+          retention-days: 30
