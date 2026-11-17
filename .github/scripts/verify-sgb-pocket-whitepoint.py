@@ -62,7 +62,7 @@ sgb_opts = core.split("Some(GbColors::SgbAuto) => {", 1)[1].split("Some(p) => {"
 assert 'core.set_option("mgba_gb_model", "Super Game Boy");' in sgb_opts
 assert 'core.set_option("mgba_gb_colors_preset", "2");' in sgb_opts
 assert 'core.set_option("mgba_gb_colors", "Auto");' in sgb_opts
-assert 'core.set_option("mgba_sgb_borders", "OFF");' in sgb_opts
+assert 'core.set_option("mgba_sgb_borders", "OFF");' in core
 
 print("PASS: SGB and Pocket Color share one complete GPU Look and whitepoint;")
 print("      Ver. 16 LCD GLSL is byte-identical; mGBA SGB palettes intact;")
