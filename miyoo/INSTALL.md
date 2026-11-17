@@ -1,11 +1,11 @@
-# Custom slot. 1.8.1 Ver. 9 — Miyoo
+# Custom slot. 1.8.1 Ver. 10 — Miyoo
 
 This is an **experimental ARMv7 app build** for the **original Miyoo Mini**, Miyoo Mini Plus, and Miyoo Mini Flip. It is **not H700 firmware** and does not replace the device OS.
 
 ## Installation
 
 1. Back up the Miyoo SD card, especially any existing Slot saves, states and settings.
-2. Download the `custom-slot-1.8.1-ver9-miyoo.zip` artifact from the **Build Custom slot Miyoo preview** GitHub Actions workflow, once it has passed.
+2. Download the `custom-slot-1.8.1-ver10-miyoo.zip` artifact from the **Build Custom slot Miyoo preview** GitHub Actions workflow, once it has passed.
 3. Extract the **contents** of the ZIP at the SD-card root. The card should contain `System/slot`, `App/Slot/` and `Apps/slot.pak/` directly. Do not put them inside another folder.
 4. Reinsert the card and reboot. Launch **Custom slot** from the Apps/App section of your existing launcher. Stock, Onion and Allium layouts are included in the base port.
 5. Add extracted, uncompressed ROMs under `Games/GB/`, `Games/GBC/` and `Games/GBA/`. Supply your legally obtained GBA BIOS as `BIOS/gba_bios.bin`; neither ROMs nor BIOS images are distributed.
@@ -15,7 +15,7 @@ This is an **experimental ARMv7 app build** for the **original Miyoo Mini**, Miy
 ## Version and verified scope
 
 - **Base:** [deanmarano/slot-miyoo](https://github.com/deanmarano/slot-miyoo), pinned to commit `d096bdb87f25f3aba62de6b40ef859b61d841e43`.
-- **Slot upstream:** `v1.8.1`, pinned by the Miyoo port; our format is **Custom slot. 1.8.1 Ver. 9**.
+- **Slot upstream:** `v1.8.1`, pinned by the Miyoo port; our format is **Custom slot. 1.8.1 Ver. 10**.
 - **Device architecture:** ARMv7 with software framebuffer rendering, not the H700/aarch64 GPU backend.
 - **Upstream testing:** The original Miyoo Mini on OnionOS 4.3.1, plus Mini Plus and Flip, were reported working by the port author. **This Custom slot variant is not hardware-tested.**
 - **GB and GBC default core:** Gambatte, custom-built for the same ARMv7 hard-float toolchain. Existing explicit per-game mGBA selections may still load; mGBA is not the recommended core here.
@@ -27,6 +27,10 @@ This is an **experimental ARMv7 app build** for the **original Miyoo Mini**, Miy
 - **Original Miyoo Mini has no Wi-Fi:** The H700 online updater therefore cannot simply be reused on it. Updating this preview requires copying the ZIP to the SD card.
 
 This is an **experimental preview**. Earlier versions cross-compiled, but Ver. 9 has not yet been tested on physical Miyoo hardware. Do not describe the Authentic shader work as completed.
+
+## Ver. 10 — remove Gambatte's forced fast display dimming
+
+The custom Gambatte option path forced `gambatte_gbc_color_correction_mode=fast`, a documented mode that darkens and desaturates colors when GBC correction is enabled. This release restores the core's **accurate** mode, without forcing color correction on; `Colour Correction: Off` stays uncorrected. The independent Gambatte dark-filter level is explicitly held at 0. It does not alter PWM/backlight, which has the original Miyoo port's range (max 112; OnionOS normally reaches about 100 with an 800 ns period), nor does it alter the BMO theme or LCD3x renderer. This is a focused image-processing correction, not a proven fix for physical backlight dimness.
 
 ## Ver. 9 — one-time recovery of brightness overwritten by Ver. 5
 
