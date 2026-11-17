@@ -32,6 +32,7 @@ A separate **ARMv7 / software-rendered** build targets the **original Miyoo Mini
 - **System:** Independent **Resume on Power On** and **Resume on Insert**, with the earlier auto-start bug fixed; **Menu Screen Off** and **Menu Power Off** timers default to 3 and 15 minutes respectively and exclude gameplay.
 - **Authentic display effects are NOT YET PORTED:** DMG, Pocket, Light, GBC, GBA and Pocket Color Authentic shaders require a real CPU software-rendering implementation. The Miyoo's LCD3x is not equivalent. The advanced H700 per-model correction, ghosting, extra hotkeys and OTA have not been ported. SGB is deliberately out of scope.
 - **Validation:** A full GitHub Actions ARMv7 cross-build and ZIP verification passed; the enhanced preview has **not** been tested on physical Miyoo hardware.
+- **OnionOS autoboot:** optional startup script provided at `System/autoboot/onion-startup.sh`. Copy to `.tmp_update/startup/custom-slot.sh` to enter Custom slot on power-on while preserving Onion's `runtime.sh`. Removing the file restores the normal boot. Not enabled by default; hardware testing pending.
 - **Delivery:** an independent, manually triggered or CI-built experimental ZIP that installs as an app on the Miyoo SD card. The original Miyoo Mini has no Wi-Fi, so it does not support the H700 OTA workflow.
 - **Platform separation:** this edition never uses the H700 SD2 firmware package, and the Miyoo build does not modify the H700 build.
 
