@@ -17,4 +17,11 @@ assert 'gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/$existing_id"' in s
 assert 'git/refs/tags/$TAG' in s and '-F force=true' in s
 assert 'gh release create "$TAG"' in s and '--latest' in s
 assert 'gh release create "$TAG"' in s
-print("PASS: OTA publisher parses Python manifest and replaces withdrawn drafts")
+assert 'stable["source"]' in code
+assert 'print("source=" + source["file"], file=result)' in code
+assert '"release/$SOURCE"' in s
+assert 'source_file.stat().st_size == source["size"]' in code
+manual = Path("../.github/workflows/publish-ota-from-run.yml").read_text()
+assert 'item["source"]' in manual
+assert '"release/$SOURCE"' in manual
+print("PASS: publishers validate firmware + corresponding source, keep release integrity and draft replacement")
