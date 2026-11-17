@@ -40,42 +40,7 @@ replace_once('          echo "gpsp        {{.GPSP_COMMIT}}"\n',
 task.write_text(text)
 (port / "cores/gambatte").mkdir(parents=True, exist_ok=True)
 
-# Enable the non-destructive OnionOS theme bridge from both the optional
-# autoboot hook and manual App/Slot launches. Stock/Allium are unaffected.
-launch = port / "card/System/launch_frontend.sh"
-body = launch.read_text()
-needle = 'export SLOT_ROOT="$SD"\n'
-if body.count(needle) != 1:
-    raise RuntimeError("Miyoo launcher: unexpected SLOT_ROOT block")
-body = body.replace(needle, needle + """
-# Only for OnionOS: its own theme renderer supplies transitions. Do not
-# replace Onion's runtime.sh or boot assets, and support user opt-out.
-if [ -f "$SD/.tmp_update/runtime.sh" ] \\
-    && [ -f "$SYS/onion-splash.sh" ]; then
-    export SLOT_ONION_VISUALS=1
-fi
-""", 1)
-# Keep Dean's tested framebuffer orientation (180 degrees). The earlier
-# 640x480 => 0 heuristic caused the user's Mini to render upside down.
-# Framebuffer dimensions alone cannot determine a panel's physical mounting.
-# Dean's launcher already exports SLOT_FB_ROTATE=180, so do not override it.
-if body.count('export SLOT_FB_ROTATE=180') != 1:
-    raise RuntimeError("Miyoo launcher: expected original rotation default once")
-
-# Onion starts keymon BEFORE running custom startup hooks. Competing POWER
-# handlers can freeze Slot mid-save or prevent the screen turning off.
-# Let keymon manage POWER only while it actually runs; otherwise Slot retains
-# its standard doze, wake and shutdown handling.
-old_visuals = '    export SLOT_ONION_VISUALS=1\nfi'
-if body.count(old_visuals) != 1:
-    raise RuntimeError("Miyoo launcher: expected OnionOS visual block once")
-body = body.replace(old_visuals, """    export SLOT_ONION_VISUALS=1
-    if pgrep -x keymon >/dev/null 2>&1; then
-        export SLOT_ONION_POWER_OWNER=1
-    fi
-fi""", 1)
-# Onion's native brightness and Dean's Slot PWM implementation stay separate.
-# Never import Onion brightness into SlotState: older custom versions persisted
-# that translated value and made later versions appear permanently dim.
-launch.write_text(body)
-print("Gambatte, original framebuffer rotation, and Onion keymon ownership registered")
+# Do not patch card/System/launch_frontend.sh. On this build its byte-for-byte
+# source is Dean's original: same initialization, framebuffer, backlight,
+# system audio, Onion environment and normal power behavior.
+print("Gambatte build registered; original Miyoo launch script untouched")
