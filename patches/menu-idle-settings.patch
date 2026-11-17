@@ -1,0 +1,193 @@
+diff --git a/crates/slot-store/src/slot_state.rs b/crates/slot-store/src/slot_state.rs
+--- a/crates/slot-store/src/slot_state.rs
++++ b/crates/slot-store/src/slot_state.rs
+@@ -22,5 +22,7 @@
+ const FF_SPEED_TEXT: [&str; 6] = ["0", "1.5", "2", "3", "4", "6"];
+ 
+-pub const LID_OFF_MIN: [u8; 6] = [1, 3, 5, 10, 15, 30];
++pub const LID_OFF_MIN: [u8; 6] = [1, 3, 5, 10, 15, 30];
++/// Menu inactivity timers: 0 disables that timer.
++pub const MENU_IDLE_MINUTES: [u8; 7] = [0, 1, 3, 5, 10, 15, 30];
+ 
+ pub const FF_SPEED_DEFAULT: u8 = 24;
+@@ -505,6 +507,10 @@
+     pub gb_core: Core,
+     pub left_stick_dpad: bool,
+-    pub lid_off_min: Option<u8>,
+-    pub bezel_gba: BezelPick,
++    pub lid_off_min: Option<u8>,
++    /// Minutes of menu inactivity before blanking the hardware backlight.
++    pub menu_screen_off_min: u8,
++    /// Minutes of menu inactivity before gracefully shutting down.
++    pub menu_power_off_min: u8,
++    pub bezel_gba: BezelPick,
+     pub bezel_gb: BezelPick,
+     pub bezel_gbc: BezelPick,
+@@ -713,6 +719,8 @@
+             gb_core: Core::Gambatte,
+             left_stick_dpad: true,
+-            lid_off_min: None,
+-            bezel_gba: BezelPick::Ags102,
++            lid_off_min: None,
++            menu_screen_off_min: 3,
++            menu_power_off_min: 15,
++            bezel_gba: BezelPick::Ags102,
+             bezel_gb: BezelPick::Ags102,
+             bezel_gbc: BezelPick::Ags102,
+@@ -843,7 +851,9 @@
+     text.push_str(&format!("resume_insert={}\n", s.resume_insert as u8));
+     text.push_str(&format!("resume_power_on={}\n", s.resume_power_on as u8));
+-    if let Some(min) = s.lid_off_min {
+-        text.push_str(&format!("lid_off_min={min}\n"));
+-    }
++    if let Some(min) = s.lid_off_min {
++        text.push_str(&format!("lid_off_min={min}\n"));
++    }
++    text.push_str(&format!("menu_screen_off_min={}\n", s.menu_screen_off_min));
++    text.push_str(&format!("menu_power_off_min={}\n", s.menu_power_off_min));
+     text.push_str(&format!("bezel_gba={}\n", s.bezel_gba.key()));
+     text.push_str(&format!("bezel_gb={}\n", s.bezel_gb.key()));
+@@ -957,6 +967,8 @@
+     let mut gb_core = None;
+     let mut left_stick_dpad = None;
+-    let mut lid_off_min = None;
+-    let mut bezel_gba = None;
++    let mut lid_off_min = None;
++    let mut menu_screen_off_min = None;
++    let mut menu_power_off_min = None;
++    let mut bezel_gba = None;
+     let mut bezel_gb = None;
+     let mut bezel_gbc = None;
+@@ -1035,5 +1047,11 @@
+             "gb_core" => gb_core = Core::parse(value).filter(|c| c.runs(Platform::Gb)),
+             "left_stick_dpad" => left_stick_dpad = flag(value),
+-            "lid_off_min" => lid_off_min = value.parse().ok().filter(|m| LID_OFF_MIN.contains(m)),
++            "lid_off_min" => lid_off_min = value.parse().ok().filter(|m| LID_OFF_MIN.contains(m)),
++            "menu_screen_off_min" => {
++                menu_screen_off_min = value.parse().ok().filter(|m| MENU_IDLE_MINUTES.contains(m))
++            }
++            "menu_power_off_min" => {
++                menu_power_off_min = value.parse().ok().filter(|m| MENU_IDLE_MINUTES.contains(m))
++            }
+             "bezel_gba" => bezel_gba = Some(BezelPick::parse(value)),
+             "bezel_gb" => bezel_gb = Some(BezelPick::parse(value)),
+@@ -1127,6 +1145,8 @@
+         gb_core: gb_core.unwrap_or(Core::Mgba),
+         left_stick_dpad: left_stick_dpad.unwrap_or(fallback.left_stick_dpad),
+-        lid_off_min,
+-        bezel_gba: bezel_gba.unwrap_or(fallback.bezel_gba),
++        lid_off_min,
++        menu_screen_off_min: menu_screen_off_min.unwrap_or(fallback.menu_screen_off_min),
++        menu_power_off_min: menu_power_off_min.unwrap_or(fallback.menu_power_off_min),
++        bezel_gba: bezel_gba.unwrap_or(fallback.bezel_gba),
+         bezel_gb: bezel_gb.unwrap_or(fallback.bezel_gb),
+         bezel_gbc: bezel_gbc.unwrap_or(fallback.bezel_gbc),
+diff --git a/crates/slot-store/src/lib.rs b/crates/slot-store/src/lib.rs
+--- a/crates/slot-store/src/lib.rs
++++ b/crates/slot-store/src/lib.rs
+@@ -61,5 +61,6 @@
+     BezelPick, Blending, GbModel, KidMode, Recent, Scale, Shader, ShelfMode, SlotState, Stretch,
+     WallpaperPick, WallpaperTint, BLUE_LIGHT_MAX, BRIGHTNESS_MAX, CONTRAST_MAX, DIM_MAX, FF_SPEEDS,
+-    FF_SPEED_DEFAULT, KID_SHELF_ALL, LID_OFF_MIN, RECENTS_MAX, SATURATION_MAX, SUNLIGHT_MAX,
++    FF_SPEED_DEFAULT, KID_SHELF_ALL, LID_OFF_MIN, MENU_IDLE_MINUTES, RECENTS_MAX, SATURATION_MAX,
++    SUNLIGHT_MAX,
+     VOLUME_MAX,
+ };
+diff --git a/crates/slot-power/src/power.rs b/crates/slot-power/src/power.rs
+--- a/crates/slot-power/src/power.rs
++++ b/crates/slot-power/src/power.rs
+@@ -28,7 +28,14 @@
+     }
+ 
+-    pub fn battery(&self) -> Option<Battery> {
+-        self.platform.battery()
+-    }
++    /// Turn off the backlight while retaining the chosen brightness for wake/lid reopen.
++    pub fn set_idle_blank(&mut self, blank: bool) {
++        if !self.closed {
++            self.platform.set_backlight(if blank { 0 } else { self.level });
++        }
++    }
++
++    pub fn battery(&self) -> Option<Battery> {
++        self.platform.battery()
++    }
+ 
+     pub fn charge(&self) -> Charge {
+diff --git a/crates/slot-ui/src/quick_menu.rs b/crates/slot-ui/src/quick_menu.rs
+--- a/crates/slot-ui/src/quick_menu.rs
++++ b/crates/slot-ui/src/quick_menu.rs
+@@ -92,6 +92,8 @@
+     ScSunlightDown,
+     ScReset,
+-    LidOff,
+-    FetchArt,
++    LidOff,
++    MenuScreenOff,
++    MenuPowerOff,
++    FetchArt,
+     #[cfg(feature = "nds")]
+     FetchBoxArt,
+@@ -158,5 +160,5 @@
+ 
+ impl QuickRow {
+-    pub const ALL: [QuickRow; 143 + cfg!(feature = "nds") as usize] = [
++    pub const ALL: [QuickRow; 145 + cfg!(feature = "nds") as usize] = [
+         QuickRow::FastForward,
+         QuickRow::FastForwardSound,
+@@ -241,6 +243,8 @@
+         QuickRow::ScSunlightDown,
+         QuickRow::ScReset,
+-        QuickRow::LidOff,
+-        QuickRow::FetchArt,
++        QuickRow::LidOff,
++        QuickRow::MenuScreenOff,
++        QuickRow::MenuPowerOff,
++        QuickRow::FetchArt,
+         #[cfg(feature = "nds")]
+         QuickRow::FetchBoxArt,
+@@ -326,12 +330,14 @@
+     ];
+ 
+-    pub const SYSTEM: [QuickRow; 6] = [
+-        QuickRow::Wifi,
+-        QuickRow::DateTime,
+-        QuickRow::LidOff,
+-        QuickRow::BatteryDisplay,
+-        QuickRow::CheckUpdates,
+-        QuickRow::About,
+-    ];
++    pub const SYSTEM: [QuickRow; 8] = [
++        QuickRow::Wifi,
++        QuickRow::DateTime,
++        QuickRow::LidOff,
++        QuickRow::MenuScreenOff,
++        QuickRow::MenuPowerOff,
++        QuickRow::BatteryDisplay,
++        QuickRow::CheckUpdates,
++        QuickRow::About,
++    ];
+ 
+     pub const WIFI: [QuickRow; 2] = [QuickRow::WifiPower, QuickRow::Networks];
+@@ -581,7 +587,9 @@
+             QuickRow::Wifi
+             | QuickRow::DateTime
+-            | QuickRow::LidOff
+-            | QuickRow::BatteryDisplay
+-            | QuickRow::CheckUpdates
++            | QuickRow::LidOff
++            | QuickRow::MenuScreenOff
++            | QuickRow::MenuPowerOff
++            | QuickRow::BatteryDisplay
++            | QuickRow::CheckUpdates
+             | QuickRow::About => &QuickRow::SYSTEM,
+             QuickRow::WifiPower | QuickRow::Networks => &QuickRow::WIFI,
+@@ -765,5 +773,7 @@
+             QuickRow::System => "System",
+             QuickRow::BatteryDisplay => "Battery Display",
+-            QuickRow::LidOff => "Lid Power Off",
++            QuickRow::LidOff => "Lid Power Off",
++            QuickRow::MenuScreenOff => "Menu Screen Off",
++            QuickRow::MenuPowerOff => "Menu Power Off",
+             QuickRow::KidMode => "Kid Mode",
+             QuickRow::KidShelf => "Kid Shelf",
