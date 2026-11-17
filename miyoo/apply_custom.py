@@ -947,8 +947,12 @@ edit("crates/slot/src/app.rs", [
                 }
             }
             self.menu_idle_at = self.now();
+            // Stock firmware can also have .tmp_update/runtime.sh for
+            // autoboot, so that file alone is NOT proof of OnionOS. Only
+            // OnionOS installs its own keymon binary under .tmp_update/bin.
             self.menu_shutdown_onion = self.root.as_ref().is_some_and(|root| {
                 root.join(".tmp_update/runtime.sh").is_file()
+                    && root.join(".tmp_update/bin/keymon").is_file()
             });
             self.begin_power_off();
             return;
