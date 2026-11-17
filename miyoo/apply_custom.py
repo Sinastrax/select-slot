@@ -631,6 +631,32 @@ edit("crates/slot/src/app.rs", [
     pub fn on_doze_timeout'''),
 ])
 
+# OnionOS starts keymon before running its startup hooks. When present,
+# keymon alone owns POWER/suspend/wake. Slot saves on the key-down edge
+# (before Onion suspends it on key release), but must never enter a competing
+# doze, redraw a splash or force shutdown in response to that same key.
+# Stock firmware / Allium continue to use Slot's original POWER path.
+edit("crates/slot/src/app.rs", [
+    ('''        // Physical releases are not wake actions. The first press while
+        // blanked wakes the screen but does not activate menu selections.''',
+     '''        // POWER goes to Onion's keymon as well as this input queue. Never
+        // race its display-off / suspend / wake actions when Onion is in charge.
+        if std::env::var_os("SLOT_ONION_POWER_OWNER").is_some() {
+            match action {
+                Action::PowerPress => {
+                    // The release may cause Onion to SIGSTOP Slot immediately.
+                    self.state_writer.flush();
+                    self.flush_resume();
+                    return;
+                }
+                Action::PowerTap | Action::PowerHold => return,
+                _ => {}
+            }
+        }
+        // Physical releases are not wake actions. The first press while
+        // blanked wakes the screen but does not activate menu selections.'''),
+])
+
 # A software renderer cannot use the H700 GLSL effects; Authentic is deferred
 # pending a measured LUT/lookup-table implementation. Do not fake it.
 
