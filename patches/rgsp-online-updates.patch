@@ -1,0 +1,62 @@
+diff --git a/crates/slot/src/update.rs b/crates/slot/src/update.rs
+--- a/crates/slot/src/update.rs
++++ b/crates/slot/src/update.rs
+@@ -146,18 +146,21 @@
+     v.split('.').map(|p| p.parse().ok()).collect()
+ }
+ 
+-/// An upstream version and this fork's release of it: `1.14.0` is `([1, 14, 0], 0)` and
+-/// `1.14.0-pvaibhav.2` is `([1, 14, 0], 2)`. Anything else, such as `1.14.0-rc1`, is `None`.
+-fn fork_version(v: &str) -> Option<(Vec<u64>, u64)> {
+-    let (base, fork) = match v.split_once('-') {
+-        None => (v, 0),
+-        Some((base, suffix)) => {
+-            let n = suffix.strip_prefix(FORK)?.strip_prefix('.')?;
+-            (base, n.parse().ok()?)
+-        }
+-    };
+-    Some((parts(base).filter(|p| p.len() == 3)?, fork))
+-}
++/// Custom RGSP releases sort after the pvaibhav build they were based on.
++/// Accept older pvaibhav versions so users can migrate to our update channel.
++fn fork_version(v: &str) -> Option<(Vec<u64>, u64)> {
++    let (base, fork) = match v.split_once('-') {
++        None => (v, 0),
++        Some((base, suffix)) => {
++            let n = match suffix.strip_prefix(FORK).and_then(|s| s.strip_prefix('.')) {
++                Some(n) => n.parse::<u64>().ok()?.checked_add(1_000_000)?,
++                None => suffix.strip_prefix("pvaibhav.")?.parse().ok()?,
++            };
++            (base, n)
++        }
++    };
++    Some((parts(base).filter(|p| p.len() == 3)?, fork))
++}
+ 
+ pub fn newer(release: &str, running: &str) -> bool {
+     match (fork_version(release), fork_version(running)) {
+@@ -318,9 +321,9 @@
+ pub const WIFI_CONF: &str = "Config/wifi.conf";
+ // This fork's releases carry their own versions.json, so updates never cross over to
+ // upstream's builds.
+-pub const LATEST: &str = "https://github.com/pvaibhav/slot/releases/latest/download/versions.json";
+-const RELEASES: &str = "https://github.com/pvaibhav/slot/releases/download";
+-const FORK: &str = "pvaibhav";
++pub const LATEST: &str = "https://github.com/Sinastrax/slot-rgsp-mod/releases/latest/download/versions.json";
++const RELEASES: &str = "https://github.com/Sinastrax/slot-rgsp-mod/releases/download";
++const FORK: &str = "rgsp";
+ const BASEOS_RELEASES: &str = "https://github.com/pvaibhav/BaseOS/releases/download";
+ 
+ #[derive(Debug, Clone, Copy)]
+diff --git a/crates/slot/tests/update.rs b/crates/slot/tests/update.rs
+--- a/crates/slot/tests/update.rs
++++ b/crates/slot/tests/update.rs
+@@ -224,7 +224,7 @@
+     assert_eq!(release.version, "1.14.0-pvaibhav.1");
+     assert_eq!(
+         release.url,
+-        "https://github.com/pvaibhav/slot/releases/download/v1.14.0-pvaibhav.1/slot-v1.14.0-pvaibhav.1-h700.zip"
++        "https://github.com/Sinastrax/slot-rgsp-mod/releases/download/v1.14.0-pvaibhav.1/slot-v1.14.0-pvaibhav.1-h700.zip"
+     );
+ }
+ 
