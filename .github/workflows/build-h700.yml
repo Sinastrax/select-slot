@@ -1,4 +1,4 @@
-name: Build Custom slot H700 (upstream 1.16 port)
+name: Build Custom slot H700
 
 on:
   workflow_dispatch:
@@ -260,11 +260,11 @@ jobs:
           test -s "$zip"
           TAG="$RELEASE_TAG"
           if [[ "$TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)-(rgsp|custom)\.([0-9]+)$ ]]; then
-            DISPLAY_VERSION="${BASH_REMATCH[1]}.${BASH_REMATCH[3]}"
+            DISPLAY_VERSION="${BASH_REMATCH[1]} Ver. ${BASH_REMATCH[3]}"
           else
             DISPLAY_VERSION="${TAG#v}"
           fi
           gh release create "$RELEASE_TAG" "$zip" release/versions.json \
             --repo "$GITHUB_REPOSITORY" \
-            --title "Custom slot. Ver. $DISPLAY_VERSION" \
+            --title "Custom slot. $DISPLAY_VERSION" \
             --notes-file RELEASE_NOTES.md
