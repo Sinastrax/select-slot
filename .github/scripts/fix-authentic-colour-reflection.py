@@ -19,53 +19,22 @@ def replace_once(source: str, old: str, new: str, what: str) -> str:
 shader_path = Path("crates/slot-gfx/src/shaders.rs")
 shader = shader_path.read_text()
 
-# The previous implementation scaled the measured response by source luma
-# separately for every pixel and crossfaded using an arbitrary saturation
-# threshold. That can blow out saturated channels and yield discontinuous
-# colours close to grey. Instead, compare the calibrated colour response with
-# its own neutral axis, use ONLY that response's chroma, and retain the source
-# luminance. White, black, and every neutral grey remain neutral. The original
-# LCD cell, dot shadows, grid, grain, and glass code remains untouched.
-anchor = """vec3 lcd_ramp(vec3 x) {
-    vec3 u = fract(x + 0.5) - 0.5;
-    return u - 2.0 * u * abs(u);
-}
-void main() {"""
-corrector = """vec3 lcd_ramp(vec3 x) {
-    vec3 u = fract(x + 0.5) - 0.5;
-    return u - 2.0 * u * abs(u);
-}
-// Colour correction affects only chroma, not the calibrated LCD's pixels,
-// glass, brightness, or neutral axis. Work in linear light and preserve Y.
-// Compress out-of-gamut chroma toward the same grey instead of independently
-// clipping R/G/B (which can cause ugly hue shifts).
-vec3 authentic_corrected_linear(vec3 sourceRgb, vec3 measured, vec3 response) {
-    vec3 sourceLinear = pow(sourceRgb, vec3(2.2));
-    float sourceY = dot(sourceLinear, luma_coeff);
-    float measuredGrey = dot(measured, luma_coeff);
-    vec3 calibratedGrey = clamp(
-        u_response * pow(vec3(measuredGrey), u_gamma), u_least, vec3(1.0));
-    vec3 chroma = response - calibratedGrey;
-    chroma -= vec3(dot(chroma, luma_coeff));
-
-    vec3 room = mix(vec3(sourceY), vec3(1.0 - sourceY),
-                    step(vec3(0.0), chroma));
-    vec3 magnitude = max(abs(chroma), vec3(0.0001));
-    float gain = min(1.0, min(room.r / magnitude.r,
-                            min(room.g / magnitude.g, room.b / magnitude.b)));
-    return clamp(vec3(sourceY) + gain * chroma, 0.0, 1.0);
-}
-void main() {"""
-shader = replace_once(shader, anchor, corrector, "Authentic helper insertion")
-
+# Correction ON restores the measured LCD transform from upstream Slot:
+# 5-bit code -> measured ramp -> response matrix -> physical panel black/white.
+# Correction OFF keeps source RGB untouched except for the Authentic pixel grid.
+# Do not force neutral whites / source luminance in the ON path; doing so
+# destroys the calibrated LCD appearance and desaturates bright yellow.
 pocket_old = """                    vec3 sourceLin = pow(raw, vec3(2.2));
                     float sourceLuma = dot(sourceLin, luma_coeff);
                     float convertedLuma = dot(response, luma_coeff);
                     float chroma = max(max(raw.r, raw.g), raw.b) - min(min(raw.r, raw.g), raw.b);
                     vec3 balanced = clamp(response * (sourceLuma / max(convertedLuma, 0.0001)), 0.0, 1.0);
                     panelRgb = pow(mix(sourceLin, balanced, smoothstep(0.015, 0.075, chroma)), vec3(1.0 / 2.2));"""
-pocket_new = """                    panelRgb = pow(authentic_corrected_linear(raw, measured, response),
-                                   vec3(1.0 / 2.2));"""
+pocket_new = """                    // Pocket Color's corrected mode uses the measured GBC
+                    // response and physical black/white points.
+                    vec3 gbcWhite = pow(vec3(134.0, 140.0, 122.0) / 255.0, vec3(2.2));
+                    vec3 gbcBlack = pow(vec3(14.0, 25.0, 28.0) / 255.0, vec3(2.2));
+                    panelRgb = pow(mix(gbcBlack, gbcWhite, response), vec3(1.0 / 2.2));"""
 shader = replace_once(shader, pocket_old, pocket_new, "Pocket Color response")
 
 colour_old = """                float rawY = dot(lin, luma_coeff);
@@ -74,10 +43,28 @@ colour_old = """                float rawY = dot(lin, luma_coeff);
                     - min(min(rawColour.r, rawColour.g), rawColour.b);
                 vec3 balanced = clamp(response * (rawY / max(correctedY, 0.0001)), 0.0, 1.0);
                 lin = mix(lin, balanced, smoothstep(0.015, 0.075, chroma));"""
-colour_new = """                lin = authentic_corrected_linear(rawColour, light, response);"""
+colour_new = """                // Original Slot physical GBA/GBC panel calibration.
+                lin = mix(u_dark, u_light, response);"""
 shader = replace_once(shader, colour_old, colour_new, "GBC/GBA response")
-if shader.count("authentic_corrected_linear(") != 3:
-    raise AssertionError("Expected helper and two Authentic colour-conversion call sites")
+# Keep the control paths independent, with a neutral uncorrected RGB image
+# and the upstream calibrated panel response when correction is enabled.
+shader = replace_once(
+    shader, "vec3 panelDark = vec3(0.0);",
+    "vec3 panelDark = u_authentic_correction > 0.5 ? u_dark : vec3(0.0);",
+    "GBA/GBC calibrated LCD black point"
+)
+shader = replace_once(
+    shader, "vec3 reflector = vec3(1.0);",
+    """vec3 reflector = u_lcd.x < 2.5 && u_authentic_correction > 0.5
+                    ? vec3(134.0, 140.0, 122.0) / 255.0 : vec3(1.0);""",
+    "Pocket Color corrected reflector tint"
+)
+if "authentic_corrected_linear(" in shader:
+    raise AssertionError("Old colour-only/luma-locking correction survived")
+if "lin = mix(u_dark, u_light, response);" not in shader:
+    raise AssertionError("Authentic calibrated panel response missing")
+if "vec3 lin = pow(rawColour, vec3(2.2));" not in shader:
+    raise AssertionError("Uncorrected RGB mode missing")
 if "uniform float u_authentic_correction;" not in shader:
     raise AssertionError("Authentic colour-correction toggle uniform is missing")
 shader_path.write_text(shader)
@@ -111,4 +98,4 @@ glass_new = """        compositor.set_authentic_screen(authentic_screen(self.ses
 frontend = replace_once(frontend, glass_old, glass_new, "Reflection setting wiring")
 frontend_path.write_text(frontend)
 
-print("Applied Authentic neutral-axis colour correction and per-platform Reflection control")
+print("Restored measured Authentic panel colour correction, neutral OFF mode and per-platform Reflection control")
