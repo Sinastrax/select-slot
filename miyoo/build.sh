@@ -9,7 +9,7 @@ PORT="$WORK/slot-miyoo"
 STAGE="$PORT/release/stage"
 PORT_COMMIT="d096bdb87f25f3aba62de6b40ef859b61d841e43"
 SLOT_VERSION="1.8.1"
-CUSTOM_VERSION="8"
+CUSTOM_VERSION="9"
 ZIP="$WORK/custom-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo.zip"
 
 for command in git task docker zip unzip python3 file; do
@@ -83,12 +83,12 @@ cp "$ROOT/miyoo/onion-splash.sh" "$STAGE/System/onion-splash.sh"
 test -s "$STAGE/System/onion-splash.sh"
 grep -q "SLOT_ONION_VISUALS" "$STAGE/System/launch_frontend.sh"
 grep -q "SLOT_ONION_POWER_OWNER" "$STAGE/System/launch_frontend.sh"
-grep -q "SLOT_ONION_BRIGHTNESS" "$STAGE/System/launch_frontend.sh"
+! grep -q "SLOT_ONION_BRIGHTNESS" "$STAGE/System/launch_frontend.sh"
 grep -q "SLOT_FB_ROTATE=180" "$STAGE/System/launch_frontend.sh"
 grep -Fq '.tmp_update/runtime.sh' "$STAGE/System/launch_frontend.sh"
 ! grep -Fq 'onionVersion/version.txt' "$STAGE/System/launch_frontend.sh"
 ! grep -Fq 'onionVersion/version.txt' "$STAGE/System/onion-splash.sh"
-grep -Fq 'trace-display.txt' "$STAGE/System/launch_frontend.sh"
+! grep -Fq 'trace-display.txt' "$STAGE/System/launch_frontend.sh"
 cp "$ROOT/miyoo/INSTALL.md" "$STAGE/System/custom-slot-install.md"
 cat > "$STAGE/System/custom-slot-version.txt" <<EOF
 Custom slot. $SLOT_VERSION Ver. $CUSTOM_VERSION
@@ -104,7 +104,7 @@ GB/GBC default: Gambatte
 GBA default: gpSP
 Onion theme visuals: native Boot, End_Save on Slot shutdown; Onion keymon handles POWER sleep/wake
 Framebuffer orientation: restored original 180 degrees (Ver. 5 regression fix)
-Onion PWM: restored original Miyoo brightness path; menu timer does not blank screen under Onion; POWER avoids synchronous save on keymon handoff
+Onion PWM: original Miyoo hardware curve; one-time recovery from Ver. 5 saved low brightness (<5) on Onion; no diagnostics; native Onion power handoff
 Authentic renderer: NOT YET PORTED
 Scaling: Original, Integer, Aspect Fit, Fill/Crop, Full Stretch (per game)
 State: experimental; this custom variant has not been hardware-tested
