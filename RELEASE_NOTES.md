@@ -1,9 +1,9 @@
-# select. slot. 1.16.0 Ver. 13
+# select. slot. 1.16.0 Ver. 14
 
-## Changes since select. slot. 1.16.0 Ver. 12
+## Changes since select. slot. 1.16.0 Ver. 13
 
-- **Pocket SGB now reuses Pocket Color's full optical treatment, not just its pixel-gap outline.** Ver. 12 overrode Pocket Color's ink-derived reflector calculation with a raw geometric mask. That made roughly half the synthetic Fit image act like reflector, instead of approximately 6% with Pocket Color's physical optical model. Ver. 13 restores the same Pocket Color ink-dependent gap response, multi-tap shadow, ghosting, reflector and glass calculations for SGB.
-- **Keep the correct mGBA SGB colors.** SGB source RGB is unchanged at dot interiors. The real geometric gap is only an upper bound on reflector coverage to prevent Ver. 11's gray/washed-out saturated SGB pixels. The calibrated GBC transfer remains exclusive to Pocket Color, the optional SNES CRT response remains exclusive to SGB.
-- Added CPU-modeled rendered reference frames for two distinct SGB palettes against the Pocket Color optical reference, including fractional Fit gaps. The CI stores a visual comparison preview and checks optical-gap coverage. All previous mGBA, Pocket Color, shader, settings, and OTA compatibility tests remain.
+- **Restore the known-working pre-RG35XX H Pocket Color optics.** In Ver. 5–13, attempts to fix fractional Fit scaling replaced the original Pocket Color LCD gap mask and ink/neighbor blend, then compounded the changes with new SGB reflector calculations. Ver. 14 restores the original Ver. 4 mask, ink blending and shared reflector/shadow formula for **both Pocket Color and Pocket SGB**.
+- **Keep the SGB palette separate.** mGBA still provides the real SGB palette rather than a grayscale source. Pocket Color retains its GBC transfer response; Pocket SGB retains its optional SNES CRT response, without applying GBC color conversion to SGB colors. The physical LCD rendering code shared between these two profiles is restored, with no new mGBA settings or emulator changes.
+- Other visual modes (monochrome GB models, regular Dot, Grid, GBA) retain their existing behavior; ROMs, saves and settings are untouched. Added final-stage checks of Ver. 4 optical expressions and independent SGB palette handling.
 
-**Hardware check:** Synthetic reference renders and OpenGL ES compilation cannot replace a photograph or FPS measurement from a real H700 device. Verify SGB appearance and performance on RG35XX H before considering the issue fully resolved.
+**Trade-off and verification:** original Ver. 4 color-Pocket dot sampling is intentionally restored on fractional Fit scaling, so old Fit artifacts may return for these two color models on 640×480 devices. The build and static checks cannot confirm physical LCD appearance. The goal is to recover the hardware-proven baseline first, not to claim this iteration is visually verified.
