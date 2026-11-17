@@ -60,14 +60,28 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          existing_draft=""
-          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            existing_draft="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft --jq '.isDraft')"
+          # GitHub's "releases/tags/<tag>" API returns 404 for drafts, so find
+          # the withdrawn release in the complete repository release listing.
+          existing="$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+            --jq ".[] | select(.tag_name == \"$TAG\") | \"\\(.id):\\(.draft)\"" | head -n1)"
+          if [ -n "$existing" ]; then
+            existing_id="${existing%%:*}"
+            existing_draft="${existing##*:}"
             if [ "$existing_draft" != true ]; then
-              echo "$TAG is already a public release; not overwriting it."
+              echo "$TAG is already published; never replace a public release."
               exit 0
             fi
-            echo "The earlier $TAG draft was withdrawn. Replacing its assets with this checked build."
+            echo "Found withdrawn $TAG draft #$existing_id; replace only with a verified package."
+            # Delete the withdrawn draft (including its bad ZIP). Git source
+            # history and the original failed build's CI artifact are retained.
+            gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/$existing_id" >/dev/null
+          fi
+          # The original Ver. 5 tag points to the crashing build. Update the
+          # tag to the exact, verified replacement commit before publishing.
+          tag_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq '.object.sha' 2>/dev/null || true)"
+          if [ -n "$tag_sha" ] && [ "$tag_sha" != "$HEAD_SHA" ]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/$TAG" \
+              -f sha="$HEAD_SHA" -F force=true >/dev/null
           fi
           # Release notes are version-specific; never repeat the cumulative feature list.
           gh api "repos/$GITHUB_REPOSITORY/contents/RELEASE_NOTES.md?ref=$HEAD_SHA" --jq '.content' | base64 -d > release-notes.md
@@ -77,18 +91,9 @@ jobs:
           else
             DISPLAY_VERSION="${TAG#v}"
           fi
-          if [ "$existing_draft" = true ]; then
-            # Discard the original crashing Ver. 5 assets before publishing.
-            gh release upload "$TAG" "release/$ZIP" release/versions.json \
-              --repo "$GITHUB_REPOSITORY" --clobber
-            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" \
-              --draft=false --target "$HEAD_SHA" \
-              --title "select. slot. $DISPLAY_VERSION" \
-              --notes-file release-notes.md
-            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --latest
-          else
-            gh release create "$TAG" "release/$ZIP" release/versions.json \
-              --repo "$GITHUB_REPOSITORY" --target "$HEAD_SHA" --latest \
-              --title "select. slot. $DISPLAY_VERSION" \
-              --notes-file release-notes.md
-          fi
+          gh release create "$TAG" "release/$ZIP" release/versions.json \
+            --repo "$GITHUB_REPOSITORY" --target "$HEAD_SHA" --latest \
+            --title "select. slot. $DISPLAY_VERSION" \
+            --notes-file release-notes.md
+          # Ensure the replacement rather than the withdrawn build is latest.
+          gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq '.tag_name' | grep -Fx "$TAG"
