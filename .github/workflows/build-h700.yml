@@ -145,6 +145,12 @@ jobs:
           # Existing Fit work for mono/standard shaders stays independent.
           python3 ../.github/scripts/restore-ver4-pocket-optics.py
           python3 ../.github/scripts/verify-restored-pocket-optics.py
+          # Replicate the user-verified live switch: an already-running
+          # mGBA SGB game looks right when the GPU profile is Pocket Color.
+          # Both screens now return literally the same Look / shader path.
+          # Keep mGBA SGB hardware and palettes unchanged.
+          python3 ../.github/scripts/alias-sgb-to-pocket-color-renderer.py
+          python3 ../.github/scripts/verify-sgb-pocket-color-renderer-alias.py
 
       - name: Capture merged source for integration review
         uses: actions/upload-artifact@v4
