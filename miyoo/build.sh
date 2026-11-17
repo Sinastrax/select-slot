@@ -49,7 +49,7 @@ python3 "$ROOT/miyoo/apply_custom.py" "$PORT/upstream/slot" "$PORT/patches/0028-
 shader_patch="$PORT/patches/0028-custom-gambatte-defaults.patch"
 grep -Fq '+        compositor.set_screen_effect(ScreenEffect::None);' "$shader_patch"
 grep -Fq '+    fn step_shader(&mut self, _right: bool) {' "$shader_patch"
-grep -Fq '+    pub fn screen_shader(&self) -> Shader {' "$shader_patch"
+grep -Fq '+        // Force the unfiltered picture even for pre-existing saved choices.' "$shader_patch"
 grep -Fq '+        Shader::Off' "$shader_patch"
 grep -Fq '+            QuickRow::Shader, QuickRow::GbaShader,' "$shader_patch"
 grep -Fq '+            shader_gba: Shader::Off,' "$shader_patch"
