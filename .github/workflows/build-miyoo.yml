@@ -62,6 +62,6 @@ jobs:
           name: select-slot-miyoo-clean-rebuild
           path: |
             .build/miyoo/select-slot-*-miyoo.zip
-            .build/miyoo/custom-slot-*-miyoo.zip.sha256
+            .build/miyoo/select-slot-*-miyoo.zip.sha256
           if-no-files-found: error
           retention-days: 30
