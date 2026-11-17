@@ -57,6 +57,6 @@ diff = "".join(unified_diff(original.splitlines(keepends=True),
                             fromfile="a/crates/slot/src/app.rs",
                             tofile="b/crates/slot/src/app.rs", n=4))
 output.write_text("diff --git a/crates/slot/src/app.rs b/crates/slot/src/app.rs\n" + diff)
-if diff.count("@@ ") != 2:
+if sum(line.startswith("@@ ") for line in diff.splitlines()) != 1:
     raise RuntimeError("Expected exactly one code hunk")
 print("Stock v0.3.0: fixed only OnionOS physical POWER ownership in app.rs")
