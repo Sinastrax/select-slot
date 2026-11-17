@@ -21,8 +21,8 @@ new = """        vec2 gap = step(f * span, vec2(1.0));
             // The result is identical to step() at exact integer scales.
             vec2 phase = f * span;
             gap = min(vec2(1.0),
-                clamp(vec2(1.5) - phase, vec2(0.0), vec2(1.0))
-                + clamp(phase - (span - vec2(0.5)), vec2(0.0), vec2(1.0)));
+                max(vec2(0.0), vec2(1.0) - abs(phase - vec2(0.5)))
+                + max(vec2(0.0), vec2(1.0) - abs(phase - span - vec2(0.5))));
         }
         if (u_lcd.x > 0.5) {"""
 
