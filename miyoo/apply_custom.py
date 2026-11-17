@@ -288,6 +288,21 @@ edit("crates/slot-ui/src/quick_menu.rs", [
 ])
 
 
+# The scaling and resume settings also have to appear in exhaustive legacy
+# action handlers; unlike the removed power/idle rows these need no
+# additional system hooks or timer callbacks.
+edit("crates/slot/src/app.rs", [
+    ('''            | QuickRow::AutoLoad
+            | QuickRow::EjectSave''',
+     '''            | QuickRow::AutoLoad
+            | QuickRow::Scaling
+            | QuickRow::ResumePowerOn
+            | QuickRow::EjectSave'''),
+    ('''            | QuickRow::LidOff => return,''',
+     '''            | QuickRow::LidOff
+            | QuickRow::Scaling => return,'''),
+])
+
 # Gambatte "Auto" applies an automatic GBC palette even with filters Off.
 # Keep Auto available but add a genuinely neutral Off and default to Off.
 edit("crates/slot-store/src/gb_palette.rs", [
