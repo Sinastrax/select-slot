@@ -275,6 +275,141 @@ edit("crates/slot-ui/src/quick_menu.rs", [
      '            QuickRow::AutoLoad => "Resume on Insert",\n            QuickRow::ResumePowerOn => "Resume on Power On",'),
 ])
 
+# Menu-only screen blank and shutdown timers. Live gameplay is excluded.
+edit("crates/slot-store/src/slot_state.rs", [
+    ("pub const LID_OFF_MIN: [u8; 6] = [1, 3, 5, 10, 15, 30];",
+     "pub const LID_OFF_MIN: [u8; 6] = [1, 3, 5, 10, 15, 30];\npub const MENU_IDLE_MINUTES: [u8; 7] = [0, 1, 3, 5, 10, 15, 30];"),
+    ("    pub lid_off_min: Option<u8>,\n    pub bezel_gba: BezelPick,",
+     "    pub lid_off_min: Option<u8>,\n    pub menu_screen_off_min: u8,\n    pub menu_power_off_min: u8,\n    pub bezel_gba: BezelPick,"),
+    ("            lid_off_min: None,\n            bezel_gba: BezelPick::Ags102,",
+     "            lid_off_min: None,\n            menu_screen_off_min: 3,\n            menu_power_off_min: 15,\n            bezel_gba: BezelPick::Ags102,"),
+    ('    text.push_str(&format!("auto_load={}\\n", s.auto_load as u8));',
+     '    text.push_str(&format!("auto_load={}\\n", s.auto_load as u8));\n    text.push_str(&format!("menu_screen_off_min={}\\n", s.menu_screen_off_min));\n    text.push_str(&format!("menu_power_off_min={}\\n", s.menu_power_off_min));'),
+    ("    let mut lid_off_min = None;\n    let mut bezel_gba = None;",
+     "    let mut lid_off_min = None;\n    let mut menu_screen_off_min = None;\n    let mut menu_power_off_min = None;\n    let mut bezel_gba = None;"),
+    ('            "lid_off_min" => lid_off_min = value.parse().ok().filter(|m| LID_OFF_MIN.contains(m)),',
+     '            "lid_off_min" => lid_off_min = value.parse().ok().filter(|m| LID_OFF_MIN.contains(m)),\n            "menu_screen_off_min" => menu_screen_off_min = value.parse().ok().filter(|m| MENU_IDLE_MINUTES.contains(m)),\n            "menu_power_off_min" => menu_power_off_min = value.parse().ok().filter(|m| MENU_IDLE_MINUTES.contains(m)),'),
+    ("        lid_off_min,\n        bezel_gba: bezel_gba.unwrap_or(fallback.bezel_gba),",
+     "        lid_off_min,\n        menu_screen_off_min: menu_screen_off_min.unwrap_or(fallback.menu_screen_off_min),\n        menu_power_off_min: menu_power_off_min.unwrap_or(fallback.menu_power_off_min),\n        bezel_gba: bezel_gba.unwrap_or(fallback.bezel_gba),"),
+])
+edit("crates/slot-ui/src/quick_menu.rs", [
+    ("    ResumePowerOn,\n}\n\nimpl QuickRow",
+     "    ResumePowerOn,\n    MenuScreenOff,\n    MenuPowerOff,\n}\n\nimpl QuickRow"),
+    ("pub const ALL: [QuickRow; 82]", "pub const ALL: [QuickRow; 84]"),
+    ("        QuickRow::ResumePowerOn,\n    ];\n\n    pub const MAIN:",
+     "        QuickRow::ResumePowerOn,\n        QuickRow::MenuScreenOff,\n        QuickRow::MenuPowerOff,\n    ];\n\n    pub const MAIN:"),
+    ("pub const GENERAL: [QuickRow; 7]", "pub const GENERAL: [QuickRow; 9]"),
+    ("        QuickRow::LidOff,\n        QuickRow::DateTime,",
+     "        QuickRow::LidOff,\n        QuickRow::MenuScreenOff,\n        QuickRow::MenuPowerOff,\n        QuickRow::DateTime,"),
+    ("            | QuickRow::LidOff => &QuickRow::GENERAL,",
+     "            | QuickRow::LidOff\n            | QuickRow::MenuScreenOff\n            | QuickRow::MenuPowerOff => &QuickRow::GENERAL,"),
+    ('            QuickRow::LidOff => "Lid Power Off",',
+     '            QuickRow::LidOff => "Lid Power Off",\n            QuickRow::MenuScreenOff => "Menu Screen Off",\n            QuickRow::MenuPowerOff => "Menu Power Off",'),
+])
+edit("crates/slot/src/app.rs", [
+    ("    power: Option<Power>,\n    dozed_at: Millis,",
+     "    power: Option<Power>,\n    menu_last_input: Millis,\n    menu_screen_blanked: bool,\n    dozed_at: Millis,"),
+    ("            power: None,\n            dozed_at: 0,",
+     "            power: None,\n            menu_last_input: 0,\n            menu_screen_blanked: false,\n            dozed_at: 0,"),
+    ("    fn timers(&mut self) {\n        self.play_hold();",
+     "    fn timers(&mut self) {\n        self.tick_menu_idle();\n        self.play_hold();"),
+    ("    pub fn apply(&mut self, action: Action) {\n        self.track_held_dir(action);",
+     '''    pub fn apply(&mut self, action: Action) {
+        // Physical releases are not wake actions. The first press while
+        // blanked wakes the screen but does not activate menu selections.
+        if !matches!(action, Action::GbaUp(_) | Action::MenuChordUp(_) | Action::PowerOff | Action::LidClose) {
+            self.menu_last_input = self.now();
+            if self.menu_screen_blanked {
+                self.menu_screen_blanked = false;
+                if let Some(power) = &mut self.power {
+                    power.set_backlight(self.state.brightness);
+                }
+                return;
+            }
+        }
+        self.track_held_dir(action);'''),
+    ("    fn timers(&mut self) {",
+     '''    fn tick_menu_idle(&mut self) {
+        let now = self.now();
+        let allowed = matches!(self.phase, Phase::Shelf | Phase::QuickMenu { .. })
+            && self.game_menu.is_none()
+            && self.core_picker.is_none()
+            && !self.powering_off
+            && !self.card_writes.failing();
+        if !allowed {
+            self.menu_last_input = now;
+            if self.menu_screen_blanked {
+                self.menu_screen_blanked = false;
+                if let Some(power) = &mut self.power {
+                    power.set_backlight(self.state.brightness);
+                }
+            }
+            return;
+        }
+        let elapsed = now.saturating_sub(self.menu_last_input);
+        let off = self.state.menu_power_off_min as u64 * 60_000;
+        if off != 0 && elapsed >= off {
+            self.menu_last_input = now;
+            self.poweroff();
+            return;
+        }
+        let blank = self.state.menu_screen_off_min as u64 * 60_000;
+        if blank != 0 && elapsed >= blank && !self.menu_screen_blanked {
+            self.menu_screen_blanked = true;
+            if let Some(power) = &mut self.power {
+                power.set_backlight(0);
+            }
+        }
+    }
+
+    fn timers(&mut self) {'''),
+    ("            QuickRow::LidOff => QuickValue::LID_OFF",
+     '''            QuickRow::MenuScreenOff | QuickRow::MenuPowerOff => {
+                let n = if row == QuickRow::MenuScreenOff {
+                    self.state.menu_screen_off_min
+                } else {
+                    self.state.menu_power_off_min
+                };
+                Some(match n {
+                    1 => QuickValue::Min1,
+                    3 => QuickValue::Min3,
+                    5 => QuickValue::Min5,
+                    10 => QuickValue::Min10,
+                    15 => QuickValue::Min15,
+                    30 => QuickValue::Min30,
+                    _ => QuickValue::Off,
+                })
+            }
+            QuickRow::LidOff => QuickValue::LID_OFF'''),
+    ("        if row == QuickRow::LidOff {\n",
+     '''        if matches!(row, QuickRow::MenuScreenOff | QuickRow::MenuPowerOff) {
+            let values = [0u8, 1, 3, 5, 10, 15, 30];
+            let from = if row == QuickRow::MenuScreenOff {
+                self.state.menu_screen_off_min
+            } else {
+                self.state.menu_power_off_min
+            };
+            let at = values.iter().position(|m| *m == from).unwrap_or(0);
+            let next = values[if right { (at + 1) % values.len() } else { (at + values.len() - 1) % values.len() }];
+            if row == QuickRow::MenuScreenOff {
+                self.state.menu_screen_off_min = next;
+                if next == 0 && self.menu_screen_blanked {
+                    self.menu_screen_blanked = false;
+                    if let Some(power) = &mut self.power {
+                        power.set_backlight(self.state.brightness);
+                    }
+                }
+            } else {
+                self.state.menu_power_off_min = next;
+            }
+            self.menu_last_input = self.now();
+            self.persist();
+            return;
+        }
+        if row == QuickRow::LidOff {
+'''),
+])
+
 # A software renderer cannot use the H700 GLSL effects; Authentic is deferred
 # pending a measured LUT/lookup-table implementation. Do not fake it.
 
