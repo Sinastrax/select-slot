@@ -542,6 +542,84 @@ edit("crates/slot-store/src/slot_state.rs", [
         gb_palette: gb_palette.unwrap_or(fallback.gb_palette),'''),
 ])
 
+# OnionOS theme transitions: only when launched under OnionOS (environment
+# exported by the packaged launcher). Boot is already drawn by Onion before
+# its startup scripts; shutdown/sleep/wake reuse Onion's existing renderer.
+# The script lives on SD, never overwrites .tmp_update/runtime.sh or keymon.
+edit("crates/slot/src/app.rs", [
+    ('''    pub fn poweroff(&mut self) {
+        self.settle_saves();
+        if let Some(power) = &mut self.power {
+            power.poweroff();
+        }
+    }''',
+     '''    fn onion_splash(&self, transition: &str) {
+        if std::env::var_os("SLOT_ONION_VISUALS").is_none() {
+            return;
+        }
+        let Some(root) = self.root() else { return; };
+        let script = root.join("System/onion-splash.sh");
+        if !script.is_file() { return; }
+        let _ = std::process::Command::new("sh")
+            .arg(script)
+            .arg(transition)
+            .status();
+        // The renderer returns immediately on the Mini. A brief hold keeps
+        // the theme visible before the display blanks or Slot redraws.
+        if transition != "shutdown" {
+            std::thread::sleep(std::time::Duration::from_millis(300));
+        }
+    }
+
+    pub fn poweroff(&mut self) {
+        self.settle_saves();
+        // Do not turn the screen back on merely for an idle sleep timeout.
+        // A direct power-off while awake should show Onion's End_Save art.
+        if !matches!(self.phase, Phase::Doze { .. }) {
+            if self.menu_screen_blanked {
+                if let Some(power) = &mut self.power {
+                    power.set_backlight(self.state.brightness);
+                }
+            }
+            self.onion_splash("shutdown");
+        }
+        if let Some(power) = &mut self.power {
+            power.poweroff();
+        }
+    }'''),
+    ('''        self.radio.ask(RadioJob::Cool);
+        if let Some(power) = &mut self.power {
+            power.on_close();
+        }
+    }
+
+    fn wake(&mut self)''',
+     '''        self.radio.ask(RadioJob::Cool);
+        // Slot has already flushed its resume snapshot. Show the themed
+        // "saving/off" screen before the LCD backlight is disabled.
+        self.onion_splash("sleep");
+        if let Some(power) = &mut self.power {
+            power.on_close();
+        }
+    }
+
+    fn wake(&mut self)'''),
+    ('''        if let Some(power) = &mut self.power {
+            power.on_open();
+        }
+    }
+
+    pub fn on_doze_timeout''',
+     '''        if let Some(power) = &mut self.power {
+            power.on_open();
+        }
+        // Reuse Onion's Boot artwork; the normal Slot frame resumes after.
+        self.onion_splash("wake");
+    }
+
+    pub fn on_doze_timeout'''),
+])
+
 # A software renderer cannot use the H700 GLSL effects; Authentic is deferred
 # pending a measured LUT/lookup-table implementation. Do not fake it.
 
