@@ -878,6 +878,18 @@ edit("crates/slot/src/app.rs", [
             | QuickRow::Scaling
             | QuickRow::MenuScreenOff
             | QuickRow::MenuPowerOff => return,'''),
+    ('''            | QuickRow::LidOff => {}
+        }
+    }
+
+    fn change_setting''',
+     '''            | QuickRow::LidOff
+            | QuickRow::MenuScreenOff
+            | QuickRow::MenuPowerOff => {}
+        }
+    }
+
+    fn change_setting'''),
     ('''    pub fn apply(&mut self, action: Action) {
         self.track_held_dir(action);''',
      '''    pub fn apply(&mut self, action: Action) {
