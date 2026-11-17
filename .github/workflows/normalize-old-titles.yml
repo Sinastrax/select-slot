@@ -1,0 +1,29 @@
+name: Normalize Custom slot older release titles
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/normalize-old-titles.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  rename:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Reformat existing release titles without rebuilding firmware
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for n in 1 2 3; do
+            tag="v1.15.3-rgsp.$n"
+            title="Custom slot. 1.15.3 Ver. $n"
+            gh release edit "$tag" --repo "$GITHUB_REPOSITORY" --title "$title"
+            actual="$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json name --jq .name)"
+            test "$actual" = "$title"
+          done
+          echo "Older release names updated without changing tags, update files or version numbers."

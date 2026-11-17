@@ -15,12 +15,26 @@
 
 **Custom slot** is a noncommercial, modified build of [slot](https://github.com/slot-cfw/slot), the Game Boy-centric frontend created by **Brandon Kowalski**, based on [pvaibhav's enhanced fork](https://github.com/pvaibhav/slot).
 
-This project builds on **`v1.15.3-pvaibhav.1`** and adds independent GB/GBC shaders, Pocket Color and Super Game Boy modes, per-core color correction, custom input mappings, performance/audio changes, online updates, and menu power management.
+This project builds on **`v1.16.0-pvaibhav.1`** and adds independent GB/GBC shaders, Pocket Color and Super Game Boy modes, per-core color correction, custom input mappings, performance/audio changes, online updates, and menu power management.
 
 Its name is **Custom slot**, not RGSP: the H700 build is intended for other compatible handhelds as well. The firmware currently supports **Game Boy, Game Boy Color and Game Boy Advance**, not yet NES, SNES, PS1 or N64.
 
 > [!IMPORTANT]
 > Use extracted ROM files, not `.zip` or `.7z` archives. Games and proprietary BIOS files are **not** included.
+
+## Inherited in Slot 1.16.0
+
+Custom slot now incorporates the latest [official Slot v1.16.0](https://github.com/slot-cfw/slot/releases/tag/v1.16.0) and [pvaibhav v1.16.0](https://github.com/pvaibhav/slot/releases/tag/v1.16.0-pvaibhav.1), including:
+
+- Handwritten cartridge titles whenever label artwork is missing.
+- Kid Mode link-play invitations and player nicknames, with clearer multiplayer prompts.
+- GPU frame blending available across mGBA, gpSP and Gambatte.
+- Custom PNG overlays, with tiled and full-frame display options.
+- USB-C audio adapter playback when connected.
+- Turbo configured using the Turbo A / Turbo B control mappings instead of a separate Turbo Buttons toggle.
+- The upstream screenshot gallery thumbnail fix.
+
+These are **upstream improvements**. The separate section below documents our own additional changes.
 
 ## What this fork adds
 
@@ -72,7 +86,7 @@ Do not interchange save states made by different emulator cores; in-game battery
 
 ## Versions and release notes
 
-Releases are titled **Custom slot. Ver. 1.15.3.1**, **Custom slot. Ver. 1.15.3.2**, etc. Technical release tags and ZIP filenames retain their original version suffixes for update compatibility. The product name is not repeated in the version number.
+Release titles follow **Custom slot. 1.16.0 Ver. 1**: the upstream Slot version is immediately after the project name, followed by our revision number. The technical GitHub tag (for example, `v1.16.0-rgsp.1`) and ZIP filename include the full identifier for reliable online updates. Older release tags remain unchanged.
 
 **[Latest release](https://github.com/Sinastrax/slot-rgsp-mod/releases/latest)** · **[Changes in the latest version](RELEASE_NOTES.md)**
 

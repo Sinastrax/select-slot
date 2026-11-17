@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - main
+      - integration/slot-1.16.0
     tags:
       - "v*-custom.*"
       - "v*-rgsp.*"
@@ -33,10 +34,18 @@ jobs:
           set -euo pipefail
           curl -fsSL --retry 5 --retry-all-errors \
             "https://github.com/pvaibhav/slot/archive/refs/tags/v1.15.3-pvaibhav.1.tar.gz" \
-            -o /tmp/upstream-slot.tar.gz
+            -o /tmp/base-slot.tar.gz
+          curl -fsSL --retry 5 --retry-all-errors \
+            "https://github.com/pvaibhav/slot/archive/refs/tags/v1.16.0-pvaibhav.1.tar.gz" \
+            -o /tmp/new-slot.tar.gz
           mkdir upstream
-          tar -xzf /tmp/upstream-slot.tar.gz --strip-components=1 -C upstream
+          tar -xzf /tmp/base-slot.tar.gz --strip-components=1 -C upstream
           cd upstream
+          git init -q
+          git config user.email "custom-slot@users.noreply.github.com"
+          git config user.name "Custom slot CI"
+          git add -A
+          git commit -qm "pvaibhav Slot v1.15.3 base"
           git apply --check ../patches/rgsp-authentic-gbc.patch
           git apply ../patches/rgsp-authentic-gbc.patch
           git apply --check ../patches/pocket-color.patch
@@ -77,7 +86,38 @@ jobs:
           done
           git apply --check ../patches/resume-power-on-do-not-autolaunch.patch
           git apply ../patches/resume-power-on-do-not-autolaunch.patch
-          echo "Exact-release patches applied"
+          echo "All verified Custom slot v1.15.3 patches applied"
+          git add -A
+          git commit -qm "Custom slot verified v1.15.3 changes"
+          git branch custom-prev
+          git checkout -qb upstream-1.16 HEAD~1
+          # Restore the exact new upstream checkout on an ancestor-linked branch.
+          find . -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          tar -xzf /tmp/new-slot.tar.gz --strip-components=1 -C .
+          git add -A
+          git commit -qm "pvaibhav Slot v1.16.0 source"
+          git checkout -q custom-prev
+          git merge --no-edit --no-ff -X ours upstream-1.16
+          # Merge conflicts in removed files must never be silently accepted.
+          test -z "$(git diff --name-only --diff-filter=U)"
+          git show upstream-1.16:CHANGELOG.md | grep -q '1.16.0'
+          git diff --stat HEAD~1 HEAD | tail -25
+          echo "Merged latest upstream with our previous complete custom modifications"
+          python3 ../.github/scripts/merge-1.16-fixes.py
+
+      - name: Capture merged source for integration review
+        uses: actions/upload-artifact@v4
+        with:
+          name: custom-slot-upstream-merge-inspection
+          path: |
+            upstream/crates/slot-gfx/src/
+            upstream/crates/slot/src/
+            upstream/crates/slot-store/src/
+            upstream/crates/slot-ui/src/
+            upstream/crates/slot-input/src/
+            upstream/crates/slot-power/src/
+            upstream/crates/slot/tests/
+          if-no-files-found: error
 
       - name: Install required tools
         shell: bash
@@ -220,11 +260,11 @@ jobs:
           test -s "$zip"
           TAG="$RELEASE_TAG"
           if [[ "$TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)-(rgsp|custom)\.([0-9]+)$ ]]; then
-            DISPLAY_VERSION="${BASH_REMATCH[1]}.${BASH_REMATCH[3]}"
+            DISPLAY_VERSION="${BASH_REMATCH[1]} Ver. ${BASH_REMATCH[3]}"
           else
             DISPLAY_VERSION="${TAG#v}"
           fi
           gh release create "$RELEASE_TAG" "$zip" release/versions.json \
             --repo "$GITHUB_REPOSITORY" \
-            --title "Custom slot. Ver. $DISPLAY_VERSION" \
+            --title "Custom slot. $DISPLAY_VERSION" \
             --notes-file RELEASE_NOTES.md
