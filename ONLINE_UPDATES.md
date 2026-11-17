@@ -34,7 +34,7 @@ in the update manifest.
 
 ## Publishing a new release
 
-- Update `.github/ota-version.txt` only when shipping a **functional firmware update**. Retain technical version identifiers and previous-release links for OTA compatibility. New builds may use a `-custom.N` suffix, but the GitHub release title is always **Custom slot. Ver. [numeric version]**.
+- Update `.github/ota-version.txt` only when shipping a **functional firmware update**. Retain technical version identifiers and previous-release links for OTA compatibility. Existing firmware recognizes `-rgsp.N` internally; retain that suffix for update compatibility. The public title is always **Custom slot. [upstream version] Ver. [revision]**.
 - Update `RELEASE_NOTES.md` with **only the changes made since the previous release**. Keep the cumulative feature list in `README.md`.
 - Verify the full `Build Custom slot H700` GitHub Actions run succeeds on `main`.
 - A successful verified build on `main` publishes `slot-v<VERSION>-h700.zip` and
