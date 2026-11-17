@@ -154,14 +154,14 @@ edit(palette, "    pub fn label(self) -> &'static str {", """    pub fn gambatte
 session = "crates/slot/src/session.rs"
 edit(session,
      '                emu.set_option("mgba_gb_colors", p.core_name());',
-     '                for (key, value) in crate::core::gambatte_palette_options(p) {
+     """                for (key, value) in crate::core::gambatte_palette_options(p) {
                     emu.set_option(key, value);
-                }')
+                }""")
 edit(session,
      '                    emu.set_option("mgba_gb_colors", self.app.gb_colors().core_name());',
-     '                    for (key, value) in crate::core::gambatte_palette_options(self.app.gb_colors()) {
+     """                    for (key, value) in crate::core::gambatte_palette_options(self.app.gb_colors()) {
                         emu.set_option(key, value);
-                    }')
+                    }""")
 
 # Separate, persistent picture modes. All scale computations are relative to
 # the actual 640x480 (or 752x560 Flip) framebuffer size.
