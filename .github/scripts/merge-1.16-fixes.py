@@ -74,4 +74,11 @@ assert s.count("pub fn set_frame_blend(") == 1
 assert s.count("pub fn cut_frame_blend(") == 1
 fbo.write_text(s)
 
-print("Slot 1.16 GPU frame blending integrated with Custom slot Authentic controls")
+menu = Path("crates/slot-ui/src/quick_menu.rs")
+q = menu.read_text()
+old_count = "pub const SYSTEM: [QuickRow; 8] = ["
+assert q.count(old_count) == 1, "Upstream system settings layout changed"
+q = q.replace(old_count, "pub const SYSTEM: [QuickRow; 9] = [", 1)
+menu.write_text(q)
+
+print("Integrated Slot 1.16 GPU blending and new System nickname row with Custom slot controls")
