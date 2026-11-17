@@ -104,12 +104,12 @@ jobs:
         run: |
           set -euo pipefail
           cd older-mgba
-          zip -qry ../Slot_RGSP_Older_mGBA_Core_Only.zip System
-          unzip -l ../Slot_RGSP_Older_mGBA_Core_Only.zip
+          zip -qry ../select-slot-older-mgba-core-only.zip System
+          unzip -l ../select-slot-older-mgba-core-only.zip
 
       - name: Upload old-core-only update
         uses: actions/upload-artifact@v4
         with:
-          name: slot-rgsp-older-mgba-core-only
-          path: Slot_RGSP_Older_mGBA_Core_Only.zip
+          name: select-slot-older-mgba-core-only
+          path: select-slot-older-mgba-core-only.zip
           if-no-files-found: error

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Resolve renderer API overlap between the v1.15 Custom slot patches and Slot v1.16.
+"""Resolve renderer API overlap between the v1.15 select. slot. patches and Slot v1.16.
 
 Slot 1.16 moved FrameBlend/LCD response into ghost.rs. Keep that upstream
 implementation while preserving our Authentic correction and fast-forward paths.
@@ -110,7 +110,7 @@ invite = Path("crates/slot/src/invite.rs")
 i = invite.read_text()
 old = "        Core::Gambatte => 3,"
 new = """        Core::Gambatte => 3,
-        // SameBoy was removed from Custom slot's bundled emulator choices.
+        // SameBoy was removed from select. slot.'s bundled emulator choices.
         // Do not incorrectly announce it as a playable link core.
         Core::Sameboy => 0,"""
 assert i.count(old) == 1, "Slot 1.16 invite core mapping changed"

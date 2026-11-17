@@ -1,9 +1,9 @@
-name: Publish Custom slot release
+name: Publish select. slot. release
 
 on:
   workflow_run:
     workflows:
-      - Build Custom slot H700
+      - Build select. slot. H700
     types: [completed]
 
 permissions:
@@ -19,7 +19,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           run-id: ${{ github.event.workflow_run.id }}
-          name: custom-slot-complete-h700
+          name: select-slot-complete-h700
           path: release
           github-token: ${{ github.token }}
 
@@ -39,7 +39,7 @@ jobs:
           stable = json.loads((release / "versions.json").read_text())["stable"]
           version = stable["version"]
           assert version == expected, f"Stale build {version}, main is now {expected}"
-          assert "-custom." in version or "-rgsp." in version
+          assert any("-" + n + "." in v for n in ("rgsp", "custom", "select"))ersion or "-rgsp." in version
           assert stable["tag"] == "v" + version
           assert stable["zip"] == "slot-v" + version + "-h700.zip"
           archive = release / stable["zip"]
@@ -67,12 +67,12 @@ jobs:
           # Release notes are version-specific; never repeat the cumulative feature list.
           gh api "repos/$GITHUB_REPOSITORY/contents/RELEASE_NOTES.md?ref=$HEAD_SHA" --jq '.content' | base64 -d > release-notes.md
           test -s release-notes.md
-          if [[ "$TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)-(rgsp|custom)\.([0-9]+)$ ]]; then
+          if [[ "$TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)-(rgsp|custom|select)\.([0-9]+)$ ]]; then
             DISPLAY_VERSION="${BASH_REMATCH[1]} Ver. ${BASH_REMATCH[3]}"
           else
             DISPLAY_VERSION="${TAG#v}"
           fi
           gh release create "$TAG" "release/$ZIP" release/versions.json \
             --repo "$GITHUB_REPOSITORY" --target "$HEAD_SHA" --latest \
-            --title "Custom slot. $DISPLAY_VERSION" \
+            --title "select. slot. $DISPLAY_VERSION" \
             --notes-file release-notes.md

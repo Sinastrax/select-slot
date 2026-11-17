@@ -8,7 +8,7 @@ This is a **code-review index** for a request to [pvaibhav/slot](https://github.
 
 | Requested behavior | Relevant source patch | Notes |
 | --- | --- | --- |
-| GBC Authentic screen for GB cartridges | [`rgsp-authentic-gbc.patch`](https://github.com/Sinastrax/slot-rgsp-mod/blob/main/patches/rgsp-authentic-gbc.patch) | Offers the existing GBC Authentic display model while playing .gb titles, with GB palette selection instead of forcing grayscale. |
+| GBC Authentic screen for GB cartridges | [`select-authentic-gbc.patch`](https://github.com/Sinastrax/slot-rgsp-mod/blob/main/patches/select-authentic-gbc.patch) | Offers the existing GBC Authentic display model while playing .gb titles, with GB palette selection instead of forcing grayscale. |
 | Pocket Color hybrid | [`pocket-color.patch`](https://github.com/Sinastrax/slot-rgsp-mod/blob/main/patches/pocket-color.patch) | Adds the Pocket Color model (Pocket pixel geometry with color input). |
 | Pocket Color response refinement | [`pocket-color-gbc-correction.patch`](https://github.com/Sinastrax/slot-rgsp-mod/blob/main/patches/pocket-color-gbc-correction.patch) | Adjusts Pocket Color color-response processing. |
 | Pocket SGB + actual SGB palette-command mode | [`sgb-pocket-pixel-separation.patch`](https://github.com/Sinastrax/slot-rgsp-mod/blob/main/patches/sgb-pocket-pixel-separation.patch) | Adds Pocket SGB and configures mGBA's Super Game Boy hardware mode; this is different from a static Gambatte SGB palette. |
@@ -20,7 +20,7 @@ This is a **code-review index** for a request to [pvaibhav/slot](https://github.
 
 ### Fast-forward blending
 
-[`rgsp-authentic-gbc.patch`](https://github.com/Sinastrax/slot-rgsp-mod/blob/main/patches/rgsp-authentic-gbc.patch) also makes Authentic frame blending/ghosting temporarily turn off during fast-forward, returning to the selected effect at normal speed.
+[`select-authentic-gbc.patch`](https://github.com/Sinastrax/slot-rgsp-mod/blob/main/patches/select-authentic-gbc.patch) also makes Authentic frame blending/ghosting temporarily turn off during fast-forward, returning to the selected effect at normal speed.
 
 ### Reproducing the patch sequence
 

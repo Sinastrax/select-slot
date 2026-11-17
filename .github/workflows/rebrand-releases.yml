@@ -1,0 +1,42 @@
+name: Rebrand historical release titles
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/rebrand-releases.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  rename-display:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Rename published release titles and introductory headings only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, re, subprocess
+          repo = os.environ["GITHUB_REPOSITORY"]
+          command = ["gh", "api", "--paginate", "--jq", ".[] | {id,tag_name,name,body} | @json", f"repos/{repo}/releases?per_page=100"]
+          result = subprocess.run(command, capture_output=True, text=True, check=True)
+          for line in result.stdout.splitlines():
+              release = json.loads(line)
+              tag = release["tag_name"]
+              match = re.fullmatch(r"v(\d+\.\d+\.\d+)-(?:rgsp|custom|select)\.(\d+)", tag)
+              if not match:
+                  continue
+              title = f"select. slot. {match.group(1)} Ver. {match.group(2)}"
+              old_body = release.get("body") or ""
+              body = old_body.replace("Custom slot.", "select. slot.").replace("Custom slot", "select. slot.")
+              if release.get("name") == title and body == old_body:
+                  continue
+              update = ["gh", "api", "--method", "PATCH", f"repos/{repo}/releases/{release['id']}", "-f", f"name={title}", "-f", f"body={body}"]
+              subprocess.run(update, capture_output=True, text=True, check=True)
+              print(f"Updated title/body for {tag}; tag and assets unchanged")
+          PY

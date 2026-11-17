@@ -11,20 +11,20 @@
 
 ---
 
-# What is Custom slot?
+# What is select. slot.?
 
-**Custom slot** is a noncommercial, modified build of [slot](https://github.com/slot-cfw/slot), the Game Boy-centric frontend created by **Brandon Kowalski**, based on [pvaibhav's enhanced fork](https://github.com/pvaibhav/slot).
+**select. slot.** is a noncommercial, modified build of [slot](https://github.com/slot-cfw/slot), the Game Boy-centric frontend created by **Brandon Kowalski**, based on [pvaibhav's enhanced fork](https://github.com/pvaibhav/slot).
 
 This project builds on **`v1.16.0-pvaibhav.1`** and adds independent GB/GBC shaders, Pocket Color and Super Game Boy modes, per-core color correction, custom input mappings, performance/audio changes, online updates, and menu power management.
 
-Its name is **Custom slot**, not RGSP: the H700 build is intended for other compatible handhelds as well. The firmware currently supports **Game Boy, Game Boy Color and Game Boy Advance**, not yet NES, SNES, PS1 or N64.
+Its name is **select. slot.**, not RGSP: the H700 build is intended for other compatible handhelds as well. The firmware currently supports **Game Boy, Game Boy Color and Game Boy Advance**, not yet NES, SNES, PS1 or N64.
 
 > [!IMPORTANT]
 > Use extracted ROM files, not `.zip` or `.7z` archives. Games and proprietary BIOS files are **not** included.
 
 ## Inherited in Slot 1.16.0
 
-Custom slot now incorporates the latest [official Slot v1.16.0](https://github.com/slot-cfw/slot/releases/tag/v1.16.0) and [pvaibhav v1.16.0](https://github.com/pvaibhav/slot/releases/tag/v1.16.0-pvaibhav.1), including:
+select. slot. now incorporates the latest [official Slot v1.16.0](https://github.com/slot-cfw/slot/releases/tag/v1.16.0) and [pvaibhav v1.16.0](https://github.com/pvaibhav/slot/releases/tag/v1.16.0-pvaibhav.1), including:
 
 - Handwritten cartridge titles whenever label artwork is missing.
 - Kid Mode link-play invitations and player nicknames, with clearer multiplayer prompts.
@@ -80,13 +80,13 @@ See [ONLINE_UPDATES.md](ONLINE_UPDATES.md) for technical packaging and release p
 2. Back up saves, save states, and `Config/` before upgrading.
 3. Download the **latest full H700 ZIP** from [Releases](https://github.com/Sinastrax/slot-rgsp-mod/releases/latest).
 4. Extract the contents of the included device folder to the **root of SD2**, so `System/slot` is in the SD2 `System` directory. Do not copy the containing device folder itself.
-5. Restart the handheld. Once running a Custom slot build with online updates, subsequent updates are available under **Settings → System → Check for Updates**.
+5. Restart the handheld. Once running a select. slot. build with online updates, subsequent updates are available under **Settings → System → Check for Updates**.
 
 Do not interchange save states made by different emulator cores; in-game battery saves and emulator save states have different compatibility requirements.
 
 ## Versions and release notes
 
-Release titles follow **Custom slot. 1.16.0 Ver. 1**: the upstream Slot version is immediately after the project name, followed by our revision number. The technical GitHub tag (for example, `v1.16.0-rgsp.1`) and ZIP filename include the full identifier for reliable online updates. Older release tags remain unchanged.
+Release titles follow **select. slot. 1.16.0 Ver. 5**: the upstream Slot version is immediately after the project name, followed by our revision number. The published Ver. 5 keeps its historical tag `v1.16.0-rgsp.5` and archive name. To preserve updates from existing installations, the next functional release can use a compatible `-custom.N` tag while introducing `-select.N` support; subsequent functional releases use `-select.N`. Old tags and archives are never rewritten. A naming change alone does not generate a firmware release.
 
 **[Latest release](https://github.com/Sinastrax/slot-rgsp-mod/releases/latest)** · **[Changes in the latest version](RELEASE_NOTES.md)**
 
@@ -98,7 +98,7 @@ The [build workflow](.github/workflows/build-h700.yml) pins the pvaibhav base, a
 
 # What does it look like?
 
-The original cartridge carousel and core picker remain part of Custom slot. The **Authentic examples** below are courtesy of [pvaibhav's fork](https://github.com/pvaibhav/slot); the carousel and link examples come from the [original Slot](https://github.com/slot-cfw/slot). These are visual references, not new captures of the custom Pocket Color or Pocket SGB modes.
+The original cartridge carousel and core picker remain part of select. slot. The **Authentic examples** below are courtesy of [pvaibhav's fork](https://github.com/pvaibhav/slot); the carousel and link examples come from the [original Slot](https://github.com/slot-cfw/slot). These are visual references, not new captures of the custom Pocket Color or Pocket SGB modes.
 
 <p align="center">
 <img src="https://raw.githubusercontent.com/pvaibhav/slot/pvaibhav-improvements/.github/resources/screenshots/authentic-gb.png" width="32%" alt="pvaibhav Authentic Game Boy shader">
@@ -120,7 +120,7 @@ The original cartridge carousel and core picker remain part of Custom slot. The 
 
 # Supported devices
 
-Custom slot builds the same **H700 ARM64 device package** as its Slot base. The underlying frontend supports these devices:
+select. slot. builds the same **H700 ARM64 device package** as its Slot base. The underlying frontend supports these devices:
 
 | Device | Supported by Slot | Custom build hardware verification |
 |---|---|---|
@@ -141,11 +141,11 @@ This is **not an RGSP-exclusive firmware**. Device-specific controls such as L3/
 
 - **Original Slot:** [slot-cfw/slot](https://github.com/slot-cfw/slot), created by **Brandon Kowalski**. The original artwork and interface are credited to their respective authors, including [Markus](https://github.com/MarkusMaribu). The original guide is at [slot-cfw.fyi](https://slot-cfw.fyi).
 - **Enhanced Slot base:** [pvaibhav/slot](https://github.com/pvaibhav/slot), including its performance, Authentic shader, CPU scaling and other improvements. Its [wiki](https://github.com/pvaibhav/slot/wiki) documents many inherited features.
-- **Custom slot:** the patches, build scripts and other changes maintained in this repository. Source modifications were developed with AI assistance and reviewed through automated builds and device testing.
+- **select. slot.:** the patches, build scripts and other changes maintained in this repository. Source modifications were developed with AI assistance and reviewed through automated builds and device testing.
 - **Emulator and third-party assets:** mGBA, gpSP, Gambatte, shader sources, bezels and other third-party parts keep their own copyright and license conditions. The device build includes the applicable files in `System/licenses/`.
 
 The Slot-derived frontend is distributed under the **GPL-3.0** terms in [LICENSE](LICENSE). This is a **noncommercial customization**; no proprietary game ROMs or BIOS dumps are distributed.
 
 ---
 
-If you enjoy Custom slot, please also support and credit the creators of [Slot](https://github.com/slot-cfw/slot) and [pvaibhav's fork](https://github.com/pvaibhav/slot).
+If you enjoy select. slot., please also support and credit the creators of [Slot](https://github.com/slot-cfw/slot) and [pvaibhav's fork](https://github.com/pvaibhav/slot).

@@ -1,7 +1,7 @@
-# Online updates for Custom slot
+# Online updates for select. slot.
 
 The firmware inherits Slot's existing **Settings → System → Check for Updates** interface.
-Our `patches/rgsp-online-updates.patch` redirects that interface to **this repository's**
+Our `patches/select-online-updates.patch` redirects that interface to **this repository's**
 GitHub Releases. It does not fetch releases from pvaibhav's fork.
 
 ## How a custom update works
@@ -34,11 +34,11 @@ in the update manifest.
 
 ## Publishing a new release
 
-- Update `.github/ota-version.txt` only when shipping a **functional firmware update**. Retain technical version identifiers and previous-release links for OTA compatibility. Existing firmware recognizes `-rgsp.N` internally; retain that suffix for update compatibility. The public title is always **Custom slot. [upstream version] Ver. [revision]**.
+- Update `.github/ota-version.txt` only when shipping a **functional firmware update**. Retain technical version identifiers and previous-release links for OTA compatibility. Preserve support for historical `-rgsp.N` and `-custom.N` update identifiers. The published Ver. 5 still uses `v1.16.0-rgsp.5`. Its installed updater cannot yet parse `-select.N`, so the next functional update must retain a suffix the existing firmware recognizes (for example `v1.16.0-custom.6` if upstream remains 1.16.0). Only later releases can switch to `-select.N` safely. The public title is always **select. slot. [upstream version] Ver. [revision]**.
 - Update `RELEASE_NOTES.md` with **only the changes made since the previous release**. Keep the cumulative feature list in `README.md`.
-- Verify the full `Build Custom slot H700` GitHub Actions run succeeds on `main`.
+- Verify the full `Build select. slot. H700` GitHub Actions run succeeds on `main`.
 - A successful verified build on `main` publishes `slot-v<VERSION>-h700.zip` and
-  `versions.json` to GitHub Releases with title **Custom slot. Ver. [numeric version]** and
+  `versions.json` to GitHub Releases with title **select. slot. [upstream version] Ver. [revision]** and
   the change-only notes from that build's `RELEASE_NOTES.md`. The separate tag workflow
   can publish the same tagged release when used.
 - Verify the release on real H700 hardware before recommending it broadly.
