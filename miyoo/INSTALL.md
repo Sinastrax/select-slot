@@ -1,54 +1,47 @@
-# select. slot. 1.8.1 Ver. 11 — Miyoo clean rebuild
+# select. slot. 1.8.1 Ver. 12 — Miyoo brightness boost
 
-This is an **experimental fresh rebuild from the original, working [deanmarano/slot-miyoo](https://github.com/deanmarano/slot-miyoo)**, pinned to commit `d096bdb87f25f3aba62de6b40ef859b61d841e43`. Original Slot upstream is v1.8.1.
+**Experimental ARMv7 Miyoo Mini / Mini Plus / Flip application, not H700 firmware.** This version is based on the pinned [deanmarano/slot-miyoo](https://github.com/deanmarano/slot-miyoo) commit `d096bdb87f25f3aba62de6b40ef859b61d841e43` and Slot upstream 1.8.1.
 
-**Why this rebuild exists:** The original Miyoo Slot displayed correctly on the user's physical original Miyoo Mini, but the modified version made **the entire display too dark even at brightness level 9**. Earlier attempts changing Onion brightness synchronization and stored settings did not fix it. The screen is not being treated as a palette or color-correction fault.
+## Why it exists
 
-The clean rebuild keeps these **unaltered from Dean's original port**:
+On the user's original Miyoo Mini, the entire image appears too dark even with Slot at its maximum value **9**. The original Dean Miyoo version previously looked correct on the same handheld, and the Ver. 9 and clean Ver. 11 repairs did not restore it. This release changes **real hardware PWM backlight brightness** and coordinates with OnionOS power management. It does not artificially brighten game colors, alter LCD3x, or apply gamma or screen filters.
 
-- `card/System/launch_frontend.sh` (verified byte-for-byte identical during packaging)
-- `crates/slot-power/` and its original PWM/backlight calibration
-- `crates/slot-gfx/` including the software compositor, all brightness handling, framebuffer rotation, and the native LCD3x effect
-- Original screen-off, sleep/wake, shutdown and button-power handling
-- Original OnionOS boot/shutdown transitions, including existing BMO theme assets; no extra BMO animation hooks are installed
-- No `SLOT_ONION_BRIGHTNESS` import, brightness state migration, display diagnostics, or new brightness logic
+## Brightness levels
 
-The feature patch is *allowlisted* to eight non-hardware source files, and the build rejects changed backlight handling.
+Slot upstream saves and exposes `BRIGHTNESS_MAX=9`; Dean's PWM calibration writes fixed values `[0,5,7,11,16,23,34,49,72,112]`, where level 9 writes duty 112. The hardware PWM period on OnionOS is configurable and defaults to 800. Ver. 12:
 
-## Preserved custom features
+- Leaves **all original levels 0–9 identical**.
+- Extends settings, on-screen controls, and saved-state parsing to 12.
+- At default 800 period, level **10 writes 160**, **11 writes 240**, and **12 writes 400** (20%, 30%, and 50% electrical PWM duty, respectively).
+- At other PWM periods, levels 10–12 scale to 20%/30%/50% of the *actual* period, never dropping below level 9 and never exceeding the period. Example at period 400: levels 9,10,11,12 write 112,112,120,200. At period 100, the old level 9 already saturates the period, so extra levels **cannot** boost further.
+- Keeps the original PWM logic for original levels 0–9; only a small code path for levels 10–12 is new. Normal framebuffer, image renderer and launcher remain the original Dean version.
 
-- Game Boy / Game Boy Color default core: **Gambatte**, configured with neutral dark-filter level 0. Game Boy palettes include Off and the supported built-in choices. Optional GBC correction uses accurate mode rather than a forced darkening fast mode.
-- Game Boy Advance default core: **gpSP**. mGBA remains available for legacy selections and some game overrides.
-- Per-game scaling: Original, Integer, Aspect Fit, Fill/Crop, Full Stretch.
-- **Resume on Power On** and **Resume on Insert** as separate preferences.
-- Original SLOT menu, framebuffer software renderer, power-management behavior and OnionOS runtime.
+This upper boost is **not validated for the original Mini's display durability**. Dean documented trying duty 400 on a **Mini Flip**, describing it as exceptionally bright; that is not a brightness/safety measurement on every Mini panel. Start with 10, then 11; use 12 only if necessary. Higher brightness can cause more power consumption, heat or display stress, and shorter battery life.
 
-**Deferred to keep the brightness fix isolated:** Added menu-idle screen-off/power-off timers; custom splash interventions during SLOT sleep/wake; H700-only Authentic shaders and GLSL color correction; H700 OTA. These are **not** included in this clean Miyoo rebuild. The original Mini has no onboard Wi-Fi.
+## OnionOS settings and interactions
+
+**OnionOS has its own global hardware brightness (0–10)**. In [Onion's source](https://github.com/OnionUI/Onion/blob/main/src/common/system/display.h), `display_setBrightness(level)` writes an exponential PWM duty. Level 10 is about **100** at the standard period, slightly *lower* than Slot's original level 9 of 112. Onion and Slot control the **same** `/sys/class/pwm/pwmchip0/pwm0/duty_cycle` interface.
+
+**Onion keymon restores its global brightness after suspend/wake**. It can also reassert that setting while it believes the MainUI is active. This build writes Onion's supported temporary `/tmp/state_changed` notification on Slot app startup (when the Onion keymon binary is present), then reapplies the saved Slot level **once after a long process-suspension gap**. It does **not** stop keymon, replace Onion's `runtime.sh`, edit global preferences, or continuously rewrite backlight hardware.
+
+**PWM frequency:** OnionOS **Apps → Tweaks → Advanced → PWM frequency** offers 100–1000; **800 Hz (Default)** is the baseline used for the table above. It changes the sysfs `period`. Onion's documentation warns lower values can cause flicker, while the setting also affects audible buzzing. For a reproducible brightness comparison, use **800 Hz (Default)**. Do not assume "level 9" means the same effective duty ratio with other PWM frequencies.
+
+**Other global display adjustments:** OnionOS has **Apps → Tweaks → Appearance → Blue light filter**, including an optional schedule. Its adjustment uses the hardware color-temperature interface and can change the entire visible picture independently of a game shader. The Miyoo's native **Settings → Display** controls (including Luminance, Hue, Saturation and Contrast) can also affect overall image luminance and contrast. These remain untouched. For checking backlight only, turn off blue-light filter and use your preferred known-good factory display settings.
+
+**Sleep:** The BMO by forevertuesday theme, Onion's native boot/shutdown art, and keymon suspend/wake logic remain intact. No custom visual animation or screen-off timer is installed.
 
 ## Installation
 
-1. Back up your SD card, especially `Config/slot.state`, `Saves/` and any current `System/slot`.
-2. Download the successful **select-slot-miyoo-clean-rebuild** artifact from GitHub Actions. The artifact contains `select-slot-1.8.1-ver11-miyoo.zip` and a SHA-256 checksum.
-3. Extract **the contents** of `select-slot-1.8.1-ver11-miyoo.zip` to the root of your Miyoo SD card. Your card should directly contain `System/slot`, `App/Slot/`, and `Apps/slot.pak/`.
-4. Reboot and launch **select. slot.** from the installed app.
-5. ROMs go in `Games/GB/`, `Games/GBC/`, and `Games/GBA/`; a legally obtained GBA BIOS may be put in `BIOS/gba_bios.bin`.
+1. Back up the card, especially `Config/slot.state`, `Saves/`, and any existing `System/slot`.
+2. Download the `select-slot-miyoo-brightness-boost` artifact from the successful GitHub Actions build; inside is `select-slot-1.8.1-ver12-miyoo.zip` plus SHA-256 checksum.
+3. Extract **the contents of the inner ZIP** to the SD-card root. `System/slot`, `App/Slot/`, and `Apps/slot.pak/` must be at the card root, not inside a new folder.
+4. Start **select. slot.**. In the SLOT **Brightness** menu or using mapped brightness shortcuts, choose 10 first and then 11 or 12 only if needed.
+5. If brightness falls back after standby, the new automatic resume reapply should restore the selected SLOT level. If a change in OnionOS settings is pending, its keymon remains responsible for its own global value.
 
-This is an **ARMv7 application**, **not firmware**, and does not replace OnionOS. It overwrites the same `System/slot` path as Dean's version. No H700 SD2 files are included.
+GB/GBC default core is Gambatte; GBA default is gpSP with mGBA available for legacy selections. Existing palette and per-game scaling features (Original, Integer, Aspect Fit, Fill/Crop, Full Stretch) and separate Resume on Power On/Resume on Insert settings remain included. The framebuffer, LCD3x and hardware orientation remain the original Miyoo implementation. Menu-idle power timers, custom sleep animations, Authentic GLSL shaders and H700 OTA are not included.
 
-### Optional auto-boot
+## Build validation and limitations
 
-The included `System/autoboot/onion-startup.sh` can be copied manually to `.tmp_update/startup/custom-slot.sh` for OnionOS autoboot. It delegates to Dean's unchanged launcher and never replaces `.tmp_update/runtime.sh`. To revert autoboot, delete or rename the custom startup file.
+The GitHub workflow compiles and packages this using Dean's original ARMv7 toolchain, checks ZIP integrity, verifies the original launcher is byte-identical and rejects custom framebuffer modifications. The source also includes unit tests for original and extended PWM at several OnionOS periods. Build success **does not prove the original Mini hardware brightness is fixed**. This is a separately branched, experimental preview, not merged into main or published as an OTA release.
 
-### If you are comparing to the original Dean release
-
-This build is intentionally minimal. It will not modify a previously saved brightness value in `Config/slot.state`; it uses Dean's original read and power setup. A clean test on a separate backed-up configuration can eliminate settings left by earlier experimental builds, but this build will not delete or reset user settings automatically.
-
-## Build and verification
-
-The build script clones the exact Dean port commit and adds Gambatte through the original ARMv7 toolchain. Only the allowlisted custom app/core modules receive the generated patch. The workflow checks package structure, checksums, CPU architecture and **launcher byte equality** with the original port.
-
-This remains **hardware-untested** until used on the physical Mini. A successful CI build proves packaging/compilation, not visual brightness or working sleep/wake behavior.
-
-## Credits and licence
-
-Original SLOT: [slot-cfw/slot](https://github.com/slot-cfw/slot). Original Miyoo port and software renderer: [deanmarano/slot-miyoo](https://github.com/deanmarano/slot-miyoo). Select customizations: [Sinastrax/select-slot](https://github.com/Sinastrax/select-slot). Respect upstream GPL-3.0-or-later and bundled core licences; no ROMs or BIOS images are distributed.
+Credits: [slot-cfw/slot](https://github.com/slot-cfw/slot), [deanmarano/slot-miyoo](https://github.com/deanmarano/slot-miyoo), and [Sinastrax/select-slot](https://github.com/Sinastrax/select-slot). Upstream GPL-3.0-or-later and component licences apply; no ROMs or BIOS binaries are included.
