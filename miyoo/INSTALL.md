@@ -1,11 +1,11 @@
-# Custom slot. 1.8.1 Ver. 5 — Miyoo
+# Custom slot. 1.8.1 Ver. 7 — Miyoo
 
 This is an **experimental ARMv7 app build** for the **original Miyoo Mini**, Miyoo Mini Plus, and Miyoo Mini Flip. It is **not H700 firmware** and does not replace the device OS.
 
 ## Installation
 
 1. Back up the Miyoo SD card, especially any existing Slot saves, states and settings.
-2. Download the `custom-slot-1.8.1-ver5-miyoo.zip` artifact from the **Build Custom slot Miyoo preview** GitHub Actions workflow, once it has passed.
+2. Download the `custom-slot-1.8.1-ver7-miyoo.zip` artifact from the **Build Custom slot Miyoo preview** GitHub Actions workflow, once it has passed.
 3. Extract the **contents** of the ZIP at the SD-card root. The card should contain `System/slot`, `App/Slot/` and `Apps/slot.pak/` directly. Do not put them inside another folder.
 4. Reinsert the card and reboot. Launch **Custom slot** from the Apps/App section of your existing launcher. Stock, Onion and Allium layouts are included in the base port.
 5. Add extracted, uncompressed ROMs under `Games/GB/`, `Games/GBC/` and `Games/GBA/`. Supply your legally obtained GBA BIOS as `BIOS/gba_bios.bin`; neither ROMs nor BIOS images are distributed.
@@ -15,7 +15,7 @@ This is an **experimental ARMv7 app build** for the **original Miyoo Mini**, Miy
 ## Version and verified scope
 
 - **Base:** [deanmarano/slot-miyoo](https://github.com/deanmarano/slot-miyoo), pinned to commit `d096bdb87f25f3aba62de6b40ef859b61d841e43`.
-- **Slot upstream:** `v1.8.1`, pinned by the Miyoo port; our format is **Custom slot. 1.8.1 Ver. 5**.
+- **Slot upstream:** `v1.8.1`, pinned by the Miyoo port; our format is **Custom slot. 1.8.1 Ver. 7**.
 - **Device architecture:** ARMv7 with software framebuffer rendering, not the H700/aarch64 GPU backend.
 - **Upstream testing:** The original Miyoo Mini on OnionOS 4.3.1, plus Mini Plus and Flip, were reported working by the port author. **This Custom slot variant is not hardware-tested.**
 - **GB and GBC default core:** Gambatte, custom-built for the same ARMv7 hard-float toolchain. Existing explicit per-game mGBA selections may still load; mGBA is not the recommended core here.
@@ -28,6 +28,15 @@ This is an **experimental ARMv7 app build** for the **original Miyoo Mini**, Miy
 
 This is an **experimental preview**. GitHub Actions successfully cross-compiled and packaged the core, scaling, and system changes, but no Custom slot Miyoo hardware or frame-time test has been performed. Do not describe the Authentic shader work as completed.
 
+## Ver. 7 — brightness and sleep investigation
+
+Dean's original Miyoo Slot had normal brightness on the user's physical Mini. Darkening began after the Custom slot changes, so **do not change Dean's upstream PWM calibration** without device measurements.
+
+The previous Onion-specific brightness and POWER changes were never enabled by their original launcher condition: the script checked for `.tmp_update/onionVersion/version.txt`, which is not part of the official OnionOS source tree. Ver. 7 checks `.tmp_update/runtime.sh` instead, preserving Onion's own runtime and keymon. The original 180° framebuffer rotation has also been restored; the 0° change caused a real upside-down screen regression.
+
+**Optional hardware diagnostic:** create `Config/trace-display.txt` on the SD card and start Slot. The launcher captures Onion brightness detection, keymon detection, PWM duty, PWM enable, and Slot saved brightness into `Logs/slot-display-debug.log`. It writes logs only; it does not change screen brightness. Delete the flag when finished.
+
+**Important:** The custom menu screen-off timer is also an added backlight-control path. Brightness and POWER behavior still need original-Mini testing; a successful cross-build does not prove either is fixed.
 ## OnionOS BMO theme, sleep and screen behavior (Ver. 4)
 
 The verified Onion theme repository includes **BMO by forevertuesday**, **BMO Noire by forevertuesday**, and **BMO by OjninJo**. Each theme provides `skin/extra/bootScreen.png`, `Screen_Off.png`, and `Screen_Off_Save.png`; none provides an independent Sleep/Wake asset. All themes remain untouched on the SD card.
@@ -42,7 +51,7 @@ The verified Onion theme repository includes **BMO by forevertuesday**, **BMO No
 
 **There are no built-in themed sleep/wake splash animations in Onion's `keymon`.** Previous Ver. 3 attempted to draw them from Slot simultaneously with Onion's suspend logic; that was unsafe and could leave the screen or input in a bad state. Ver. 4 prioritizes a working POWER sleep/wake over an unverified BMO animation. To get BMO artwork **on** sleep/wake when Onion owns the button, a separately tested Onion keymon integration is necessary; the theme files themselves cannot implement it.
 
-**Display orientation correction:** Dean's launcher hard-coded `SLOT_FB_ROTATE=180` for the upside-down **752×560 Mini Flip** panel. Ver. 4 detects the `752,*` framebuffer mode and applies rotation **only there**; the original Mini / Mini Plus 640×480 displays use normal orientation. This corrects a real cross-device display bug but does not imply the independent Authentic LCD effects or noninteger scaling have been verified on your Mini.
+**Display orientation:** Ver. 5 incorrectly selected 0° on the user's original Mini. Ver. 7 restores the original 180° setting.
 
 **Display brightness correction (Ver. 5):** OnionOS loads its configured brightness (0–10) and controls `/sys/class/pwm/pwmchip0/pwm0/duty_cycle`. Original Slot had a **separate default of 5/9** and immediately overwrote that PWM level at `set_power()`, making Slot substantially darker if OnionOS was configured near its maximum. On OnionOS, the launcher now reads `/customer/app/jsonval brightness` and passes it to Slot. Slot uses the corresponding 1–9 level **before its first backlight write**; Onion brightness 10 maps to Slot 9. In-game brightness adjustment continues to work. This fixes the startup mismatch in code, **not yet confirmed on the device**. If the whole screen remains dark at maximum Slot brightness, inspect real PWM duty, display settings and power interaction rather than assuming the shader is responsible. If only game imagery is dim while Slot menus remain normally bright, investigate the software LCD filtering instead.
 
