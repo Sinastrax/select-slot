@@ -1,10 +1,13 @@
-# select. slot. 1.16.0 Ver. 15
+# select. slot. 1.16.0 Ver. 16
 
-## Changes since select. slot. 1.16.0 Ver. 14
+## Changes since select. slot. 1.16.0 Ver. 15
 
-- **Pocket SGB now uses EXACTLY the Pocket Color Authentic rendering profile.** On the physical RG SP, switching the running SGB game to Pocket Color instantly produced the desired LCD appearance while the previously loaded SGB palette was still active. The existing Pocket SGB profile instead set `u_lcd.x = 3.0`, selecting a different shader color path; Pocket Color used `2.0`.
-- **No longer treat SGB as a separate GPU screen.** Its `Screen::PocketSgb` profile now returns `Screen::PocketColor.look()` *unchanged*: same physical dot geometry, ink, gap blending, reflector, ghosting, glass, correction-on and correction-off GLSL paths. The shader source itself is not modified.
-- **Keep mGBA's actual SGB palette and hardware on restart.** Slot still saves Pocket SGB as a distinct model and launches mGBA in `Super Game Boy` mode with SGB presets and borders off. This keeps the visual profile separate from emulation mode.
-- Added a final-stage regression test proving that Authentic selection is independent of Color Correction On/Off, and that Pocket SGB and Pocket Color select identical GPU optics while the mGBA hardware palette selection stays separate.
+**The LCD effect is already correct. This version changes color routing ONLY.**
 
-**Verification:** Source routing, OpenGL ES 2.0 compilation and complete OTA packaging are checked in CI. Physical appearance and performance remain subject to a real RG SP/RG35XX H test. In this version the screen *look* is deliberately identical, while the underlying game palette is chosen by the emulator. This does not include the separate OTA size optimization.
+- **Pocket Color Auto no longer forces monochrome Game Boy hardware.** Slot previously passed the saved Auto palette through the explicit-palette branch, which selected `mgba_gb_model=Game Boy` and disabled game-specific GBC hardware colors at restart. An internal, non-menu `GbcAuto` directive now selects `Game Boy Color` hardware, GBC automatic title palettes, and the user's independent Pocket LCD renderer. Explicitly selected palettes and the original monochrome Authentic models keep their previous behavior.
+- **Pocket SGB keeps its real SGB palettes when Color Correction is enabled.** Ver. 15 correctly reused Pocket Color's optical screen but the shared `u_lcd.x=2` inadvertently selected the GBC color-correction transfer for SGB too. Both profiles still use `u_lcd.x=2` for the **identical full Pocket LCD optics**; the otherwise unused color-ramp selector `u_lcd.y` now distinguishes the GBC measured response (Pocket Color) from the optional SNES CRT response (SGB).
+- **Color Correction Off** continues passing the emulator's RGB unchanged. **On** applies the appropriate console color response. Neither toggle switches off the Authentic LCD filter.
+- **No changes** to the pixel-gap mask, neighbor ink, reflections, shadows, persistence, fit scaling, or the renderer's optical final mix. No change to ROMs, saves, or mGBA core binary.
+- Added regression checks for the mGBA model/palette options actually selected when starting games, correction-path selection, and unchanged LCD mathematics.
+
+**Verification boundary:** CI verifies the final merged source, GLSL ES2 shader, Rust compilation and OTA package. Physical colors still need confirmation on RG SP / RG35XX H. The separate OTA size optimization is not included.

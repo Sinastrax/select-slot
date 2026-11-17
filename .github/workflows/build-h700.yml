@@ -151,6 +151,11 @@ jobs:
           # Keep mGBA SGB hardware and palettes unchanged.
           python3 ../.github/scripts/alias-sgb-to-pocket-color-renderer.py
           python3 ../.github/scripts/verify-sgb-pocket-color-renderer-alias.py
+          # Final palette routing fix: color Auto is not a forced DMG
+          # palette; SGB uses SGB source colors, not GBC correction.
+          # This executes AFTER all historical shader transformations.
+          python3 ../.github/scripts/repair-pocket-rgb-source-and-correction.py
+          python3 ../.github/scripts/verify-pocket-rgb-source-and-correction.py
 
       - name: Capture merged source for integration review
         uses: actions/upload-artifact@v4
