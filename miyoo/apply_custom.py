@@ -452,6 +452,35 @@ edit("crates/slot/src/core.rs", [
 ])
 
 
+# OnionOS owns physical POWER and its theme transitions when running its
+# native runtime. SLOT must not blank the PWM on PowerTap before Onion's
+# bootScreen renderer can draw BMO's Screen_Off/Screen_Off_Save.
+# Keep SLOT's immediate save-state flush at press, without entering doze or
+# doing a competing poweroff on release/hold. Native non-Onion use unchanged.
+edit("crates/slot/src/app.rs", [
+    ('''    pub fn apply(&mut self, action: Action) {
+        self.track_held_dir(action);
+        match action {''',
+     '''    pub fn apply(&mut self, action: Action) {
+        self.track_held_dir(action);
+        // Under Onion, its keymon receives the same physical POWER event.
+        // Let keymon own LCD blanking, BMO theme artwork and suspend/wake.
+        // In particular do not execute Slot's doze() -> PWM duty 0 before
+        // Onion's bootScreen has a chance to render.
+        if self.root.as_ref().is_some_and(|r| r.join(".tmp_update/runtime.sh").is_file()) {
+            match action {
+                Action::PowerPress => {
+                    self.state_writer.flush();
+                    self.flush_resume();
+                    return;
+                }
+                Action::PowerTap | Action::PowerHold => return,
+                _ => {}
+            }
+        }
+        match action {'''),
+])
+
 # Miyoo-only physical brightness extension, requested after the clean Ver. 11
 # display rebuild remained too dim at SLOT level 9. This does NOT alter the
 # framebuffer, LCD3x effects, OnionOS files, or the original 1..9 PWM rungs.
