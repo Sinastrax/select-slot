@@ -60,6 +60,8 @@ jobs:
           git apply ../patches/authentic-color-response-only.patch
           git apply --check ../patches/mgba-gb-buffer-recovery.patch
           git apply ../patches/mgba-gb-buffer-recovery.patch
+          git apply --check ../patches/rg34xxsp-extra-hotkeys.patch
+          git apply ../patches/rg34xxsp-extra-hotkeys.patch
           echo "Exact-release patches applied"
 
       - name: Install required tools
@@ -105,7 +107,20 @@ jobs:
       - name: Package the SD2 update
         working-directory: upstream
         shell: bash
-        run: zip -qry ../slot-rgsp-custom-h700.zip slot-rgsp-custom
+        run: |
+          zip -qry ../slot-rgsp-custom-h700.zip slot-rgsp-custom
+          # Safe update for users already running the older, stable mGBA core:
+          # overwrite only Slot; preserve System/mgba_libretro.so and all saves.
+          mkdir -p ../hotkeys-update/System
+          cp slot-rgsp-custom/System/slot ../hotkeys-update/System/slot
+          (cd ../hotkeys-update && zip -qry ../Slot_RGSP_Extra_Hotkeys_Update.zip System)
+
+      - name: Upload minimal hotkeys-only update
+        uses: actions/upload-artifact@v4
+        with:
+          name: slot-rgsp-extra-hotkeys-update
+          path: Slot_RGSP_Extra_Hotkeys_Update.zip
+          if-no-files-found: error
 
       - name: Upload firmware artifact
         uses: actions/upload-artifact@v4
