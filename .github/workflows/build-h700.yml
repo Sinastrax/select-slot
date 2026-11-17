@@ -3,6 +3,8 @@ name: Build custom Slot H700
 on:
   workflow_dispatch:
   push:
+    tags:
+      - "v*-rgsp.*"
     paths:
       - "patches/**"
       - ".github/workflows/build-h700.yml"
@@ -161,3 +163,48 @@ jobs:
             slot-v*-h700.zip
             versions.json
           if-no-files-found: error
+
+  release-h700:
+    name: Publish complete custom firmware for online updates
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build-h700
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: slot-rgsp-complete-h700
+          path: release
+
+      - name: Verify version and archive checksum before publication
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib
+          root = pathlib.Path("release")
+          d = json.loads((root / "versions.json").read_text())["stable"]
+          assert d["tag"] == os.environ["RELEASE_TAG"], (d["tag"], os.environ["RELEASE_TAG"])
+          archive = root / d["zip"]
+          assert archive.is_file(), d["zip"]
+          assert archive.stat().st_size == d["size"]
+          assert hashlib.sha256(archive.read_bytes()).hexdigest() == d["sha256"]
+          print("Validated", archive.name, d["sha256"])
+          PY
+
+      - name: Publish update assets on GitHub Releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          zip="release/slot-${RELEASE_TAG}-h700.zip"
+          test -s "$zip"
+          gh release create "$RELEASE_TAG" "$zip" release/versions.json \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Custom Slot $RELEASE_TAG (H700)" \
+            --notes "Complete custom Slot H700 release. Includes existing Authentic shaders, SGB support, hotkeys and the pinned older mGBA core. Source and GPL-3.0 license: https://github.com/$GITHUB_REPOSITORY. Back up saves before installing."
