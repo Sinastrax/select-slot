@@ -125,6 +125,9 @@ jobs:
           # Pocket ink rendering on the dedicated mGBA/Gambatte SGB path.
           python3 ../.github/scripts/fix-fit-reference-sgb-fastpath.py
           python3 ../.github/scripts/verify-fit-reference-sgb-fastpath.py
+          # Native Game Boy Pocket ink must use fractional gap coverage at Fit.
+          python3 ../.github/scripts/fix-pocket-fit-ink-coverage.py
+          python3 ../.github/scripts/verify-pocket-fit-ink-coverage.py
 
       - name: Capture merged source for integration review
         uses: actions/upload-artifact@v4
