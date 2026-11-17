@@ -26,15 +26,25 @@ def replace_once(old: str, new: str, what: str):
 # monochrome ink/reflector/16-tap shadow. Preserve the exact current color
 # correction, neighboring-dot shadow and glass compositing below the branch.
 header = "                if (u_lcd.x > 2.5) {\n"
-tail = "                }\n            }\n        } else if (!inside) {"
 assert shader.count(header) == 1, "Expected one SGB override"
 start = shader.index(header)
-end = shader.index(tail, start)
-sgb_body = shader[start + len(header):end]
+# Match GLSL braces rather than relying on surrounding indentation / else
+# formatting; the SGB color-correction if has its own nested braces.
+cursor = start + len(header)
+depth = 1
+while depth:
+    assert cursor < len(shader), "Unclosed SGB shader block"
+    char = shader[cursor]
+    if char == "{":
+        depth += 1
+    elif char == "}":
+        depth -= 1
+    cursor += 1
+sgb_body = shader[start + len(header):cursor - 1]
 assert "vec3 sgbRgb = raw;" in sgb_body
 assert "u_authentic_correction > 0.5" in sgb_body
 assert "sgbNeighborDark" in sgb_body
-shader = shader[:start] + shader[end + len("                }\n"):]
+shader = shader[:start] + shader[cursor:]
 old_gap_start = "                    vec2 sgbPhase = f * span;\n"
 old_gap_end = "                    sgbGap = mix(sgbGap, 1.0 / max(span, vec2(1.0)), sgbSoft);\n"
 assert sgb_body.count(old_gap_start) == 1
