@@ -84,7 +84,14 @@ The [build workflow](.github/workflows/build-h700.yml) pins the pvaibhav base, a
 
 # What does it look like?
 
-The original cartridge carousel and core picker remain part of Custom slot. The screenshots below are **from the original Slot project**, not newly captured screens of the custom Pocket Color or Pocket SGB modes.
+The original cartridge carousel and core picker remain part of Custom slot. The **Authentic examples** below are courtesy of [pvaibhav's fork](https://github.com/pvaibhav/slot); the carousel and link examples come from the [original Slot](https://github.com/slot-cfw/slot). These are visual references, not new captures of the custom Pocket Color or Pocket SGB modes.
+
+<p align="center">
+<img src="https://raw.githubusercontent.com/pvaibhav/slot/pvaibhav-improvements/.github/resources/screenshots/authentic-gb.png" width="32%" alt="pvaibhav Authentic Game Boy shader">
+<img src="https://raw.githubusercontent.com/pvaibhav/slot/pvaibhav-improvements/.github/resources/screenshots/authentic-gbc.png" width="32%" alt="pvaibhav Authentic Game Boy Color shader">
+<img src="https://raw.githubusercontent.com/pvaibhav/slot/pvaibhav-improvements/.github/resources/screenshots/authentic-gba.png" width="32%" alt="pvaibhav Authentic Game Boy Advance shader">
+</p>
+<p align="center">GB · GBC · GBA — inherited Authentic shader examples</p>
 
 <p align="center">
 <img src="https://raw.githubusercontent.com/slot-cfw/slot/main/.github/resources/screenshots/carousel.gif" width="48%" alt="Original Slot cartridge carousel">
