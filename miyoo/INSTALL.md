@@ -1,4 +1,4 @@
-# select. slot. 1.8.1 Ver. 17 — use Onion's physical PWM backlight
+# select. slot. 1.8.1 Ver. 18 — GB/GBC Fit-aware Dot
 
 **Experimental ARMv7 Miyoo Mini / Mini Plus / Flip application, not H700 firmware.** This version is based on the pinned [deanmarano/slot-miyoo](https://github.com/deanmarano/slot-miyoo) commit `d096bdb87f25f3aba62de6b40ef859b61d841e43` and Slot upstream 1.8.1.
 
@@ -8,7 +8,15 @@ Successful Miyoo builds on the development branch now publish a **GitHub prerele
 
 The publishing job only runs after the build and package checks succeed and only for trusted branch pushes/manual builds; pull requests do not publish releases. Miyoo prereleases use `--prerelease --latest=false`, so the H700 stable release and OTA channel remain separate. Release publication does **not** establish hardware compatibility, frame-rate or shader accuracy.
 
-## Ver. 17: experimental Fit-aware software Dot\n\nDot now uses area-weighted coverage of each emulated source pixel across its actual destination pixel footprint in both axes. Horizontal and vertical masks are precomputed per output column/row using the original Miyoo CPU renderer, so fractional Fit scaling does not produce a naive repeating output-pixel mask. Dot is neutral RGB (no color tint), with a modest dot-gap luminance reduction and no artificial brightening beyond the original white signal. Off and LCD3x paths remain intact; no changes to mGBA/gpSP, PWM, Onion standby or BMO. Performance and visual fidelity require physical device verification.\n\n## Ver. 16: restore the original Miyoo emulator defaults\n\nThe GB/GBC default is restored from Gambatte to the original Miyoo mGBA, retaining gpSP for GBA. Gambatte remains optional for compatibility, rather than being mandatory. The original renderer, launcher, PWM implementation, Onion keymon coordination and working BMO handoff are kept. Existing per-game core choices may continue to override the default, so test using a title without an explicit Gambatte selection. This is an experimental core-path correction, not a proven cure for the physical darkness.\n\n## Ver. 15: actual hardware backlight priority on the original Mini
+## Ver. 18: make Dot selectable for GB and GBC
+
+The previous Ver. 17 built the software Dot renderer, but **GB and GBC were still restricted to their original shader selection list** (Off, LCD3x, Grid, Simpletex). Dot was only offered to GBA. Ver. 18 corrects the GB/GBC selection table, exposes Dot for all three platforms, and hides Grid/Simpletex because the Miyoo CPU renderer never implemented those modes. The selectable shaders are now **Off / LCD3x / Dot** on GB, GBC and GBA.
+
+The build checks both shader choice tables, the live frontend-to-renderer mapping, and the Dot mask. Saved unsupported shader choices fall back to neutral Off. Existing mGBA/gpSP defaults, PWM brightness, OnionOS/BMO and Fit scaling remain unchanged. Visual and frame-rate results still require testing on a real Miyoo.
+
+## Ver. 17: experimental Fit-aware software Dot
+
+Dot now uses area-weighted coverage of each emulated source pixel across its actual destination pixel footprint in both axes. Horizontal and vertical masks are precomputed per output column/row using the original Miyoo CPU renderer, so fractional Fit scaling does not produce a naive repeating output-pixel mask. Dot is neutral RGB (no color tint), with a modest dot-gap luminance reduction and no artificial brightening beyond the original white signal. Off and LCD3x paths remain intact; no changes to mGBA/gpSP, PWM, Onion standby or BMO. Performance and visual fidelity require physical device verification.\n\n## Ver. 16: restore the original Miyoo emulator defaults\n\nThe GB/GBC default is restored from Gambatte to the original Miyoo mGBA, retaining gpSP for GBA. Gambatte remains optional for compatibility, rather than being mandatory. The original renderer, launcher, PWM implementation, Onion keymon coordination and working BMO handoff are kept. Existing per-game core choices may continue to override the default, so test using a title without an explicit Gambatte selection. This is an experimental core-path correction, not a proven cure for the physical darkness.\n\n## Ver. 15: actual hardware backlight priority on the original Mini
 
 This release preserves the **working Ver. 14 OnionOS standby / BMO handoff**. The remaining problem was a dark game/display even when the new SLOT brightness scale reached level 12.
 
