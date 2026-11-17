@@ -14,6 +14,7 @@ code = "\n".join(line[10:] if line.startswith("          ") else line for line i
 compile(code, "release_manifest_validator", "exec")
 assert 'assert any("-" + n + "." in version' in code
 assert 'gh release upload "$TAG"' in s and "--clobber" in s
-assert 'gh release edit "$TAG"' in s and "--draft=false --latest" in s
+assert 'gh release edit "$TAG"' in s and "--draft=false --target" in s
+assert 'gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --latest' in s
 assert 'gh release create "$TAG"' in s
 print("PASS: OTA publisher parses Python manifest and replaces withdrawn drafts")
