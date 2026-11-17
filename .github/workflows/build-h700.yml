@@ -140,6 +140,11 @@ jobs:
           # frames and compare optical contrast at Integer and Fit scales.
           python3 ../.github/scripts/fix-pocket-sgb-full-optics.py
           python3 ../.github/scripts/verify-pocket-sgb-full-optics.py
+          # After all experimental shader transitions, restore exactly the
+          # PRE-RG35XX H Ver. 4 optical raster path for both color Pocket modes.
+          # Existing Fit work for mono/standard shaders stays independent.
+          python3 ../.github/scripts/restore-ver4-pocket-optics.py
+          python3 ../.github/scripts/verify-restored-pocket-optics.py
 
       - name: Capture merged source for integration review
         uses: actions/upload-artifact@v4
