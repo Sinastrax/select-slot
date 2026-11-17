@@ -67,6 +67,25 @@ if "vec3 lin = pow(rawColour, vec3(2.2));" not in shader:
     raise AssertionError("Uncorrected RGB mode missing")
 if "uniform float u_authentic_correction;" not in shader:
     raise AssertionError("Authentic colour-correction toggle uniform is missing")
+# Authentic's LCD grid darkens the pixel gaps. In the current Off path
+# the 1/(1-grid) inverse compensation brightens pixel centres enough to
+# recover the source's average luminance, making Off resemble the unfiltered
+# picture instead of the modestly darker regular LCD shader.
+# GBA Off is not a physical colour calibration, so keep the original source
+# RGB at pixel centres and let the optical grid darken the full image slightly.
+# Keep GBA On, GBC On/Off and the GB/Pocket modes completely unchanged.
+shader = replace_once(
+    shader,
+    "lin = min(panelDark + (lin - panelDark) * sparkle / (1.0 - grid), vec3(1.0));",
+    """// Only uncorrected GBA omits inverse grid-brightness compensation:
+            // RGB at pixel centres stays unchanged, dark gaps reduce luminance.
+            // Calibrated On, GBC and Pocket modes retain original behaviour.
+            bool gbaRawLcd = u_lcd.x < 0.5 && u_lcd.y < 0.5
+                && u_authentic_correction < 0.5;
+            float cellCompensation = gbaRawLcd ? 1.0 : 1.0 / max(1.0 - grid, 0.001);
+            lin = min(panelDark + (lin - panelDark) * sparkle * cellCompensation, vec3(1.0));""",
+    "GBA Authentic Off optical LCD brightness"
+)
 shader_path.write_text(shader)
 
 # Slot already has GamePass::set_glass and Compositor::set_authentic_glass,

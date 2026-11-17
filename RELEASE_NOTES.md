@@ -1,10 +1,10 @@
-# Custom slot. 1.16.0 Ver. 3
+# Custom slot. 1.16.0 Ver. 4
 
-## Changes since Custom slot. 1.16.0 Ver. 2
+## Changes since Custom slot. 1.16.0 Ver. 3
 
-- Fixed **Authentic → Color Correction On** for GBA and GBC: restore the original measured LCD response, including the model's physical panel tint, brightness and black/white levels, rather than preserving modern RGB brightness and neutral whites.
-- **Color Correction Off** keeps the original game's RGB colors with Authentic's pixel grid, shadows and LCD response still active.
-- Restored calibrated GBC panel colours for Pocket Color when correction is enabled; its uncorrected palette mode remains neutral.
-- Added regression checks to protect the independent On/Off behavior and avoid the near-white/yellow desaturation introduced in Ver. 2.
+- Fixed **GBA Authentic with Color Correction Off** looking too bright and too similar to an unfiltered LCD image: pixel centres now retain the source RGB without the inverse pixel-grid brightness boost, so the dark LCD gaps naturally reduce the overall brightness.
+- **Authentic with Color Correction On** still uses the original measured GBA LCD response and calibrated panel levels from Ver. 3.
+- Other Authentic modes (GB, GBC, Pocket Color and Pocket SGB), Reflection, LCD response, emulator cores and scaling remain unchanged.
+- Added a regression check to keep this change limited to uncorrected GBA rendering.
 
-The Reflection toggle fix and other Authentic geometry and emulator changes remain unchanged.
+The adjustment does not introduce additional color tint or alter the underlying game palette.

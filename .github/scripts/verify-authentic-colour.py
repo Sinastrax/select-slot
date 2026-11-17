@@ -28,6 +28,26 @@ required("vec3 gbcBlack = pow(vec3(14.0, 25.0, 28.0) / 255.0, vec3(2.2));",
          "Calibrated GBC black point")
 assert "authentic_corrected_linear(" not in shader, "Obsolete gamut/luminance lock has survived"
 
+# Regression: GBA with correction OFF retains the source RGB in each LCD cell,
+# but no longer boosts the lit area to offset the darkness of the pixel grid.
+required("bool gbaRawLcd = u_lcd.x < 0.5 && u_lcd.y < 0.5", "GBA-only LCD brightness selector")
+required("&& u_authentic_correction < 0.5;", "Optical darkening only when correction Off")
+required("float cellCompensation = gbaRawLcd ? 1.0 : 1.0 / max(1.0 - grid, 0.001);",
+         "Off skips inverse grid boost while calibrated On retains it")
+required("lin = min(panelDark + (lin - panelDark) * sparkle * cellCompensation, vec3(1.0));",
+         "LCD grid luminance compensation")
+
+# Approximate 640x480 display and native 240x160 GBA frame: at this scale,
+# removing the inverse-brightness boost reduces the overall light through
+# the grid, without introducing a hue shift or changing source pixel centres.
+span_x, span_y = 640 / 240, 480 / 160
+thin_x, thin_y = 1 / span_x, 1 / span_y
+grid = thin_x * (1 - thin_y) * 0.45 + thin_y * (1 - thin_x) * 0.20 + thin_x * thin_y * max(0.45, 0.20)
+assert 0.15 < grid < 0.25, ("Unexpected GBA LCD gap strength", grid)
+assert abs((1 - grid) * (1 / (1 - grid)) - 1) < 1e-9
+assert 0.75 < (1 - grid) < 0.85
+
+
 # Extract the published GBA ramp/matrix from the same Slot source we build.
 ramp_text = authentic.split("pub(crate) const RAMPS:", 1)[1].split("= [", 1)[1].split("];", 1)[0]
 ramp_rows = re.findall(r"\[\s*((?:\d+[\s,]+){31}\d+,?)\s*\]", ramp_text)
