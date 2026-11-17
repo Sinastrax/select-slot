@@ -111,7 +111,8 @@ def image(palette,screen):
             if screen=='sgb':
                 mask=min(optical,geo)
                 # SGB palette must be unmodified in pixel interiors.
-                if geo==0. and abs(shade-1.)<.0000001:
+                if geo==0.:
+                    assert mask==0., "Dot interiors cannot become gray reflector"
                     assert mix(raw,ref,mask)==raw
                     nonempty_chroma+=1
             else:
