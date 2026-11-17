@@ -1,12 +1,12 @@
-# select. slot. 1.16.0 Ver. 6
+# select. slot. 1.16.0 Ver. 7
 
-## Changes since select. slot. 1.16.0 Ver. 5
+## Changes since select. slot. 1.16.0 Ver. 6
 
-- Reduced the pronounced **vertical LCD stripes** when using **Fit scaling** at fractional pixel ratios on the 640×480 RG35XX H.
-- **Authentic GBA/GBC:** softly suppresses the uneven vertical gap contrast when individual source pixels cannot be displayed at an integer multiple, while maintaining their average dark-gap coverage and brightness.
-- **Standard LCD shader:** softly suppresses its RGB vertical stripe contrast at fractional pixel scales without altering horizontal scanlines, texture area integration, or precision settings.
-- **Integer scaling remains identical:** the original Authentic and standard LCD stripe patterns are retained at exact 2×, 3×, and other integer scaling ratios.
-- Unchanged: calibrated Authentic color correction, Color Correction Off, Reflection, emulator cores, and game scaling geometry.
-- Added numerical Fit/integer regression checks and retained automatic OpenGL ES shader compilation validation.
+- **RG35XX H Fit / Dot shader:** reduced uneven pixel-dot intensity at noninteger GBA/GB scaling (e.g. GBA 2.67×, GB 3.33×), keeping the dot structure and average darkness rather than changing game colors.
+- **RG35XX H Fit / Grid shader:** stabilized the contrast of the pixel grid's intersecting rows and columns at fractional scale. The existing area-integrated grid geometry remains.
+- **Pocket SGB with Gambatte and mGBA:** corrected the shared rendering path so colored SGB palette pixels are not interpreted as monochrome Pocket ink or run through the GBC LCD calibration. Their original RGB hues survive with a mild, antialiased Pocket-style pixel pattern.
+- **Gambatte SGB palettes:** disables its additional GBC LCD color correction for SGB selections, which are intended for TV display.
+- **Integer scaling:** Dot and Grid visual masks are unchanged at exact 2×, 3×, and other integer multiples. Existing GBA/GBC color correction, reflection toggles, regular Pocket and Pocket Color models, cores, and saves remain unchanged.
+- Added source/numerical regression checks; the complete H700 build still validates the generated OpenGL ES shaders.
 
-This is an OTA update from Ver. 5. Hardware appearance still requires visual confirmation on the RG35XX H.
+**Note:** Gambatte supplies game-specific SGB preset palettes, whereas mGBA supports SGB hardware and in-game palette commands. Their resulting colors may differ by game. The update is delivered via the existing OTA updater; physical RG35XX H appearance requires on-device verification.
