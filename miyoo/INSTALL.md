@@ -1,6 +1,16 @@
-# select. slot. 1.8.1 Ver. 23 — Miyoo Mini family
+# select. slot. 1.8.1 Ver. 24 — Miyoo Mini family
 
 **Experimental, offline-capable Miyoo Mini / Mini Plus / Mini Flip application.** This is not the Anbernic H700 firmware. Built from the pinned [deanmarano/slot-miyoo](https://github.com/deanmarano/slot-miyoo) ARMv7 port and Slot 1.8.1. Its releases are separate from the H700 update channel.
+
+## Ver. 24 — persistent menu Scaling and power-transition regression fix
+
+- **Shelf menu > Screen > General > Default Scaling:** Original, Integer, Aspect Fit, Fill / Crop, Full Stretch. Changing the entry writes `Config/video_mode.txt` with `default = <mode>`. The selection persists after restart and applies to all games without a per-game scaling override. Games already configured individually retain their choices.
+- **In-game Screen > Scaling:** remains available and saves a per-game override in the same `Config/video_mode.txt`. The shelf default continues applying to other games. No existing per-game selections or saves are removed.
+- **Shutting down now disables input immediately.** Previously, Slot kept accepting menu/game input while the shutdown sequence was pending. For an OnionOS menu-idle shutdown, the delay before giving OnionOS control is now eliminated.
+- **POWER hold on OnionOS:** The previous app build ignored `PowerHold`, allowing OnionOS keymon to enter a long application suspend/shutdown fallback. A deliberate hold is now recognized before keymon's ~0.5s deepsleep path, requests a normal OnionOS shutdown via `/tmp/.offOrder`, and exits to let the OS display the **selected theme's own Screen Off** artwork. Short POWER taps remain handled by OnionOS for standby/wake. The stock autoboot runtime is no longer mistaken for OnionOS.
+- These changes are **not theme-specific**. The same OnionOS `bootScreen End` path selects the active theme. The OnionOS startup hook still owns the actual display/shutdown presentation; Slot does not copy or replace any theme assets.
+
+The OnionOS keymon and boot-screen process share the device with Slot, so exact POWER timing and artwork visibility still require physical-device testing. The ARM build checks validate the changed code and packaging, not the physical behavior.
 
 ## Ver. 23 — Plug-and-play autoboot, one ZIP per firmware
 
@@ -8,9 +18,9 @@
 
 | Download | What happens after extracting at the SD root |
 | --- | --- |
-| `select-slot-1.8.1-ver23-miyoo-onion-autoboot.zip` | **OnionOS 4.3+ (Mini / Mini Plus):** starts select. slot. automatically after OnionOS has initialized its screen, audio and key monitor. Installs only `.tmp_update/startup/select-slot.sh`. It does **not** replace OnionOS's own `.tmp_update/runtime.sh` or any theme files. |
-| `select-slot-1.8.1-ver23-miyoo-stock-autoboot.zip` | **Stock Miyoo firmware only:** starts select. slot. instead of stock MainUI. It installs `.tmp_update/runtime.sh`, the stock firmware's boot hook, based on the original slot-miyoo port. |
-| `select-slot-1.8.1-ver23-miyoo.zip` | **App-only:** does not enable autoboot. Slot remains available from the normal launcher in stock, OnionOS and supported Allium setups. |
+| `select-slot-1.8.1-ver24-miyoo-onion-autoboot.zip` | **OnionOS 4.3+ (Mini / Mini Plus):** starts select. slot. automatically after OnionOS has initialized its screen, audio and key monitor. Installs only `.tmp_update/startup/select-slot.sh`. It does **not** replace OnionOS's own `.tmp_update/runtime.sh` or any theme files. |
+| `select-slot-1.8.1-ver24-miyoo-stock-autoboot.zip` | **Stock Miyoo firmware only:** starts select. slot. instead of stock MainUI. It installs `.tmp_update/runtime.sh`, the stock firmware's boot hook, based on the original slot-miyoo port. |
+| `select-slot-1.8.1-ver24-miyoo.zip` | **App-only:** does not enable autoboot. Slot remains available from the normal launcher in stock, OnionOS and supported Allium setups. |
 
 **Important: Never extract the Stock Autoboot ZIP on OnionOS or Allium.** They use `.tmp_update/runtime.sh` to boot their own software, and overwriting that file would damage the SD-card operating-system installation. Back up the card before using *any* variant. Do not overwrite an existing `.tmp_update/runtime.sh` even on a stock-labeled card unless you have confirmed it is genuinely stock with no other boot manager.
 
