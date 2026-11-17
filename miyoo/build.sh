@@ -9,8 +9,10 @@ PORT="$WORK/slot-miyoo"
 STAGE="$PORT/release/stage"
 PORT_COMMIT="d096bdb87f25f3aba62de6b40ef859b61d841e43"
 SLOT_VERSION="1.8.1"
-CUSTOM_VERSION="22"
+CUSTOM_VERSION="23"
 ZIP="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo.zip"
+ZIP_ONION="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo-onion-autoboot.zip"
+ZIP_STOCK="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo-stock-autoboot.zip"
 
 for command in git task docker zip unzip python3 file; do
   command -v "$command" >/dev/null || { echo "Missing build dependency: $command" >&2; exit 1; }
@@ -130,12 +132,12 @@ grep -Fq '+            "brightness" => brightness = Some(value.parse::<u8>().ok(
 ! grep -Fq '+                let duty = if step <= TOP_STEP as u8 {' "$PORT/patches/0028-custom-gambatte-defaults.patch"
 echo 'Verified legacy brightness 0–9 and compatibility migration'
 
-# Optional autoboot delegates to the original launcher and leaves Onion's
-# runtime, keymon, the selected theme, and display services unmodified.
+# The OnionOS autoboot helper delegates to the original launcher and leaves
+# runtime, keymon, the selected theme and display services unmodified.
 cp "$ROOT/miyoo/onion-autoboot.sh" "$STAGE/System/autoboot/onion-startup.sh"
 cp "$ROOT/miyoo/INSTALL.md" "$STAGE/System/select-slot-install.md"
 cat > "$STAGE/System/select-slot-version.txt" <<EOF
-select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - menu idle timers, shaders off, brightness 1-9
+select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - copy-paste autoboot variants; idle timers; shaders off; brightness 1-9
 Base: https://github.com/deanmarano/slot-miyoo
 Pinned original: $PORT_COMMIT
 GB/GBC: Miyoo-native mGBA default; Gambatte optional; GBA: gpSP default (mGBA alternative)
@@ -151,8 +153,47 @@ Onion PWM: original 0-9 brightness duty table; select physical PWM over unrelate
 Experimental preview; no H700 OTA publication
 EOF
 
-rm -f "$ZIP"
+# Keep the original app-only ZIP for people who do NOT want autostart.
+# Never install or overwrite any OS boot hook in this base package.
+rm -f "$ZIP" "$ZIP_ONION" "$ZIP_STOCK"
 (cd "$STAGE" && zip -qr "$ZIP" .)
-unzip -t "$ZIP" | tail -1
-sha256sum "$ZIP" > "$ZIP.sha256"
-printf '\nBuilt %s\n' "$ZIP"
+
+# OnionOS 4.3+ explicitly executes every .sh file in this dedicated startup
+# directory. Crucially, DO NOT put runtime.sh at the card root: that belongs
+# to OnionOS itself. This hook is ignored by stock firmware.
+test ! -e "$STAGE/.tmp_update/startup/select-slot.sh"
+mkdir -p "$STAGE/.tmp_update/startup"
+cp "$ROOT/miyoo/onion-autoboot.sh" "$STAGE/.tmp_update/startup/select-slot.sh"
+(cd "$STAGE" && zip -qr "$ZIP_ONION" .)
+rm "$STAGE/.tmp_update/startup/select-slot.sh"
+
+# Stock Miyoo firmware uses .tmp_update/runtime.sh as its real startup
+# script. Copy Dean's proven original *unmodified* stock-autoboot hook only
+# into the separate, conspicuously named stock ZIP. NEVER ship it inside
+# OnionOS/autoboot or the normal app ZIP: overwriting an existing OnionOS
+# runtime.sh would stop that operating system from booting.
+test -s "$PORT/card/System/autoboot/runtime.sh"
+test ! -e "$STAGE/.tmp_update/runtime.sh"
+mkdir -p "$STAGE/.tmp_update"
+cp "$PORT/card/System/autoboot/runtime.sh" "$STAGE/.tmp_update/runtime.sh"
+cmp -s "$STAGE/.tmp_update/runtime.sh" "$PORT/card/System/autoboot/runtime.sh"
+(cd "$STAGE" && zip -qr "$ZIP_STOCK" .)
+rm "$STAGE/.tmp_update/runtime.sh"
+
+# Verify cross-OS isolation; a wrong runtime.sh in OnionOS is dangerous.
+for z in "$ZIP" "$ZIP_ONION" "$ZIP_STOCK"; do
+  unzip -t "$z" | tail -1 | grep -q 'No errors detected'
+  unzip -Z1 "$z" | grep -qx 'System/slot'
+  unzip -Z1 "$z" | grep -qx 'App/Slot/launch.sh'
+  unzip -Z1 "$z" | grep -qx 'Apps/slot.pak/launch.sh'
+  sha256sum "$z" > "$z.sha256"
+done
+! unzip -Z1 "$ZIP" | grep -q '^.tmp_update/'
+unzip -Z1 "$ZIP_ONION" | grep -qx '.tmp_update/startup/select-slot.sh'
+! unzip -Z1 "$ZIP_ONION" | grep -qx '.tmp_update/runtime.sh'
+unzip -Z1 "$ZIP_STOCK" | grep -qx '.tmp_update/runtime.sh'
+! unzip -Z1 "$ZIP_STOCK" | grep -qx '.tmp_update/startup/select-slot.sh'
+unzip -p "$ZIP_ONION" '.tmp_update/startup/select-slot.sh' | grep -Fq 'System/launch_frontend.sh'
+unzip -p "$ZIP_STOCK" '.tmp_update/runtime.sh' | cmp -s - "$PORT/card/System/autoboot/runtime.sh"
+echo "Verified app-only, OnionOS hook, and stock runtime ZIPs are isolated"
+printf '\nBuilt\n  %s\n  %s\n  %s\n' "$ZIP" "$ZIP_ONION" "$ZIP_STOCK"
