@@ -35,13 +35,16 @@ shader = (shader[:sgb_start] +
 # color conversion, but it must be disabled for the SGB palette.
 pocket_start = shader.index("if (u_lcd.x > 1.5 && inside) {")
 rgb_idx = shader.index("                vec3 panelRgb = raw;", pocket_start)
-gbc_if = "                if (u_lcd.x < 3.5) {"
-assert shader.count(gbc_if) == 1, "Expected combined Pocket Color/SGB correction"
-gbc_idx = shader.index(gbc_if, rgb_idx)
-assert gbc_idx - rgb_idx < 250, "GBC correction moved away from Pocket RGB selection"
-shader = shader[:gbc_idx] + shader[gbc_idx:].replace(gbc_if, "                if (u_lcd.x < 2.5) {", 1)
-gbc_idx = shader.index("                if (u_lcd.x < 2.5) {", rgb_idx)
-cursor = gbc_idx + len("                if (u_lcd.x < 2.5) {")
+import re
+# Locate the actual measured-color block without depending on its indentation.
+window = shader[rgb_idx:rgb_idx + 900]
+match = re.search(r"(?m)^[ \\t]*if \\(u_lcd\\.x < (?:2\\.5|3\\.5)\\) \\{", window)
+assert match is not None, "Expected Pocket GBC color branch near source RGB; got: " + repr(window)
+gbc_idx = rgb_idx + match.start()
+gbc_if = match.group(0)
+shader = shader[:gbc_idx] + shader[gbc_idx:].replace(gbc_if, gbc_if.replace("3.5", "2.5"), 1)
+gbc_open = gbc_if.replace("3.5", "2.5")
+cursor = gbc_idx + len(gbc_open)
 depth = 1
 while depth:
     assert cursor < len(shader), "Unclosed Pocket Color correction block"
