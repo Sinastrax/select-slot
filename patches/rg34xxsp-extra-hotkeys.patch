@@ -1,0 +1,281 @@
+diff --git a/crates/slot-input/src/raw.rs b/crates/slot-input/src/raw.rs
+--- a/crates/slot-input/src/raw.rs
++++ b/crates/slot-input/src/raw.rs
+@@ -19,6 +19,14 @@
+     VolDown,
+     Power,
+     Lid,
++    /// Physical stick clicks on the RG34XXSP.
++    L3,
++    R3,
++    /// Digital directions synthesized from the right analog stick.
++    RUp,
++    RDown,
++    RLeft,
++    RRight,
+ }
+ 
+ #[derive(Copy, Clone, PartialEq, Eq, Debug)]
+diff --git a/crates/slot-store/src/bindings.rs b/crates/slot-store/src/bindings.rs
+--- a/crates/slot-store/src/bindings.rs
++++ b/crates/slot-store/src/bindings.rs
+@@ -23,6 +23,12 @@
+     R2,
+     Select,
+     Start,
++    L3,
++    R3,
++    RUp,
++    RDown,
++    RLeft,
++    RRight,
+ }
+ 
+ impl Device {
+@@ -30,7 +36,7 @@
+         matches!(self, Device::Select | Device::Start)
+     }
+ 
+-    pub const ALL: [Device; 14] = [
++    pub const ALL: [Device; 20] = [
+         Device::Up,
+         Device::Down,
+         Device::Left,
+@@ -45,6 +51,12 @@
+         Device::R2,
+         Device::Select,
+         Device::Start,
++        Device::L3,
++        Device::R3,
++        Device::RUp,
++        Device::RDown,
++        Device::RLeft,
++        Device::RRight,
+     ];
+ 
+     pub fn key(self) -> &'static str {
+@@ -63,6 +75,12 @@
+             Device::R2 => "r2",
+             Device::Select => "select",
+             Device::Start => "start",
++            Device::L3 => "l3",
++            Device::R3 => "r3",
++            Device::RUp => "right_up",
++            Device::RDown => "right_down",
++            Device::RLeft => "right_left",
++            Device::RRight => "right_right",
+         }
+     }
+ 
+@@ -82,6 +100,12 @@
+             Device::R2 => "R2",
+             Device::Select => "SELECT",
+             Device::Start => "START",
++            Device::L3 => "L3",
++            Device::R3 => "R3",
++            Device::RUp => "R-UP",
++            Device::RDown => "R-DOWN",
++            Device::RLeft => "R-LEFT",
++            Device::RRight => "R-RIGHT",
+         }
+     }
+ 
+diff --git a/crates/slot/src/input/bind.rs b/crates/slot/src/input/bind.rs
+--- a/crates/slot/src/input/bind.rs
++++ b/crates/slot/src/input/bind.rs
+@@ -1,7 +1,7 @@
+ use slot_input::{Action, Btn, Chord, Mod};
+ use slot_store::{Binding, Device, Modifier, Shortcut};
+ 
+-const PAIRS: [(Device, Btn); 14] = [
++const PAIRS: [(Device, Btn); 20] = [
+     (Device::Up, Btn::Up),
+     (Device::Down, Btn::Down),
+     (Device::Left, Btn::Left),
+@@ -16,6 +16,12 @@
+     (Device::R2, Btn::R2),
+     (Device::Select, Btn::Select),
+     (Device::Start, Btn::Start),
++    (Device::L3, Btn::L3),
++    (Device::R3, Btn::R3),
++    (Device::RUp, Btn::RUp),
++    (Device::RDown, Btn::RDown),
++    (Device::RLeft, Btn::RLeft),
++    (Device::RRight, Btn::RRight),
+ ];
+ 
+ pub fn device_btn(d: Device) -> Btn {
+diff --git a/crates/slot/src/input/evdev.rs b/crates/slot/src/input/evdev.rs
+--- a/crates/slot/src/input/evdev.rs
++++ b/crates/slot/src/input/evdev.rs
+@@ -17,6 +17,11 @@
+ pub const ABS_X: u16 = 0x00;
+ pub const ABS_Y: u16 = 0x01;
+ 
++// Slot's BaseOS left-stick axes are 0x02/0x03. The other stick uses
++// 0x00/0x01 on the RG34XXSP input node.
++const RIGHT_PRESS: i32 = 12000;
++const RIGHT_RELEASE: i32 = 8000;
++
+ pub const STICK_DEADZONE: i32 = 2048;
+ pub const DSOS_STICK_DEADZONE: i32 = 900;
+ 
+@@ -127,6 +132,26 @@
+         self == Keymap::DsOs || has_left_stick(target)
+     }
+ 
++    pub fn right_stick_axes(self) -> [u16; 2] {
++        match self {
++            Keymap::BaseOs => [ABS_X, ABS_Y],
++            Keymap::DsOs => [0x03, 0x04],
++        }
++    }
++
++    /// Only enable right-stick hotkeys when the actual RG34XXSP click
++    /// buttons are advertised. Do not synthesize phantom buttons on
++    /// other devices or DSOS, where 0x139 already means R2.
++    pub fn has_right_stick(self, sys: &Path, node: &Path) -> bool {
++        if self != Keymap::BaseOs {
++            return false;
++        }
++        let Some(name) = node.file_name() else { return false; };
++        std::fs::read_to_string(sys.join(name).join("device/capabilities/key"))
++            .ok()
++            .is_some_and(|keys| has_bit(&keys, 0x139) && has_bit(&keys, 0x13c))
++    }
++
+     pub fn stick_axes(self) -> [u16; 2] {
+         match self {
+             Keymap::BaseOs => [ABS_LSX, ABS_LSY],
+@@ -153,6 +178,43 @@
+     "rgcubexx",
+ ];
+ 
++/// Stateful right analog stick -> distinct virtual buttons, with hysteresis.
++/// No game-button behavior is assigned unless a user explicitly binds it.
++pub struct RightStick {
++    axes: [u16; 2],
++    directions: [i8; 2],
++}
++
++impl RightStick {
++    pub fn new(keymap: Keymap) -> RightStick {
++        RightStick { axes: keymap.right_stick_axes(), directions: [0; 2] }
++    }
++
++    pub fn feed(&mut self, ev: Ev) -> Option<Vec<RawEvent>> {
++        if ev.kind != EV_ABS { return None; }
++        let axis = self.axes.iter().position(|&code| code == ev.code)?;
++        let was = self.directions[axis];
++        let v = ev.value;
++        let now = if was < 0 && v < -RIGHT_RELEASE { -1 }
++            else if was > 0 && v > RIGHT_RELEASE { 1 }
++            else if v < -RIGHT_PRESS { -1 }
++            else if v > RIGHT_PRESS { 1 }
++            else { 0 };
++        if was == now { return Some(Vec::new()); }
++        self.directions[axis] = now;
++        let btn = |dir: i8| match (axis, dir > 0) {
++            (0, false) => Btn::RLeft,
++            (0, true) => Btn::RRight,
++            (1, false) => Btn::RUp,
++            _ => Btn::RDown,
++        };
++        let mut out = Vec::new();
++        if was != 0 { out.push(RawEvent::Up(btn(was))); }
++        if now != 0 { out.push(RawEvent::Down(btn(now))); }
++        Some(out)
++    }
++}
++
+ pub fn has_left_stick(target: &str) -> bool {
+     LEFT_STICK_TARGETS.contains(&target)
+ }
+@@ -314,6 +376,8 @@
+         0x138 => Btn::Menu,
+         0x13a => Btn::L2,
+         0x13b => Btn::R2,
++        0x139 => Btn::L3, // RG34XXSP: BTN_TR2 (physical L3)
++        0x13c => Btn::R3, // RG34XXSP: BTN_MODE (physical R3)
+         115 => Btn::VolUp,
+         114 => Btn::VolDown,
+         116 => Btn::Power,
+@@ -321,9 +385,9 @@
+     })
+ }
+ 
+-const WANTED: [u16; 15] = [
+-    0x130, 0x131, 0x132, 0x133, 0x134, 0x135, 0x136, 0x137, 0x138, 0x13a, 0x13b, 0x162, 115, 114,
+-    116,
++const WANTED: [u16; 17] = [
++    0x130, 0x131, 0x132, 0x133, 0x134, 0x135, 0x136, 0x137, 0x138, 0x139, 0x13a, 0x13b,
++    0x13c, 0x162, 115, 114, 116,
+ ];
+ 
+ pub use slot_power::has_bit;
+diff --git a/crates/slot/src/input/device.rs b/crates/slot/src/input/device.rs
+--- a/crates/slot/src/input/device.rs
++++ b/crates/slot/src/input/device.rs
+@@ -7,7 +7,7 @@
+ 
+ use slot_input::{Btn, InputSource, Millis, RawEvent};
+ 
+-use super::evdev::{decode, device_name, Ev, Hat, Keymap, EVENT_BYTES, EV_ABS, EV_KEY, EV_SYN};
++use super::evdev::{decode, device_name, Ev, Hat, Keymap, RightStick, EVENT_BYTES, EV_ABS, EV_KEY, EV_SYN};
+ use super::trace;
+ 
+ const DEV: &str = "/dev/input";
+@@ -60,13 +60,14 @@
+                 device_name(sys, &node)
+             );
+             quicken_poll(sys, &node);
++            let has_right_stick = keymap.has_right_stick(sys, &node);
+             let queue = pending.clone();
+             let steers = stick.clone();
+             let name = node.display().to_string();
+             let trace = trace.clone();
+             let spawned = std::thread::Builder::new()
+                 .name(format!("slot-input-{name}"))
+-                .spawn(move || read_node(keymap, &node, &queue, &steers, trace.as_deref()));
++                .spawn(move || read_node(keymap, &node, &queue, &steers, has_right_stick, trace.as_deref()));
+             if let Err(e) = spawned {
+                 eprintln!("slot: input {name}: {e}");
+             }
+@@ -122,6 +123,7 @@
+     node: &Path,
+     queue: &Mutex<Vec<RawEvent>>,
+     steers: &AtomicBool,
++    has_right_stick: bool,
+     trace: Option<&Trace>,
+ ) {
+     let label = node
+@@ -129,6 +131,7 @@
+         .map(|n| n.to_string_lossy().into_owned())
+         .unwrap_or_else(|| node.display().to_string());
+     let mut hat = Hat::new(keymap);
++    let mut right_stick = has_right_stick.then(|| RightStick::new(keymap));
+     let mut file = match File::open(node) {
+         Ok(f) => f,
+         Err(e) => {
+@@ -155,12 +158,15 @@
+             if (ev.kind == EV_KEY && ev.value == 1) || (ev.kind == EV_ABS && ev.value != 0) {
+                 crate::latency::read();
+             }
+-            match hat.takes(ev) {
+-                true => {
+-                    hat.steer_with_stick(steers.load(Ordering::Relaxed));
+-                    events.extend(hat.feed(ev));
+-                }
+-                false => events.extend(keymap.to_raw(ev)),
++            // Right-stick input is deliberately distinct from D-pad/left-stick
++            // steering. Consume its axis events before the Hat's EV_ABS path.
++            if let Some(out) = right_stick.as_mut().and_then(|s| s.feed(ev)) {
++                events.extend(out);
++            } else if hat.takes(ev) {
++                hat.steer_with_stick(steers.load(Ordering::Relaxed));
++                events.extend(hat.feed(ev));
++            } else {
++                events.extend(keymap.to_raw(ev));
+             }
+         }
+         if events.is_empty() {
