@@ -131,6 +131,10 @@ jobs:
           # SGB must draw through Pocket Color's exact optical LCD pipeline.
           python3 ../.github/scripts/fix-pocket-sgb-parity.py
           python3 ../.github/scripts/verify-pocket-sgb-parity.py
+          # SGB RGB pixels must retain their palette chroma; only the real
+          # Pocket geometry may blend into the reflector at LCD dot gaps.
+          python3 ../.github/scripts/fix-mgba-sgb-optical-chroma.py
+          python3 ../.github/scripts/verify-mgba-sgb-optical-chroma.py
 
       - name: Capture merged source for integration review
         uses: actions/upload-artifact@v4
