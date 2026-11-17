@@ -1,110 +1,129 @@
-# Slot. RG SP custom Authentic build
+<div align="center">
 
-Custom modifications based on [pvaibhav's Slot. v1.15.3-pvaibhav.1](https://github.com/pvaibhav/slot) for the Anbernic **RG SP (H700)**.
+<img src="https://raw.githubusercontent.com/slot-cfw/slot/main/.github/resources/hero.webp" width="100%" alt="slot — Game Boy-centric custom firmware for Anbernic H700 handhelds">
 
-## Latest: Gambatte + mGBA restored (experimental)
+[![Download](https://img.shields.io/badge/Download-Latest%20release-238636?style=for-the-badge)](https://github.com/Sinastrax/slot-rgsp-mod/releases/latest)
+[![Original slot](https://img.shields.io/badge/Original-slot-555?style=for-the-badge)](https://github.com/slot-cfw/slot)
+[![pvaibhav's fork](https://img.shields.io/badge/Based%20on-pvaibhav%2Fslot-555?style=for-the-badge)](https://github.com/pvaibhav/slot)
+[![Guide](https://img.shields.io/badge/Guide-slot--cfw.fyi-555?style=for-the-badge)](https://slot-cfw.fyi)
 
-The current [H700 build](../../actions/runs/43764469607) restores the original two GB/GBC emulator choices: **mGBA on the left**, **Gambatte on the right**. For GBA, the choices remain mGBA and gpSP.
+</div>
 
-- Previously saved GB/GBC choices marked `sameboy` are interpreted as mGBA. Existing Gambatte choices stay Gambatte.
-- Gambatte and mGBA have separate GB Authentic screen-model and color-correction profiles, including **Pocket Color** and **Pocket SGB**.
-- Pocket Color retains the Pocket-style separated LCD dots, shadows and GBC-style colors.
-- Pocket SGB on mGBA uses **Super Game Boy hardware**, with borders disabled, and supports the dynamic game-specific SGB color commands (where the game and core support them). Close and reopen a game after selecting Pocket SGB.
-- Authentic ghosting is disabled during fast-forward and retained at regular speed.
-- **mGBA GB/GBC automatic frameskip is now disabled**. Slot. previously forced `mgba_frameskip=auto`; this build explicitly sets `disabled` for GB/GBC, matching the bundled mGBA core's default. The GBA mGBA settings are unchanged.
-- This frameskip change is a **targeted performance experiment**, not an established fix. mGBA SGB emulation can still be demanding; frame pacing and audio sync remain unverified on the physical device.
-- The SameBoy experiment is **retired from the UI and the build package**, because it performed badly on the device. The source retains some dormant SameBoy integration code for the moment.
+---
 
-## Authentic color correction
+# What is Custom slot?
 
-When the RGB color-correction switch is off, the LCD grid, pixel gaps, shadows, grain, and glass rendering remain active. Turning it off bypasses the measured color-response conversion where applicable.
+**Custom slot** is a noncommercial, modified build of [slot](https://github.com/slot-cfw/slot), the Game Boy-centric frontend created by **Brandon Kowalski**, based on [pvaibhav's enhanced fork](https://github.com/pvaibhav/slot).
 
-- **Pocket Color, Pocket SGB, GBC and GBA Authentic:** per-model correction setting (on/off).
-- **DMG, original Pocket and Light:** their panel tint is part of the screen simulation, not a separate RGB correction; it is not stripped away by the switch.
-- GB correction flags are stored independently for Gambatte and mGBA.
-- Select a model, then use **Quick Menu → Settings → Screen → Color Correction**.
+This project builds on **`v1.15.3-pvaibhav.1`** and adds independent GB/GBC shaders, Pocket Color and Super Game Boy modes, per-core color correction, custom input mappings, performance/audio changes, online updates, and menu power management.
 
-## Install to SD2
+Its name is **Custom slot**, not RGSP: the H700 build is intended for other compatible handhelds as well. The firmware currently supports **Game Boy, Game Boy Color and Game Boy Advance**, not yet NES, SNES, PS1 or N64.
 
-Back up `System/slot`, `System/mgba_libretro.so`, `Config/slot.state`, `Config/selected_core.txt`, and your saved games and states.
+> [!IMPORTANT]
+> Use extracted ROM files, not `.zip` or `.7z` archives. Games and proprietary BIOS files are **not** included.
 
-A release/build artifact contains a `slot-rgsp-custom/` directory. **Copy the contents of that directory to the root of SD2, not the directory itself.** A minimal upgrade ZIP can contain only `System/slot` and `System/mgba_libretro.so`, which can be merged with the existing `System` folder.
+## What this fork adds
 
-Do not load save states produced by another emulator core. In-game battery saves are different from save states and are generally more portable, but back them up regardless.
+These are the **custom changes in this project**, on top of both upstream Slot and pvaibhav's improvements. Everything listed here is retained in complete release builds.
 
-The [GitHub Actions workflow](.github/workflows/build-h700.yml) downloads the exact upstream tag, applies the patches in order, builds the ARM64 firmware and validates the device file tree. The build can complete successfully even if a runtime performance issue remains.
+### Game Boy visuals and color
 
-**No ROMs, games, personal saves or other copyrighted game content are included in this repository.**
+- **Authentic GB/GBC/GBA shaders.** Extended Authentic rendering with model-specific LCD pixel separation, shadowing, ghosting and reflector response.
+- **Game Boy Color appearance for original Game Boy games.** Additional Authentic color presentation beyond the original monochrome models.
+- **Pocket Color.** Pocket-style LCD dot spacing and shadows with Game Boy Color-style color output.
+- **Pocket SGB (Super Game Boy).** Runs compatible GB titles with mGBA's Super Game Boy hardware behavior and supports the games' dynamic SGB palettes. SGB borders are disabled for the handheld display.
+- **Independent settings for Gambatte and mGBA.** GB/GBC screen appearance and color-correction behavior can differ by emulator core without interfering with the other.
+- **Separate color-correction switches.** Keep the Authentic pixel grid, reflections and visual treatment while disabling the calibrated RGB color transfer. Monochrome LCD tint remains part of the model simulation.
+- **Fast-forward adjustments.** Authentic LCD ghosting is suppressed during fast-forward and restored for normal play.
 
-## History
+### Emulation and audio
 
-Earlier experiments integrated SameBoy and developed the Pocket Color/Pocket SGB hybrid shaders. Their patch history remains in `patches/`; the **current firmware selects mGBA and Gambatte**. Previously successful test artifacts are recorded in the GitHub Actions run history.
+- **Three supported cores:** mGBA and Gambatte for GB/GBC, and mGBA and gpSP for GBA.
+- **Pinned older mGBA core.** Our complete H700 build uses the older mGBA revision `c758314a639aa0066e7b65a8341448181b73c804` rather than replacing it with a newer experimental core. Its corresponding source is packaged.
+- **GB/GBC mGBA performance and audio changes.** Core-specific CPU governor selection, audio-ring overflow handling with short crossfades, buffer recovery, and pitch-neutral drift behavior. Gambatte and GBA playback are not modified by the mGBA-only audio path.
+- **SameBoy is not bundled.** Experimental SameBoy work was retired after unfavorable performance; the supported GB/GBC choices remain mGBA and Gambatte.
 
+### Controls and handheld behavior
 
-## Current diagnostic: mGBA audio-queue drift and Authentic correction (2026-11-15)
+- **Extra hotkey buttons:** L3, R3, and right-stick up/down/left/right on devices that have those controls.
+- **Corrected right-stick axis mapping** for H700 handheld input, including the RG34XXSP layout.
+- **Menu Screen Off** under **Settings → System**: turns off the display backlight after menu inactivity, default **3 minutes**.
+- **Menu Power Off** under **Settings → System**: gracefully shuts down after menu inactivity, default **15 minutes**. Each timer is independently adjustable to **Off, 1, 3, 5, 10, 15 or 30 minutes**.
+- **Menu-only inactivity detection.** Active gameplay is excluded, and a button press wakes an idled, dark screen without accidentally launching a game. Active background operations are excluded.
+- **Corrected Resume on Power On.** **On** starts the last game and loads its resume state; **Off** boots to the shelf with that game selected but not running. **Resume on Insert** stays independent for manual launches.
 
-- Latest firmware: [successful ARM64 H700 build 43765871771](https://github.com/Sinastrax/slot-rgsp-mod/actions/runs/43765871771).
-- On physical RG SP, mGBA was reported to start smoothly, develop hiccups, temporarily recover on fast-forward, and get worse when automatic frameskip was disabled. Disabling rewind and Authentic ghosting did not solve it.
-- The previous `mgba_frameskip=disabled` experiment is therefore **reverted to `auto`** for GB/GBC.
-- Slot.'s audio ring buffers up to ~8 game frames and `push_blocking` may wait up to 50ms when full. mGBA GB/GBC now uses a wider **queue-dependent** audio drift correction (max ±5% instead of ±0.5%), without changing other cores' audio response. This is a hypothesis-driven test: **not yet a confirmed performance fix**.
-- The uncorrected RGB path for GBC/GBA Authentic now maps source values into the *same panel dark/light range* as corrected values before the common sparkle, LCD grid, pixel gaps, and glass pass. Corrected-on rendering remains unchanged. Monochrome Authentic models retain their historical physical LCD panel tint.
-- Update-only ZIP replaces **only `System/slot`** on SD2. Back up your existing executable and configuration, plus saves, before installing.
-- Compare a full normal-speed play session with Pocket Color versus Pocket SGB; check audio pitch/crackling and whether temporary fast-forward resets are still needed. The hardware behavior is currently unverified.
+### Online updates
 
+- **Custom update channel** from **Settings → System → Check for Updates**. Updates come from [this repository's releases](https://github.com/Sinastrax/slot-rgsp-mod/releases), not an upstream build.
+- **Full releases only:** the updater downloads a complete H700 package, checks its size and SHA-256 checksum, then stages it for installation at restart.
+- **No forced background updates.** The user chooses whether to install. ROMs, saves and personal settings are not bundled in releases.
 
-## Latest test: native-pitch mGBA audio and neutral Authentic whites
+See [ONLINE_UPDATES.md](ONLINE_UPDATES.md) for technical packaging and release procedures.
 
-[H700 build 43767324185](https://github.com/Sinastrax/slot-rgsp-mod/actions/runs/43767324185) passed patching, Rust formatting, ARM64 compilation, device tree validation and artifact upload.
+## How to install
 
-- Previous ±5% mGBA GB/GBC resampler drift correction produced smooth video but audibly wrong music/audio. New test returns to the normal ±0.5% resampler limit.
-- For GB/GBC **mGBA only**, audio pushes no longer block the emulation thread when the ring fills: stale samples are dropped from the queue instead. This preserves nominal sample playback pitch but can occasionally click or skip sound. Gambatte and GBA behavior are unchanged.
-- With Authentic **Color Correction Off**, Pocket Color/Pocket SGB use neutral reflector white, and GBC/GBA shader branches use neutral (0,0,0) grid/black instead of calibrated panel tint. Pixel-gap geometry, grain, glass and LCD response timings are not changed. With correction **On**, the established calibrated/tinted look is unchanged.
-- The supplied minimal update contains only `System/slot`. Back up the old executable, `Config/slot.state`, and saves before replacing it.
-- **Physical hardware testing is required.** If sound clicks persist, the queue's overflow counters need measurement instead of increasing the resampler pitch deviation again.
+1. Install a compatible [BaseOS](https://github.com/pvaibhav/BaseOS) setup for your handheld and prepare the SD2 card following the [original Slot guide](https://slot-cfw.fyi).
+2. Back up saves, save states, and `Config/` before upgrading.
+3. Download the **latest full H700 ZIP** from [Releases](https://github.com/Sinastrax/slot-rgsp-mod/releases/latest).
+4. Extract the contents of the included device folder to the **root of SD2**, so `System/slot` is in the SD2 `System` directory. Do not copy the containing device folder itself.
+5. Restart the handheld. Once running a Custom slot build with online updates, subsequent updates are available under **Settings → System → Check for Updates**.
 
-## Online updates (custom release channel)
+Do not interchange save states made by different emulator cores; in-game battery saves and emulator save states have different compatibility requirements.
 
-The original Slot **Settings → System → Check for Updates** interface is retained, but the
-`rgsp-online-updates.patch` routes future downloads to this repository's own GitHub Releases,
-**not** to the unmodified upstream or pvaibhav firmware. The updater verifies release size and
-SHA-256, stages the complete `System/` folder and installs on restart.
+## Versions and release notes
 
-Release ZIPs are built from all current patches, replace upstream's mGBA with the verified older
-core `c758314a639aa0066e7b65a8341448181b73c804`, and retain the standard licenses and
-source records. This is a **complete-build-only** release channel; an incomplete zip must never
-be published as an online update.
+Releases are named **Custom slot. Ver. [version]**. The version in the ZIP and update manifest is used for update comparison and can include a technical fork suffix.
 
-**One manual installation** of an OTA-enabled full build is necessary to switch older firmware
-to our release channel. Releases are not offered until the matching firmware version has actually
-been published on GitHub. See [ONLINE_UPDATES.md](ONLINE_UPDATES.md) for the update and release process.
+**[Latest release](https://github.com/Sinastrax/slot-rgsp-mod/releases/latest)** · **[Changes in the latest version](RELEASE_NOTES.md)**
 
-## Main-menu inactivity timers
+Release notes list **only the additions and fixes since the previous release**, rather than repeating the complete feature list. This README is the permanent place for the full feature overview.
 
-This custom build adds two independent settings under **Settings → System**:
+The [build workflow](.github/workflows/build-h700.yml) pins the pvaibhav base, applies our patches and builds a reproducible H700 device package. The firmware may run on other H700 devices, but not every feature or device has been physically tested.
 
-- **Menu Screen Off**: switches off the physical display backlight after inactivity (default **3 minutes**).
-- **Menu Power Off**: initiates normal, graceful shutdown after inactivity (default **15 minutes**, counted from the last input).
+---
 
-Both offer **Off, 1, 3, 5, 10, 15 and 30 minutes**. A button press wakes the dark display
-without accidentally selecting a game. The saved brightness returns on wake, and closing or
-opening the lid retains its normal behavior. Timers apply to the shelf, system menu and About
-screen **only**; they do not interrupt gameplay, downloads, active Wi-Fi configuration or other
-ongoing operations. Setting either option to Off disables just that action.
+# What does it look like?
 
-The feature is implemented in `patches/menu-idle-settings.patch`,
-`patches/menu-idle-behavior.patch` and `patches/menu-idle-timer.patch`, extending the
-existing Slot power controller without changing the custom mGBA core, shaders or hotkeys.
+The original cartridge carousel and core picker remain part of Custom slot. The screenshots below are **from the original Slot project**, not newly captured screens of the custom Pocket Color or Pocket SGB modes.
 
-## Resume on Power On (custom behavior)
+<p align="center">
+<img src="https://raw.githubusercontent.com/slot-cfw/slot/main/.github/resources/screenshots/carousel.gif" width="48%" alt="Original Slot cartridge carousel">
+<img src="https://raw.githubusercontent.com/slot-cfw/slot/main/.github/resources/screenshots/core-picker.gif" width="48%" alt="Original Slot core picker">
+</p>
 
-The original Slot setting disabled automatic **save-state restoration**, but still
-launched the last cartridge when switching on. Our `rgsp.3` fix changes this
-to match the menu label:
+<p align="center">
+<img src="https://raw.githubusercontent.com/slot-cfw/slot/main/.github/resources/screenshots/link.gif" width="96.5%" alt="Original Slot Game Boy link demonstration">
+</p>
 
-- **On:** power on directly into the last played game, loading its resume state.
-- **Off:** power on to the game shelf. The last game is selected but **not launched**.
-- **Resume on Insert:** independent; continues to control whether a game manually launched
-  from the shelf loads its existing resume state.
+---
 
-This fix is in `patches/resume-power-on-do-not-autolaunch.patch`, with boot tests for
-both setting states and manual inserts. It does not alter the save files themselves.
+# Supported devices
+
+Custom slot builds the same **H700 ARM64 device package** as its Slot base. The underlying frontend supports these devices:
+
+| Device | Supported by Slot | Custom build hardware verification |
+|---|---|---|
+| Anbernic RG SP / RG35XXSP | Yes | Tested during custom development |
+| Anbernic RG34XXSP | Yes | Tested during custom development |
+| Anbernic RG34XX | Yes | Not individually verified |
+| Anbernic RG35XX H | Yes | Not individually verified |
+| Anbernic RG35XX Plus | Yes | Not individually verified |
+| Anbernic RG35XX Pro | Yes | Not individually verified |
+| Anbernic RG28XX | Yes | Not individually verified |
+
+This is **not an RGSP-exclusive firmware**. Device-specific controls such as L3/R3 and analog stick directions only appear where the hardware provides them.
+
+---
+
+# Credits and licensing
+
+- **Original Slot:** [slot-cfw/slot](https://github.com/slot-cfw/slot), created by **Brandon Kowalski**. The original artwork and interface are credited to their respective authors, including [Markus](https://github.com/MarkusMaribu). The original guide is at [slot-cfw.fyi](https://slot-cfw.fyi).
+- **Enhanced Slot base:** [pvaibhav/slot](https://github.com/pvaibhav/slot), including its performance, Authentic shader, CPU scaling and other improvements. Its [wiki](https://github.com/pvaibhav/slot/wiki) documents many inherited features.
+- **Custom slot:** the patches, build scripts and other changes maintained in this repository. Source modifications were developed with AI assistance and reviewed through automated builds and device testing.
+- **Emulator and third-party assets:** mGBA, gpSP, Gambatte, shader sources, bezels and other third-party parts keep their own copyright and license conditions. The device build includes the applicable files in `System/licenses/`.
+
+The Slot-derived frontend is distributed under the **GPL-3.0** terms in [LICENSE](LICENSE). This is a **noncommercial customization**; no proprietary game ROMs or BIOS dumps are distributed.
+
+---
+
+If you enjoy Custom slot, please also support and credit the creators of [Slot](https://github.com/slot-cfw/slot) and [pvaibhav's fork](https://github.com/pvaibhav/slot).
