@@ -20,11 +20,11 @@ jobs:
           run-id: 44134166638
           name: select-slot-complete-h700
           path: release
-          github-token: \${{ github.token }}
+          github-token: ${{ github.token }}
 
       - name: Verify and publish tested firmware to existing OTA channel
         env:
-          GH_TOKEN: \${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
           HEAD_SHA: e34810c4603a506ba59b251f62768af49b206181
         shell: bash
         run: |
