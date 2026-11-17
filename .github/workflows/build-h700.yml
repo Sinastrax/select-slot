@@ -112,6 +112,8 @@ jobs:
           echo "Merged latest upstream with our previous complete custom modifications"
           python3 ../.github/scripts/merge-1.16-fixes.py
           python3 ../.github/scripts/fix-authentic-colour-reflection.py
+          python3 ../.github/scripts/fix-fit-lcd-sampling.py
+          python3 ../.github/scripts/verify-fit-lcd-sampling.py
           python3 ../.github/scripts/verify-authentic-colour.py
 
       - name: Capture merged source for integration review
