@@ -97,7 +97,7 @@ jobs:
           test -s "$archive"
           test -s "$archive.sha256"
           sha256sum -c "$archive.sha256"
-          unzip -t "$archive" | grep -q 'No errors detected'
+          unzip -t "$archive" | tail -n 1 | grep -q 'No errors detected'
           unzip -Z1 "$archive" | grep -qx 'System/slot'
           unzip -Z1 "$archive" | grep -qx 'System/select-slot-version.txt'
           unzip -Z1 "$archive" | grep -qx 'App/Slot/config.json'
@@ -154,5 +154,6 @@ jobs:
             --title "select. slot. Miyoo $DISPLAY_VERSION Ver. $DISPLAY_REVISION (Preview ${GITHUB_RUN_NUMBER})" \
             --notes-file miyoo-preview-notes.md \
             --prerelease --latest=false
-          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
-            --json isPrerelease,isLatest,tagName --jq '{tag:.tagName,prerelease:.isPrerelease,latest:.isLatest}'
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" \
+            --jq '{tag:.tag_name,prerelease:.prerelease,draft:.draft}'
+          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq .prerelease)" = true
