@@ -1,20 +1,14 @@
-name: Publish verified custom OTA build
+name: Publish Custom slot from verified build
 
 on:
-  # Publish the first verified OTA build when this workflow is added.
-  push:
-    branches:
-      - main
-    paths:
-      - ".github/workflows/publish-ota-from-run.yml"
-  # Publish later builds from a successful Actions run without recompiling.
+  # Manually select a successful complete build for publication.
   workflow_dispatch:
     inputs:
       build_run_id:
         description: "Successful Build custom Slot H700 Actions run ID"
         required: true
         type: string
-        default: "44073042296"
+
 
 permissions:
   contents: write
@@ -28,7 +22,7 @@ jobs:
         id: build
         env:
           GH_TOKEN: ${{ github.token }}
-          BUILD_RUN_ID: ${{ inputs.build_run_id || '44073042296' }}
+          BUILD_RUN_ID: ${{ inputs.build_run_id }}
         shell: bash
         run: |
           set -euo pipefail
@@ -41,7 +35,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           run-id: ${{ steps.build.outputs.run_id }}
-          name: slot-rgsp-complete-h700
+          name: custom-slot-complete-h700
           path: release
           github-token: ${{ github.token }}
 
@@ -55,7 +49,7 @@ jobs:
           root = pathlib.Path("release")
           item = json.loads((root / "versions.json").read_text())["stable"]
           v = item["version"]
-          assert v.startswith("1.15.3-rgsp.") or "-rgsp." in v
+          assert "-custom." in v
           assert item["tag"] == "v" + v
           assert item["zip"] == f"slot-v{v}-h700.zip"
           path = root / item["zip"]
@@ -81,7 +75,9 @@ jobs:
             echo "Release $TAG exists; do not silently overwrite OTA artifacts"
             exit 0
           fi
+          gh api "repos/$GITHUB_REPOSITORY/contents/RELEASE_NOTES.md?ref=$SHA" --jq '.content' | base64 -d > release-notes.md
+          test -s release-notes.md
           gh release create "$TAG" "release/$ZIP" release/versions.json \
             --repo "$GITHUB_REPOSITORY" --target "$SHA" --latest \
-            --title "Custom Slot $TAG (H700)" \
-            --notes "Full custom RGSP firmware with online updates, working older mGBA, Authentic GB/GBC/GBA shaders, SGB and corrected hotkeys. Includes third-party licenses and corresponding older mGBA source. Noncommercial custom project. Source and GPL-3.0 license: https://github.com/$GITHUB_REPOSITORY. ROMs and proprietary BIOS files are not included."
+            --title "Custom slot. Ver. ${TAG#v}" \
+            --notes-file release-notes.md
