@@ -1,11 +1,11 @@
-# Custom slot. 1.8.1 Ver. 1 — Miyoo
+# Custom slot. 1.8.1 Ver. 2 — Miyoo
 
 This is an **experimental ARMv7 app build** for the **original Miyoo Mini**, Miyoo Mini Plus, and Miyoo Mini Flip. It is **not H700 firmware** and does not replace the device OS.
 
 ## Installation
 
 1. Back up the Miyoo SD card, especially any existing Slot saves, states and settings.
-2. Download the `custom-slot-1.8.1-ver1-miyoo.zip` artifact from the **Build Custom slot Miyoo preview** GitHub Actions workflow, once it has passed.
+2. Download the `custom-slot-1.8.1-ver2-miyoo.zip` artifact from the **Build Custom slot Miyoo preview** GitHub Actions workflow, once it has passed.
 3. Extract the **contents** of the ZIP at the SD-card root. The card should contain `System/slot`, `App/Slot/` and `Apps/slot.pak/` directly. Do not put them inside another folder.
 4. Reinsert the card and reboot. Launch **Custom slot** from the Apps/App section of your existing launcher. Stock, Onion and Allium layouts are included in the base port.
 5. Add extracted, uncompressed ROMs under `Games/GB/`, `Games/GBC/` and `Games/GBA/`. Supply your legally obtained GBA BIOS as `BIOS/gba_bios.bin`; neither ROMs nor BIOS images are distributed.
@@ -15,14 +15,18 @@ This is an **experimental ARMv7 app build** for the **original Miyoo Mini**, Miy
 ## Version and verified scope
 
 - **Base:** [deanmarano/slot-miyoo](https://github.com/deanmarano/slot-miyoo), pinned to commit `d096bdb87f25f3aba62de6b40ef859b61d841e43`.
-- **Slot upstream:** `v1.8.1`, pinned by the Miyoo port; our format is **Custom slot. 1.8.1 Ver. 1**.
+- **Slot upstream:** `v1.8.1`, pinned by the Miyoo port; our format is **Custom slot. 1.8.1 Ver. 2**.
 - **Device architecture:** ARMv7 with software framebuffer rendering, not the H700/aarch64 GPU backend.
 - **Upstream testing:** The original Miyoo Mini on OnionOS 4.3.1, plus Mini Plus and Flip, were reported working by the port author. **This Custom slot variant is not hardware-tested.**
-- **Custom behavior added here:** `Auto Load: Off` no longer automatically inserts the remembered game during startup; it leaves the cartridge selected on the shelf. With `Auto Load: On`, the normal automatic state-loading path remains in place.
-- **Not yet ported:** H700-specific Authentic shaders, Pocket Color/SGB modes, Gambatte selection, per-core color correction, new hotkeys, idle timers, separate Resume on Power On / Resume on Insert toggles, and the H700 update menu. They cannot be claimed as working on the CPU-only Miyoo renderer.
+- **GB and GBC default core:** Gambatte, custom-built for the same ARMv7 hard-float toolchain. Existing explicit per-game mGBA selections may still load; mGBA is not the recommended core here.
+- **GBA default core:** gpSP with its ARM dynamic recompiler. mGBA remains in the original GBA core picker for compatibility.
+- **Scaling in game:** Pause / Quick Menu → Settings → Screen → **Scaling**. Options are Original, Integer, Aspect Fit, Fill/Crop, and Full Stretch, saved per game in `Config/video_mode.txt`. GB/GBC shoulder buttons cycle these modes when not remapped to a game action. GBA uses the menu, because L/R are gameplay buttons. Original 640×480 Miyoo GB integer fit is 3× = 480×432; GBA integer fit is 2× = 480×320.
+- **Resume settings:** Separate **Resume on Power On** (default On) and **Resume on Insert** (default On), under Gameplay. Turning power-on resume Off keeps the previously selected cartridge on the shelf without launching it; manual insertion still has its own setting. Older `auto_load` values initialize the power-on setting.
+- **Menu inactivity:** Under General, **Menu Screen Off** defaults to 3 min and **Menu Power Off** to 15 min. Each accepts Off, 1, 3, 5, 10, 15 or 30 minutes. Gameplay is excluded; the first button press after screen blanking wakes the backlight rather than triggering a menu item. Test actual power handling on your device.
+- **Still not implemented:** Your H700 **Authentic** GB/GBC/GBA screen simulation (DMG/Pocket/Light/GBC/GBA, Pocket Color), independent Authentic display correction and ghosting. Existing LCD3x is **not the same as Authentic**. The Miyoo renderer is software-only; no GLSL H700 shaders were copied. SGB and mGBA SGB modes are **intentionally excluded**. H700-only hotkeys and OTA remain excluded.
 - **Original Miyoo Mini has no Wi-Fi:** The H700 online updater therefore cannot simply be reused on it. Updating this preview requires copying the ZIP to the SD card.
 
-This is a preview intended to establish a working baseline before porting more user-facing changes. A successful CI cross-build is not proof of correct on-device visuals, audio, battery reporting or performance.
+This is an **experimental preview**. GitHub Actions successfully cross-compiled and packaged the core, scaling, and system changes, but no Custom slot Miyoo hardware or frame-time test has been performed. Do not describe the Authentic shader work as completed.
 
 ## Building
 
