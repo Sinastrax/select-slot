@@ -15,16 +15,30 @@
 
 **Custom slot** is a noncommercial, modified build of [slot](https://github.com/slot-cfw/slot), the Game Boy-centric frontend created by **Brandon Kowalski**, based on [pvaibhav's enhanced fork](https://github.com/pvaibhav/slot).
 
-This project builds on **`v1.15.3-pvaibhav.1`** and adds independent GB/GBC shaders, Pocket Color and Super Game Boy modes, per-core color correction, custom input mappings, performance/audio changes, online updates, and menu power management.
+The **H700 edition** builds on **`v1.15.3-pvaibhav.1`** and adds independent GB/GBC shaders, Pocket Color and Super Game Boy modes, per-core color correction, custom input mappings, performance/audio changes, online updates, and menu power management.
 
-Its name is **Custom slot**, not RGSP: the H700 build is intended for other compatible handhelds as well. The firmware currently supports **Game Boy, Game Boy Color and Game Boy Advance**, not yet NES, SNES, PS1 or N64.
+Its name is **Custom slot**, not RGSP: the H700 build is intended for other compatible handhelds as well. The H700 and experimental Miyoo editions focus on **Game Boy, Game Boy Color and Game Boy Advance**, not NES, SNES, PS1 or N64.
 
 > [!IMPORTANT]
 > Use extracted ROM files, not `.zip` or `.7z` archives. Games and proprietary BIOS files are **not** included.
 
-## What this fork adds
+## Miyoo Mini edition (experimental)
 
-These are the **custom changes in this project**, on top of both upstream Slot and pvaibhav's improvements. Everything listed here is retained in complete release builds.
+A separate **ARMv7 / software-rendered** build targets the **original Miyoo Mini**, Miyoo Mini Plus and Miyoo Mini Flip. It is based on [deanmarano's Miyoo port](https://github.com/deanmarano/slot-miyoo) rather than the H700/aarch64 build. The port author has tested the original Mini with OnionOS 4.3.1; **our custom build has not yet been tested on hardware**.
+
+- **Preview name:** Custom slot. 1.8.1 Ver. 1 (Miyoo). The Slot base is v1.8.1, pinned by the Miyoo port.
+- **Implemented custom behavior:** `Auto Load: Off` leaves the last game selected on the shelf instead of automatically starting it. `Auto Load: On` retains automatic resume behavior.
+- **Still to port:** Authentic/Pocket Color/SGB visual options and their per-core corrections, Gambatte, custom hotkeys, menu idle controls, separated resume switches, and online updates. The Miyoo uses a CPU rasterizer; the H700 GPU shaders cannot simply be copied.
+- **Delivery:** an independent, manually triggered or CI-built experimental ZIP that installs as an app on the Miyoo SD card. The original Miyoo Mini has no Wi-Fi, so it does not support the H700 OTA workflow.
+- **Platform separation:** this edition never uses the H700 SD2 firmware package, and the Miyoo build does not modify the H700 build.
+
+**[Miyoo installation, changes and credits](miyoo/INSTALL.md)** · **[Miyoo preview build workflow](.github/workflows/build-miyoo.yml)**
+
+---
+
+## H700 edition: what this fork adds
+
+These are the **H700-specific custom changes**, on top of both upstream Slot and pvaibhav's improvements. Everything listed here is retained in complete H700 release builds. **Do not assume these features are available in the experimental Miyoo edition.**
 
 ### Game Boy visuals and color
 
@@ -104,7 +118,7 @@ The original cartridge carousel and core picker remain part of Custom slot. The 
 
 ---
 
-# Supported devices
+# Supported H700 devices
 
 Custom slot builds the same **H700 ARM64 device package** as its Slot base. The underlying frontend supports these devices:
 
