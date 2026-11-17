@@ -743,6 +743,40 @@ edit("crates/slot/src/core.rs", [
     }'''),
 ])
 
+# Ver. 5 wrote the OnionOS brightness preference into SlotState.brightness.
+# Ver. 8 reverted that import but left the modified value persisted on SD.
+# On the first Onion launch of this repair, restore the original Miyoo Slot's
+# default (5/9) *only if* that saved level is below 5. A marker makes the
+# migration one-time, so the player's later deliberate dim setting is respected.
+# Other firmware and already-bright preferences are unchanged. No PWM map or
+# rendering code is modified.
+edit("crates/slot/src/app.rs", [
+    ('''    pub fn set_power(&mut self, mut power: Power) {
+        // Restore Dean's previously working original Miyoo brightness path.
+        // Do not translate another frontend's brightness here: Slot's own
+        // stored setting and PWM calibration already worked on this panel.
+        power.set_backlight(self.state.brightness);''',
+     '''    pub fn set_power(&mut self, mut power: Power) {
+        // Older custom builds imported Onion's 0..10 brightness directly
+        // into Slot's saved 0..9 setting. Reverting the import alone did not
+        // restore a low value already written to Config/slot.state.
+        if std::env::var_os("SLOT_ONION_VISUALS").is_some() {
+            if let Some(root) = self.root() {
+                let marker = root.join("Config/.select-slot-miyoo-brightness-restored");
+                if !marker.is_file() {
+                    if self.state.brightness < 5 {
+                        self.state.brightness = 5;
+                        self.persist();
+                    }
+                    // Create after persisting. On later launches, user-chosen
+                    // levels (including below 5) must never be overridden.
+                    let _ = std::fs::write(&marker, b"1\\n");
+                }
+            }
+        }
+        power.set_backlight(self.state.brightness);'''),
+])
+
 # A software renderer cannot use the H700 GLSL effects; Authentic is deferred
 # pending a measured LUT/lookup-table implementation. Do not fake it.
 
