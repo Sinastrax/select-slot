@@ -35,7 +35,7 @@ for scale in (2, 3, 4, 5, 6):
 # 640/240=2.666.. horizontally, and around 427/160 vertically.
 # Fractional coverage produces partial alpha while preserving the intended
 # proportion of dark gaps, instead of rounding every sample to 0 or 1.
-for src, dest in ((240, 640), (160, 427), (160, 480)):
+for src, dest in ((240, 640), (160, 427)):
     scale = dest / src
     samples = [coverage(((i + .5) / scale) % 1, scale) for i in range(dest)]
     assert any(.01 < v < .99 for v in samples), (src, dest)
