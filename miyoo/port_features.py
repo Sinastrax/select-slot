@@ -81,13 +81,13 @@ newcolour = """pub fn colour_option(
     }
 }
 
-pub fn apply_gambatte_palette(core: &mut dyn RetroCore, colours: GbColors) {
+pub fn gambatte_palette_options(colours: GbColors) -> Vec<(&'static str, &'static str)> {
     match colours {
-        GbColors::Auto => core.set_option("gambatte_gb_colorization", "GBC"),
-        GbColors::Palette(p) => {
-            core.set_option("gambatte_gb_colorization", "internal");
-            core.set_option("gambatte_gb_internal_palette", p.gambatte_name());
-        }
+        GbColors::Auto => vec![("gambatte_gb_colorization", "GBC")],
+        GbColors::Palette(p) => vec![
+            ("gambatte_gb_colorization", "internal"),
+            ("gambatte_gb_internal_palette", p.gambatte_name()),
+        ],
     }
 }
 """
@@ -100,7 +100,9 @@ if start < 0 or end < 0:
 source = source[:start] + """    if which == Core::Gambatte {
         core.set_option("gambatte_gb_hwmode", "Auto");
         core.set_option("gambatte_mix_frames", "disabled");
-        apply_gambatte_palette(core, palette.unwrap_or(GbColors::Auto));
+        for (key, value) in gambatte_palette_options(palette.unwrap_or(GbColors::Auto)) {
+            core.set_option(key, value);
+        }
         if let Some((key, value)) = colour_option(which, platform, colour) {
             core.set_option(key, value);
         }
@@ -111,10 +113,10 @@ source = source.replace(
     '    core.set_option(&format!("{}_frameskip", which.as_str()), "auto");',
     '    if which == Core::Gpsp {\n        core.set_option("gpsp_frameskip", "auto");\n    }'
 )
-# Disallow mGBA-specific link negotiation on a Gambatte library.
+# Prevent the port from configuring mGBA's link protocol on Gambatte.
 source = source.replace(
-    '    if which != Core::Gambatte {\n        return;\n    }\n    core.set_option("mgba_link", "on");',
-    '    if which != Core::Gpsp {\n        return;\n    }\n    // No mGBA link transport exists in the Gambatte/gpSP-only build.\n    core.set_option("mgba_link", "on");'
+    '    core.set_option("mgba_link", "on");',
+    '    // Gambatte does not provide the old mGBA cable transport.\n    return;'
 )
 (root / core).write_text(source)
 
@@ -152,10 +154,14 @@ edit(palette, "    pub fn label(self) -> &'static str {", """    pub fn gambatte
 session = "crates/slot/src/session.rs"
 edit(session,
      '                emu.set_option("mgba_gb_colors", p.core_name());',
-     '                crate::core::apply_gambatte_palette(emu, p);')
+     '                for (key, value) in crate::core::gambatte_palette_options(p) {
+                    emu.set_option(key, value);
+                }')
 edit(session,
      '                    emu.set_option("mgba_gb_colors", self.app.gb_colors().core_name());',
-     '                    crate::core::apply_gambatte_palette(emu, self.app.gb_colors());')
+     '                    for (key, value) in crate::core::gambatte_palette_options(self.app.gb_colors()) {
+                        emu.set_option(key, value);
+                    }')
 
 # Separate, persistent picture modes. All scale computations are relative to
 # the actual 640x480 (or 752x560 Flip) framebuffer size.
