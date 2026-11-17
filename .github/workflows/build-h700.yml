@@ -70,6 +70,10 @@ jobs:
           git apply ../patches/rg34xxsp-extra-hotkeys.patch
           git apply --check ../patches/rgsp-online-updates.patch
           git apply ../patches/rgsp-online-updates.patch
+          for patch in menu-idle-settings menu-idle-behavior menu-idle-timer; do
+            git apply --check "../patches/${patch}.patch"
+            git apply "../patches/${patch}.patch"
+          done
           echo "Exact-release patches applied"
 
       - name: Install required tools
@@ -102,7 +106,9 @@ jobs:
       - name: Verify online-update version comparison and ZIP safety
         working-directory: upstream
         shell: bash
-        run: cargo test -p slot --no-default-features --features device --test update -- --nocapture
+        run: |
+          cargo test -p slot --no-default-features --features device --test update -- --nocapture
+          cargo test -p slot --no-default-features --features device --lib menu_idle::tests -- --nocapture
 
       - name: Build the H700 device tree
         working-directory: upstream
