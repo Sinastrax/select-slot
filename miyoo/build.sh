@@ -9,7 +9,7 @@ PORT="$WORK/slot-miyoo"
 STAGE="$PORT/release/stage"
 PORT_COMMIT="d096bdb87f25f3aba62de6b40ef859b61d841e43"
 SLOT_VERSION="1.8.1"
-CUSTOM_VERSION="24"
+CUSTOM_VERSION="25"
 ZIP="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo.zip"
 ZIP_ONION="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo-onion-autoboot.zip"
 ZIP_STOCK="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo-stock-autoboot.zip"
@@ -64,7 +64,7 @@ echo "Verified shader-free Miyoo frontend, menus, shortcuts and default state"
 # The setting, displayed row, physical blanking and OnionOS handoff must
 # all be present. A successful compile alone does not prove wiring.
 grep -Fq '+    pub const GENERAL: [QuickRow; 9]' "$shader_patch"
-grep -Fq '+    pub const ALL: [QuickRow; 85]' "$shader_patch"
+grep -Fq '+    pub const ALL: [QuickRow; 87]' "$shader_patch"
 grep -Fq '+    pub menu_screen_off_min: u8,' "$shader_patch"
 grep -Fq '+    pub menu_power_off_min: u8,' "$shader_patch"
 grep -Fq '+            menu_screen_off_min: 3,' "$shader_patch"
@@ -81,18 +81,33 @@ echo "Verified independent menu timers and OnionOS shutdown handoff"
 # aborting the build without context when one hunk is not in the generated patch.
 check_patch() {
   if ! grep -Fq "$1" "$shader_patch"; then
-    printf 'Missing Ver. 24 patch wiring: %s\n' "$1" >&2
+    printf 'Missing Miyoo patch wiring: %s\n' "$1" >&2
     exit 1
   fi
 }
-# Menu scaling must be available on the shelf and persist globally as an INI
-# default without dropping existing per-ROM scaling overrides.
-check_patch '+    pub const SCREEN_GENERAL: [QuickRow; 3]'
-check_patch '+            QuickRow::DefaultScaling => "Default Scaling",'
-check_patch '+pub fn default_video_mode(root: &Path) -> VideoMode {'
-check_patch '+    ini::write(root, VIDEO_MODE_FILE, "default", mode.as_str())'
-check_patch '+        .unwrap_or_else(|| default_video_mode(root))'
-check_patch '+            QuickRow::DefaultScaling => Some(match self.root.as_deref()'
+# GB/GBC/GBA each has its own Scaling row under Screen > system.
+# The General screen stays unmodified; no single global selector remains.
+check_patch '+    pub const SCREEN_GBA: [QuickRow; 4]'
+check_patch '+    pub const SCREEN_GBC: [QuickRow; 4]'
+check_patch '+    pub const SCREEN_GB: [QuickRow; 5]'
+check_patch '+        QuickRow::GbaScaling,'
+check_patch '+        QuickRow::GbcScaling,'
+check_patch '+        QuickRow::GbScaling,'
+check_patch '+            QuickRow::GbaScaling | QuickRow::GbScaling | QuickRow::GbcScaling => "Scaling",'
+check_patch '+pub fn default_video_mode(root: &Path, platform: Platform) -> VideoMode {'
+check_patch '+        Platform::Gb => "default_gb",'
+check_patch '+        Platform::Gbc => "default_gbc",'
+check_patch '+        Platform::Gba => "default_gba",'
+check_patch '+        .or_else(|| ini::value(root, VIDEO_MODE_FILE, "default")'
+check_patch '+        .unwrap_or_else(|| default_video_mode(root, platform))'
+check_patch '+    ini::write(root, VIDEO_MODE_FILE, platform_default_key(platform), mode.as_str())'
+check_patch '+            .set_video_mode(crate::video_mode::video_mode_for(&self.root, stem, platform));'
+check_patch '+        if matches!(row, QuickRow::GbaScaling | QuickRow::GbScaling | QuickRow::GbcScaling) {'
+if grep -Fq '+            QuickRow::DefaultScaling' "$shader_patch"; then
+  echo "ERROR: global Default Scaling row found in Ver. 25" >&2
+  exit 1
+fi
+echo "Verified three saved system scaling defaults, per-ROM overrides, and no general scaling row"
 # The earlier OnionOS POWER passthrough is still used for short presses,
 # while long hold must request real shutdown before keymon sleeps the app.
 check_patch '+pub const POWER_HOLD_MS: Millis = 350;'
@@ -162,11 +177,11 @@ echo 'Verified legacy brightness 0–9 and compatibility migration'
 cp "$ROOT/miyoo/onion-autoboot.sh" "$STAGE/System/autoboot/onion-startup.sh"
 cp "$ROOT/miyoo/INSTALL.md" "$STAGE/System/select-slot-install.md"
 cat > "$STAGE/System/select-slot-version.txt" <<EOF
-select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - copy-paste autoboot; persistent menu scaling; themed shutdown fix; shaders off; brightness 1-9
+select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - copy-paste autoboot; per-system persistent scaling; shaders off; brightness 1-9
 Base: https://github.com/deanmarano/slot-miyoo
 Pinned original: $PORT_COMMIT
 GB/GBC: Miyoo-native mGBA default; Gambatte optional; GBA: gpSP default (mGBA alternative)
-Scaling: Original, Integer, Aspect Fit, Fill/Crop, Full Stretch; persistent global default in Screen > General plus in-game per-ROM overrides
+Scaling: Original, Integer, Aspect Fit, Fill/Crop, Full Stretch; separate persisted defaults in Screen > GB/GBC/GBA plus in-game per-ROM overrides
 Resume On Power / Insert: independent
 Brightness: original 0-9 PWM hardware levels (UI 1-9); previously saved 10-12 migrate to 9 without resetting other settings
 Framebuffer: original unfiltered Miyoo CPU renderer; no effects, orientation and launcher unchanged
