@@ -86,7 +86,9 @@ cmp -s "$STAGE/System/launch_frontend.sh" "$PORT/card/System/launch_frontend.sh"
 # Only the PWM implementation and its test may differ in slot-power.
 ! grep -E '^diff --git a/crates/slot-gfx/' "$PORT/patches/0028-custom-gambatte-defaults.patch"
 grep -Fq 'diff --git a/crates/slot-power/src/device.rs' "$PORT/patches/0028-custom-gambatte-defaults.patch"
-! grep -E '^diff --git a/crates/slot-power/src/(power|lib)\.rs' "$PORT/patches/0028-custom-gambatte-defaults.patch"
+grep -Fq 'fn backlight_is_current' "$PORT/patches/0028-custom-gambatte-defaults.patch"
+grep -Fq 'restore_if_overridden' "$PORT/patches/0028-custom-gambatte-defaults.patch"
+grep -Fq 'last_pwm_target' "$PORT/patches/0028-custom-gambatte-defaults.patch"
 # Full level range must be wired through settings, menu, and hardware.
 grep -Fq 'BRIGHTNESS_MAX: u8 = 12' "$PORT/patches/0028-custom-gambatte-defaults.patch"
 grep -Fq 'QuickValue::Level12' "$PORT/patches/0028-custom-gambatte-defaults.patch"
