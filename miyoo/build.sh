@@ -9,7 +9,7 @@ PORT="$WORK/slot-miyoo"
 STAGE="$PORT/release/stage"
 PORT_COMMIT="d096bdb87f25f3aba62de6b40ef859b61d841e43"
 SLOT_VERSION="1.8.1"
-CUSTOM_VERSION="21"
+CUSTOM_VERSION="22"
 ZIP="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo.zip"
 
 for command in git task docker zip unzip python3 file; do
@@ -59,6 +59,23 @@ grep -Fq '+            shader_gbc: Shader::Off,' "$shader_patch"
 ! grep -Eq '^diff --git a/crates/slot-gfx/' "$shader_patch"
 ! grep -Eq '^\+.*(draw_shimmerless|shimmer_axis|dot_axis_factor)' "$shader_patch"
 echo "Verified shader-free Miyoo frontend, menus, shortcuts and default state"
+# The setting, displayed row, physical blanking and OnionOS handoff must
+# all be present. A successful compile alone does not prove wiring.
+grep -Fq '+    pub const GENERAL: [QuickRow; 9]' "$shader_patch"
+grep -Fq '+    pub const ALL: [QuickRow; 84]' "$shader_patch"
+grep -Fq '+    pub menu_screen_off_min: u8,' "$shader_patch"
+grep -Fq '+    pub menu_power_off_min: u8,' "$shader_patch"
+grep -Fq '+            menu_screen_off_min: 3,' "$shader_patch"
+grep -Fq '+            menu_power_off_min: 15,' "$shader_patch"
+grep -Fq '+            QuickRow::MenuScreenOff => "Menu Screen Off",' "$shader_patch"
+grep -Fq '+            QuickRow::MenuPowerOff => "Menu Power Off",' "$shader_patch"
+grep -Fq '+    pub fn set_idle_blank(&mut self, blank: bool) {' "$shader_patch"
+grep -Fq '+    fn tick_menu_idle(&mut self) {' "$shader_patch"
+grep -Fq '+        self.tick_menu_idle();' "$shader_patch"
+grep -Fq '+            if std::fs::write("/tmp/.offOrder", b"").is_ok() {' "$shader_patch"
+grep -Fq '+                std::process::exit(0);' "$shader_patch"
+echo "Verified independent menu timers and OnionOS shutdown handoff"
+
 (
   cd "$PORT"
   task unpatch
@@ -97,10 +114,12 @@ cmp -s "$STAGE/System/launch_frontend.sh" "$PORT/card/System/launch_frontend.sh"
     echo "Packaged launcher differs from original Miyoo port; refusing build" >&2
     exit 1
 }
-# Only the PWM implementation and its test may differ in slot-power.
+# Only PWM selection/testing and menu-specific blanking may differ in slot-power.
 ! grep -Fq "diff --git a/crates/slot-gfx/" "$PORT/patches/0028-custom-gambatte-defaults.patch"
 grep -Fq 'diff --git a/crates/slot-power/src/device.rs' "$PORT/patches/0028-custom-gambatte-defaults.patch"
-! grep -E '^diff --git a/crates/slot-power/src/(power|lib)\.rs' "$PORT/patches/0028-custom-gambatte-defaults.patch"
+! grep -E '^diff --git a/crates/slot-power/src/lib\.rs' "$PORT/patches/0028-custom-gambatte-defaults.patch"
+grep -Fq 'diff --git a/crates/slot-power/src/power.rs' "$PORT/patches/0028-custom-gambatte-defaults.patch"
+grep -Fq '+    pub fn set_idle_blank(&mut self, blank: bool) {' "$PORT/patches/0028-custom-gambatte-defaults.patch"
 # Check that the original nine levels and PWM duty table are untouched.
 # The generated patch includes only a migration for older brightness=10..12
 # values so the *rest* of slot.state still loads.
@@ -116,7 +135,7 @@ echo 'Verified legacy brightness 0–9 and compatibility migration'
 cp "$ROOT/miyoo/onion-autoboot.sh" "$STAGE/System/autoboot/onion-startup.sh"
 cp "$ROOT/miyoo/INSTALL.md" "$STAGE/System/select-slot-install.md"
 cat > "$STAGE/System/select-slot-version.txt" <<EOF
-select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - original brightness 1-9, shaders disabled
+select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - menu idle timers, shaders off, brightness 1-9
 Base: https://github.com/deanmarano/slot-miyoo
 Pinned original: $PORT_COMMIT
 GB/GBC: Miyoo-native mGBA default; Gambatte optional; GBA: gpSP default (mGBA alternative)
@@ -125,6 +144,8 @@ Resume On Power / Insert: independent
 Brightness: original 0-9 PWM hardware levels (UI 1-9); previously saved 10-12 migrate to 9 without resetting other settings
 Framebuffer: original unfiltered Miyoo CPU renderer; no effects, orientation and launcher unchanged
 Shaders: disabled globally for GB/GBC/GBA; menu controls hidden and shortcuts inert; pre-existing shader settings ignored
+Menu Screen Off: Off/1/3/5/10/15/30 minutes; default 3; first press wakes without opening an item
+Menu Power Off: Off/1/3/5/10/15/30 minutes; default 15; hands off to OnionOS themed shutdown
 OnionOS: theme-independent keymon POWER/suspend/shutdown handoff; retains whichever OnionOS theme is selected
 Onion PWM: original 0-9 brightness duty table; select physical PWM over unrelated legacy backlight interfaces
 Experimental preview; no H700 OTA publication
