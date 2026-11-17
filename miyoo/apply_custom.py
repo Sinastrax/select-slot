@@ -676,6 +676,48 @@ edit("crates/slot/src/app.rs", [
         power.set_backlight(self.state.brightness);'''),
 ])
 
+# Protect the known-good original Miyoo backlight behavior. Onion's keymon
+# owns LCD blanking during suspend and wake, so the fork's new menu-idle
+# timer must not set raw backlight PWM on Onion. Do not alter Dean's PWM
+# brightness table; the separate Onion brightness import is reverted below.
+edit("crates/slot/src/app.rs", [
+    ('''    fn tick_menu_idle(&mut self) {
+        let now = self.now();''',
+     '''    fn tick_menu_idle(&mut self) {
+        let now = self.now();
+        // Onion keymon is the display/backlight owner for this app.
+        // Never blank PWM from the fork's optional menu timer.
+        if std::env::var_os("SLOT_ONION_POWER_OWNER").is_some() {
+            self.menu_last_input = now;
+            return;
+        }'''),
+    ('''                Action::PowerPress => {
+                    // The release may cause Onion to SIGSTOP Slot immediately.
+                    self.state_writer.flush();
+                    self.flush_resume();
+                    return;
+                }''',
+     '''                // Onion's keymon handles POWER and may SIGSTOP this process
+                // on button release. A synchronous save/flush here can be
+                // interrupted mid-write. Rely on normal Slot autosaves,
+                // and do not block the keymon handoff.
+                Action::PowerPress => return,'''),
+    ('''    pub fn set_power(&mut self, mut power: Power) {
+        if let Ok(level) = std::env::var("SLOT_ONION_BRIGHTNESS") {
+            if let Ok(level) = level.parse::<u8>() {
+                if level <= 10 {
+                    self.state.brightness = level.clamp(1, 9);
+                }
+            }
+        }
+        power.set_backlight(self.state.brightness);''',
+     '''    pub fn set_power(&mut self, mut power: Power) {
+        // Restore Dean's previously working original Miyoo brightness path.
+        // Do not translate another frontend's brightness here: Slot's own
+        // stored setting and PWM calibration already worked on this panel.
+        power.set_backlight(self.state.brightness);'''),
+])
+
 # A software renderer cannot use the H700 GLSL effects; Authentic is deferred
 # pending a measured LUT/lookup-table implementation. Do not fake it.
 
