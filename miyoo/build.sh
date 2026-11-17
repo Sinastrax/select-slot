@@ -9,7 +9,7 @@ PORT="$WORK/slot-miyoo"
 STAGE="$PORT/release/stage"
 PORT_COMMIT="d096bdb87f25f3aba62de6b40ef859b61d841e43"
 SLOT_VERSION="1.8.1"
-CUSTOM_VERSION="16"
+CUSTOM_VERSION="17"
 ZIP="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo.zip"
 
 for command in git task docker zip unzip python3 file; do
@@ -84,7 +84,7 @@ cmp -s "$STAGE/System/launch_frontend.sh" "$PORT/card/System/launch_frontend.sh"
     exit 1
 }
 # Only the PWM implementation and its test may differ in slot-power.
-! grep -E '^diff --git a/crates/slot-gfx/' "$PORT/patches/0028-custom-gambatte-defaults.patch"
+grep -Fq "diff --git a/crates/slot-gfx/src/soft/mod.rs" "$PORT/patches/0028-custom-gambatte-defaults.patch"
 grep -Fq 'diff --git a/crates/slot-power/src/device.rs' "$PORT/patches/0028-custom-gambatte-defaults.patch"
 ! grep -E '^diff --git a/crates/slot-power/src/(power|lib)\.rs' "$PORT/patches/0028-custom-gambatte-defaults.patch"
 # Full level range must be wired through settings, menu, and hardware.
@@ -97,14 +97,14 @@ grep -Fq 'let percent: u32' "$PORT/patches/0028-custom-gambatte-defaults.patch"
 cp "$ROOT/miyoo/onion-autoboot.sh" "$STAGE/System/autoboot/onion-startup.sh"
 cp "$ROOT/miyoo/INSTALL.md" "$STAGE/System/select-slot-install.md"
 cat > "$STAGE/System/select-slot-version.txt" <<EOF
-select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - native mGBA defaults, retained Onion BMO standby
+select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - Fit-aware Dot software shader
 Base: https://github.com/deanmarano/slot-miyoo
 Pinned original: $PORT_COMMIT
 GB/GBC: Miyoo-native mGBA default; Gambatte optional; GBA: gpSP default (mGBA alternative)
 Per-game scaling: Original, Integer, Aspect Fit, Fill/Crop, Full Stretch
 Resume On Power / Insert: independent
 Brightness: original 1-9 PWM values, boost levels 10-12 (20%,30%,50% of PWM period)
-Framebuffer, renderer, orientation and launcher: unchanged Miyoo originals
+Framebuffer: original Miyoo renderer with Fit-aware Dot mode; orientation and launcher unchanged
 Onion PWM: period-aware scaling of boost steps; Onion keymon owns POWER and BMO; Slot uses Onion PWM instead of legacy backlight/dispdbg
 OnionOS BMO: native theme and power path
 Experimental preview; no H700 OTA publication
