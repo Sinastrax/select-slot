@@ -2,9 +2,10 @@
 
 ## Changes since select. slot. 1.16.0 Ver. 4
 
-- Fixed **Authentic GBA/GBC LCD pixel-gap aliasing at fractional Fit scales**, including on the RG35XX H's 640×480 display. Fractional gaps use destination-pixel coverage rather than uneven hard samples.
-- Improved **standard LCD-grid shader precision** on non-3:2 panels to reduce subpixel banding at Fit scaling without blurring artwork.
-- Preserved integer-scaling behavior, calibrated color correction, reflection settings, emulator cores and game aspect ratios.
-- Added a deterministic geometry regression test for Fit and integer scaling.
+- Rebuilt the Fit scaling fix from the working Ver. 4 shader baseline after the withdrawn first Ver. 5 caused a frontend boot loop on the RG35XX H.
+- **Authentic GBA/GBC with fractional Fit scaling:** replaced the original uneven hard-edged LCD gaps with a minimal one-pixel-coverage calculation for displays such as the RG35XX H's 640×480 screen.
+- **Standard LCD-grid shader:** retained Ver. 4 rendering and precision settings instead of the original Ver. 5 rewrite.
+- Kept integer scaling, calibrated/uncorrected Authentic color modes, Reflection, and emulator cores unchanged.
+- Added OpenGL ES 2.0 shader compilation/linking checks and OTA publisher regression tests.
 
-The project name changed to **select. slot.** without publishing a separate firmware version or altering the Ver. 5 tag and archive.
+**Hardware validation:** Automated build and shader checks cannot prove boot compatibility with the RG35XX H's GPU. This replacement should be tested on the handheld. Ver. 4 remains available as a recovery release.

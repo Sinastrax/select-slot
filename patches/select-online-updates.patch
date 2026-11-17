@@ -47,8 +47,8 @@ diff --git a/crates/slot/src/update.rs b/crates/slot/src/update.rs
 -pub const LATEST: &str = "https://github.com/pvaibhav/slot/releases/latest/download/versions.json";
 -const RELEASES: &str = "https://github.com/pvaibhav/slot/releases/download";
 -const FORK: &str = "pvaibhav";
-+pub const LATEST: &str = "https://github.com/Sinastrax/slot-rgsp-mod/releases/latest/download/versions.json";
-+const RELEASES: &str = "https://github.com/Sinastrax/slot-rgsp-mod/releases/download";
++pub const LATEST: &str = "https://github.com/Sinastrax/select-slot/releases/latest/download/versions.json";
++const RELEASES: &str = "https://github.com/Sinastrax/select-slot/releases/download";
 +const FORK: &str = "select";
  const BASEOS_RELEASES: &str = "https://github.com/pvaibhav/BaseOS/releases/download";
  
@@ -61,7 +61,7 @@ diff --git a/crates/slot/tests/update.rs b/crates/slot/tests/update.rs
      assert_eq!(
          r.url,
 -        "https://github.com/pvaibhav/slot/releases/download/v1.11.0/slot-v1.11.0-h700.zip"
-+        "https://github.com/Sinastrax/slot-rgsp-mod/releases/download/v1.11.0/slot-v1.11.0-h700.zip"
++        "https://github.com/Sinastrax/select-slot/releases/download/v1.11.0/slot-v1.11.0-h700.zip"
      );
      assert_eq!(r.size, 6919551);
      assert_eq!(&r.sha256[..2], &[0xe7, 0x8b]);
@@ -88,7 +88,7 @@ diff --git a/crates/slot/tests/update.rs b/crates/slot/tests/update.rs
      assert_eq!(
          release.url,
 -        "https://github.com/pvaibhav/slot/releases/download/v1.14.0-pvaibhav.1/slot-v1.14.0-pvaibhav.1-h700.zip"
-+        "https://github.com/Sinastrax/slot-rgsp-mod/releases/download/v1.14.0-pvaibhav.1/slot-v1.14.0-pvaibhav.1-h700.zip"
++        "https://github.com/Sinastrax/select-slot/releases/download/v1.14.0-pvaibhav.1/slot-v1.14.0-pvaibhav.1-h700.zip"
      );
  }
  
@@ -97,7 +97,7 @@ diff --git a/crates/slot/tests/update.rs b/crates/slot/tests/update.rs
      assert_eq!(
          r.url,
 -        "https://github.com/pvaibhav/slot/releases/download/v1.11.0/slot-v1.11.0-rgdsplus.zip"
-+        "https://github.com/Sinastrax/slot-rgsp-mod/releases/download/v1.11.0/slot-v1.11.0-rgdsplus.zip"
++        "https://github.com/Sinastrax/select-slot/releases/download/v1.11.0/slot-v1.11.0-rgdsplus.zip"
      );
      assert_eq!(r.size, 8000000);
      assert_eq!(&r.sha256[..2], &[0xaa, 0x8b]);
