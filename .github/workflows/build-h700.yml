@@ -74,6 +74,8 @@ jobs:
             git apply --check "../patches/${patch}.patch"
             git apply "../patches/${patch}.patch"
           done
+          git apply --check ../patches/resume-power-on-do-not-autolaunch.patch
+          git apply ../patches/resume-power-on-do-not-autolaunch.patch
           echo "Exact-release patches applied"
 
       - name: Install required tools
@@ -109,6 +111,7 @@ jobs:
         run: |
           cargo test -p slot --no-default-features --features device --test update -- --nocapture
           cargo test -p slot --no-default-features --features device --lib menu_idle::tests -- --nocapture
+          cargo test -p slot --no-default-features --features device --test boot -- --nocapture
 
       - name: Build the H700 device tree
         working-directory: upstream
