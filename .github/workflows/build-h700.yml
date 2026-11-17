@@ -159,6 +159,11 @@ jobs:
         shell: bash
         run: python3 ../.github/scripts/check-gles2-shader.py
 
+      - name: Verify OTA release publisher before firmware build
+        working-directory: upstream
+        shell: bash
+        run: python3 ../.github/scripts/verify-ota-publisher.py
+
       - name: Verify Rust formatting
         working-directory: upstream
         shell: bash
