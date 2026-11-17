@@ -1,11 +1,11 @@
-# select. slot. 1.16.0 Ver. 5 — replacement candidate
+# select. slot. 1.16.0 Ver. 5
 
 ## Changes since select. slot. 1.16.0 Ver. 4
 
-- Rebuilt the Fit scaling fix from the Ver. 4 shader baseline after the initial Ver. 5 caused a startup loop on the RG35XX H.
-- **Authentic GBA/GBC with fractional Fit scaling:** use a small, coverage-weighted LCD gap expression to reduce irregular gap stripes on the 640×480 screen.
-- Kept the **standard LCD-grid shader exactly as in Ver. 4**, including its original GPU precision declarations. The earlier invasive pixel-grid rewrite was removed.
-- Preserved integer pixel scaling, Authentic calibrated On/uncorrected Off modes, Reflection, and all emulator cores.
-- Added regression checks for subpixel coverage and OpenGL ES 2.0 shader compilation/linking during the H700 build.
+- Rebuilt the Fit scaling fix from the working Ver. 4 shader baseline after the withdrawn first Ver. 5 caused a frontend boot loop on the RG35XX H.
+- **Authentic GBA/GBC with fractional Fit scaling:** replaced the original uneven hard-edged LCD gaps with a minimal one-pixel-coverage calculation for displays such as the RG35XX H's 640×480 screen.
+- **Standard LCD-grid shader:** retained Ver. 4 rendering and precision settings instead of the original Ver. 5 rewrite.
+- Kept integer scaling, calibrated/uncorrected Authentic color modes, Reflection, and emulator cores unchanged.
+- Added OpenGL ES 2.0 shader compilation/linking checks and OTA publisher regression tests.
 
-**Testing status:** Not confirmed on RG35XX H yet. This candidate remains unpublished until it boots and its Fit scaling can be inspected on-device.
+**Hardware validation:** Automated build and shader checks cannot prove boot compatibility with the RG35XX H's GPU. This replacement should be tested on the handheld. Ver. 4 remains available as a recovery release.
