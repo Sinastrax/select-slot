@@ -138,5 +138,5 @@ for y in range(OH):
     a=y*OW*3;b=a+OW*3
     rows.append(gb[a:b]+sg[a:b]+sg2[a:b])
 out=Path("pocket-sgb-visual-parity.ppm")
-out.write_bytes(f"P6\\n{3*OW} {OH}\\n255\\n".encode("ascii")+b"".join(rows))
+out.write_bytes(f"P6\n{3*OW} {OH}\n255\n".encode("ascii")+b"".join(rows))
 print("PASS: Pocket Color and SGB share optical gap density under color swap:",round(gb_gap,4),round(sg_gap,4),round(sg2_gap,4),"; preview",out)
