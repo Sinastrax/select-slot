@@ -96,7 +96,11 @@ jobs:
           archive="${archives[0]}"
           test -s "$archive"
           test -s "$archive.sha256"
-          sha256sum -c "$archive.sha256"
+          # The checksum file records the source runner's absolute ZIP path.
+          # Verify its digest against the ZIP on this release runner instead.
+          expected="$(awk 'NR==1 {print $1}' "$archive.sha256")"
+          actual="$(sha256sum "$archive" | cut -d' ' -f1)"
+          test "$actual" = "$expected"
           unzip -t "$archive" | tail -n 1 | grep -q 'No errors detected'
           unzip -Z1 "$archive" | grep -qx 'System/slot'
           unzip -Z1 "$archive" | grep -qx 'System/select-slot-version.txt'
