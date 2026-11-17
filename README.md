@@ -26,9 +26,12 @@ Its name is **Custom slot**, not RGSP: the H700 build is intended for other comp
 
 A separate **ARMv7 / software-rendered** build targets the **original Miyoo Mini**, Miyoo Mini Plus and Miyoo Mini Flip. It is based on [deanmarano's Miyoo port](https://github.com/deanmarano/slot-miyoo) rather than the H700/aarch64 build. The port author has tested the original Mini with OnionOS 4.3.1; **our custom build has not yet been tested on hardware**.
 
-- **Preview name:** Custom slot. 1.8.1 Ver. 1 (Miyoo). The Slot base is v1.8.1, pinned by the Miyoo port.
-- **Implemented custom behavior:** `Auto Load: Off` leaves the last game selected on the shelf instead of automatically starting it. `Auto Load: On` retains automatic resume behavior.
-- **Still to port:** Authentic/Pocket Color/SGB visual options and their per-core corrections, Gambatte, custom hotkeys, menu idle controls, separated resume switches, and online updates. The Miyoo uses a CPU rasterizer; the H700 GPU shaders cannot simply be copied.
+- **Preview name:** Custom slot. 1.8.1 Ver. 2 (Miyoo). The Slot upstream is v1.8.1, pinned by Dean's port.
+- **Emulators:** **Gambatte for GB/GBC** and **gpSP for GBA**, both ARMv7. mGBA remains optional for compatibility but Super Game Boy hardware/border modes are not included.
+- **Scaling:** Original, true integer scaling, aspect fit, fill/crop and full stretch. Select under the in-game **Settings → Screen → Scaling** menu; options persist per game. GB/GBC shoulder buttons cycle choices if not used by the game.
+- **System:** Independent **Resume on Power On** and **Resume on Insert**, with the earlier auto-start bug fixed; **Menu Screen Off** and **Menu Power Off** timers default to 3 and 15 minutes respectively and exclude gameplay.
+- **Authentic display effects are NOT YET PORTED:** DMG, Pocket, Light, GBC, GBA and Pocket Color Authentic shaders require a real CPU software-rendering implementation. The Miyoo's LCD3x is not equivalent. The advanced H700 per-model correction, ghosting, extra hotkeys and OTA have not been ported. SGB is deliberately out of scope.
+- **Validation:** A full GitHub Actions ARMv7 cross-build and ZIP verification passed; the enhanced preview has **not** been tested on physical Miyoo hardware.
 - **Delivery:** an independent, manually triggered or CI-built experimental ZIP that installs as an app on the Miyoo SD card. The original Miyoo Mini has no Wi-Fi, so it does not support the H700 OTA workflow.
 - **Platform separation:** this edition never uses the H700 SD2 firmware package, and the Miyoo build does not modify the H700 build.
 
