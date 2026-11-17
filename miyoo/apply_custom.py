@@ -481,76 +481,6 @@ edit("crates/slot/src/app.rs", [
         match action {'''),
 ])
 
-# Original Miyoo Mini / Mini Plus: OnionOS controls PWM directly, but Dean's
-# power detector was designed around the Mini Flip and only picks PWM AFTER
-# finding no class backlight and no dispdbg. If either older interface exists,
-# the PWM levels 10..12 update SLOT's UI but never reach the LCD backlight.
-# On OnionOS ONLY, prefer its actual PWM channel when already exported.
-# Preserve Dean's original priority and fallbacks for stock/Allium firmware.
-edit("crates/slot-power/src/device.rs", [
-    ('''        let backlight = match class {
-            Some(dir) => Some(Backlight::Class(dir)),
-            None => {
-                let dbg = sysfs.join("kernel/debug/dispdbg");
-                dbg.join("param")
-                    .is_file()
-                    .then_some(Backlight::Dispdbg(dbg))
-                    .or_else(|| find_pwm(sysfs).map(Backlight::Pwm))
-            }
-        };''',
-     '''        // Onion controls physical screen brightness through
-        // /sys/class/pwm/pwmchip0/pwm0/duty_cycle. On original Mini units a
-        // secondary display class or dispdbg may exist but isn't the actual
-        // backlight. Prefer PWM only while running on the Onion card.
-        let onion_pwm = root.join(".tmp_update/runtime.sh").is_file()
-            .then(|| find_pwm(sysfs).map(Backlight::Pwm))
-            .flatten();
-        let backlight = onion_pwm.or_else(|| match class {
-            Some(dir) => Some(Backlight::Class(dir)),
-            None => {
-                let dbg = sysfs.join("kernel/debug/dispdbg");
-                dbg.join("param")
-                    .is_file()
-                    .then_some(Backlight::Dispdbg(dbg))
-                    .or_else(|| find_pwm(sysfs).map(Backlight::Pwm))
-            }
-        });'''),
-])
-edit("crates/slot-power/tests/device.rs", [
-    ('''#[test]
-fn extended_brightness_respects_live_onion_pwm_period() {''',
-     '''#[test]
-fn onion_prefers_real_pwm_over_other_reported_display_backlights() {
-    let d = sysfs("255", "87");
-    let pwm = d.path().join("class/pwm/pwmchip0/pwm0");
-    fs::create_dir_all(&pwm).unwrap();
-    fs::write(pwm.join("period"), "800\\n").unwrap();
-    fs::write(pwm.join("duty_cycle"), "6\\n").unwrap();
-    fs::write(pwm.join("enable"), "1\\n").unwrap();
-
-    // Without Onion, keep Dean's existing class-first policy.
-    let mut stock = platform(&d);
-    stock.set_backlight(9);
-    assert_eq!(brightness(&d), 255);
-    assert_eq!(duty(&d), 6);
-
-    // Once Onion's runtime is present, direct PWM is the real LCD backlight.
-    let onion = d.path().join(".tmp_update");
-    fs::create_dir_all(&onion).unwrap();
-    fs::write(onion.join("runtime.sh"), "#!/bin/sh\\n").unwrap();
-    let mut slot = DevicePlatform::probe(d.path(), d.path().to_path_buf());
-    slot.set_backlight(9);
-    assert_eq!(duty(&d), 112);
-    slot.set_backlight(12);
-    assert_eq!(duty(&d), 400);
-    // Class isn't touched by the Onion-specific correction.
-    assert_eq!(brightness(&d), 255);
-}
-
-#[test]
-fn extended_brightness_respects_live_onion_pwm_period() {'''),
-])
-
 # Miyoo-only physical brightness extension, requested after the clean Ver. 11
 # display rebuild remained too dim at SLOT level 9. This does NOT alter the
 # framebuffer, LCD3x effects, OnionOS files, or the original 1..9 PWM rungs.
@@ -694,6 +624,76 @@ fn extended_brightness_respects_live_onion_pwm_period() {
 
 #[test]
 fn a_shorter_period_clamps_rather_than_failing() {'''),
+])
+
+# Original Miyoo Mini / Mini Plus: OnionOS controls PWM directly, but Dean's
+# power detector was designed around the Mini Flip and only picks PWM AFTER
+# finding no class backlight and no dispdbg. If either older interface exists,
+# the PWM levels 10..12 update SLOT's UI but never reach the LCD backlight.
+# On OnionOS ONLY, prefer its actual PWM channel when already exported.
+# Preserve Dean's original priority and fallbacks for stock/Allium firmware.
+edit("crates/slot-power/src/device.rs", [
+    ('''        let backlight = match class {
+            Some(dir) => Some(Backlight::Class(dir)),
+            None => {
+                let dbg = sysfs.join("kernel/debug/dispdbg");
+                dbg.join("param")
+                    .is_file()
+                    .then_some(Backlight::Dispdbg(dbg))
+                    .or_else(|| find_pwm(sysfs).map(Backlight::Pwm))
+            }
+        };''',
+     '''        // Onion controls physical screen brightness through
+        // /sys/class/pwm/pwmchip0/pwm0/duty_cycle. On original Mini units a
+        // secondary display class or dispdbg may exist but isn't the actual
+        // backlight. Prefer PWM only while running on the Onion card.
+        let onion_pwm = root.join(".tmp_update/runtime.sh").is_file()
+            .then(|| find_pwm(sysfs).map(Backlight::Pwm))
+            .flatten();
+        let backlight = onion_pwm.or_else(|| match class {
+            Some(dir) => Some(Backlight::Class(dir)),
+            None => {
+                let dbg = sysfs.join("kernel/debug/dispdbg");
+                dbg.join("param")
+                    .is_file()
+                    .then_some(Backlight::Dispdbg(dbg))
+                    .or_else(|| find_pwm(sysfs).map(Backlight::Pwm))
+            }
+        });'''),
+])
+edit("crates/slot-power/tests/device.rs", [
+    ('''#[test]
+fn extended_brightness_respects_live_onion_pwm_period() {''',
+     '''#[test]
+fn onion_prefers_real_pwm_over_other_reported_display_backlights() {
+    let d = sysfs("255", "87");
+    let pwm = d.path().join("class/pwm/pwmchip0/pwm0");
+    fs::create_dir_all(&pwm).unwrap();
+    fs::write(pwm.join("period"), "800\\n").unwrap();
+    fs::write(pwm.join("duty_cycle"), "6\\n").unwrap();
+    fs::write(pwm.join("enable"), "1\\n").unwrap();
+
+    // Without Onion, keep Dean's existing class-first policy.
+    let mut stock = platform(&d);
+    stock.set_backlight(9);
+    assert_eq!(brightness(&d), 255);
+    assert_eq!(duty(&d), 6);
+
+    // Once Onion's runtime is present, direct PWM is the real LCD backlight.
+    let onion = d.path().join(".tmp_update");
+    fs::create_dir_all(&onion).unwrap();
+    fs::write(onion.join("runtime.sh"), "#!/bin/sh\\n").unwrap();
+    let mut slot = DevicePlatform::probe(d.path(), d.path().to_path_buf());
+    slot.set_backlight(9);
+    assert_eq!(duty(&d), 112);
+    slot.set_backlight(12);
+    assert_eq!(duty(&d), 400);
+    // Class isn't touched by the Onion-specific correction.
+    assert_eq!(brightness(&d), 255);
+}
+
+#[test]
+fn extended_brightness_respects_live_onion_pwm_period() {'''),
 ])
 
 # Invariants: only allow the two explicit PWM backlight edits above in
