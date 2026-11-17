@@ -1253,6 +1253,19 @@ edit("crates/slot/src/app.rs", [
         }
         let blank = self.state.menu_screen_off_min;'''),
 ])
+# Ver. 26: the GB/GBC/GBA Screen submenus now begin with Scaling rather
+# than Shader. QuickRow::parent() identifies its menu by its FIRST row.
+# Update the three parent keys so B returns to Screen instead of Shelf.
+# Neither input handling nor any other navigation or scaling logic changes.
+edit("crates/slot-ui/src/quick_menu.rs", [
+    ('''            QuickRow::GbaShader => Some(QuickRow::ScreenGba),
+            QuickRow::GbcShader => Some(QuickRow::ScreenGbc),
+            QuickRow::GbShader => Some(QuickRow::ScreenGb),''',
+     '''            QuickRow::GbaScaling => Some(QuickRow::ScreenGba),
+            QuickRow::GbcScaling => Some(QuickRow::ScreenGbc),
+            QuickRow::GbScaling => Some(QuickRow::ScreenGb),'''),
+])
+
 # Invariants: keep PWM brightness untouched. The only power-layer addition is
 # menu-only backlight blank/restore, preserving the stored brightness level.
 # Never patch the frame-buffer, keymon, theme files or OnionOS runtime.
