@@ -9,7 +9,7 @@ PORT="$WORK/slot-miyoo"
 STAGE="$PORT/release/stage"
 PORT_COMMIT="d096bdb87f25f3aba62de6b40ef859b61d841e43"
 SLOT_VERSION="1.8.1"
-CUSTOM_VERSION="23"
+CUSTOM_VERSION="24"
 ZIP="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo.zip"
 ZIP_ONION="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo-onion-autoboot.zip"
 ZIP_STOCK="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo-stock-autoboot.zip"
@@ -77,6 +77,23 @@ grep -Fq '+        self.tick_menu_idle();' "$shader_patch"
 grep -Fq '+            if std::fs::write("/tmp/.offOrder", b"").is_ok() {' "$shader_patch"
 grep -Fq '+                std::process::exit(0);' "$shader_patch"
 echo "Verified independent menu timers and OnionOS shutdown handoff"
+# Menu scaling must be available on the shelf and persist globally as an INI
+# default without dropping existing per-ROM scaling overrides.
+grep -Fq '+    pub const SCREEN_GENERAL: [QuickRow; 3]' "$shader_patch"
+grep -Fq '+            QuickRow::DefaultScaling => "Default Scaling",' "$shader_patch"
+grep -Fq '+pub fn default_video_mode(root: &Path) -> VideoMode {' "$shader_patch"
+grep -Fq '+    ini::write(root, VIDEO_MODE_FILE, "default", mode.as_str())' "$shader_patch"
+grep -Fq '+        .unwrap_or_else(|| default_video_mode(root))' "$shader_patch"
+grep -Fq '+            QuickRow::DefaultScaling => Some(match self.root.as_deref()' "$shader_patch"
+# The earlier OnionOS POWER passthrough is still used for short presses,
+# while long hold must request real shutdown before keymon sleeps the app.
+grep -Fq '+pub const POWER_HOLD_MS: Millis = 350;' "$shader_patch"
+grep -Fq '+                Action::PowerHold => {' "$shader_patch"
+grep -Fq '+                    self.menu_shutdown_onion = true;' "$shader_patch"
+grep -Fq '+        if self.shutting_down() {' "$shader_patch"
+grep -Fq '+                    && root.join(".tmp_update/onionVersion/version.txt").is_file()' "$shader_patch"
+echo "Verified menu scaling persistence, quick shutdown, and input lock"
+
 
 (
   cd "$PORT"
@@ -137,17 +154,18 @@ echo 'Verified legacy brightness 0–9 and compatibility migration'
 cp "$ROOT/miyoo/onion-autoboot.sh" "$STAGE/System/autoboot/onion-startup.sh"
 cp "$ROOT/miyoo/INSTALL.md" "$STAGE/System/select-slot-install.md"
 cat > "$STAGE/System/select-slot-version.txt" <<EOF
-select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - copy-paste autoboot variants; idle timers; shaders off; brightness 1-9
+select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - copy-paste autoboot; persistent menu scaling; themed shutdown fix; shaders off; brightness 1-9
 Base: https://github.com/deanmarano/slot-miyoo
 Pinned original: $PORT_COMMIT
 GB/GBC: Miyoo-native mGBA default; Gambatte optional; GBA: gpSP default (mGBA alternative)
-Per-game scaling: Original, Integer, Aspect Fit, Fill/Crop, Full Stretch
+Scaling: Original, Integer, Aspect Fit, Fill/Crop, Full Stretch; persistent global default in Screen > General plus in-game per-ROM overrides
 Resume On Power / Insert: independent
 Brightness: original 0-9 PWM hardware levels (UI 1-9); previously saved 10-12 migrate to 9 without resetting other settings
 Framebuffer: original unfiltered Miyoo CPU renderer; no effects, orientation and launcher unchanged
 Shaders: disabled globally for GB/GBC/GBA; menu controls hidden and shortcuts inert; pre-existing shader settings ignored
 Menu Screen Off: Off/1/3/5/10/15/30 minutes; default 3; first press wakes without opening an item
-Menu Power Off: Off/1/3/5/10/15/30 minutes; default 15; hands off to OnionOS themed shutdown
+Menu Power Off: Off/1/3/5/10/15/30 minutes; default 15; instant input lock and OnionOS theme handoff
+Power hold: on OnionOS, quick hold uses native themed shutdown; short press stays native OnionOS standby
 OnionOS: theme-independent keymon POWER/suspend/shutdown handoff; retains whichever OnionOS theme is selected
 Onion PWM: original 0-9 brightness duty table; select physical PWM over unrelated legacy backlight interfaces
 Experimental preview; no H700 OTA publication
