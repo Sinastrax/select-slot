@@ -452,8 +452,110 @@ edit("crates/slot/src/core.rs", [
 ])
 
 
-# Invariants: all hardware/display modules from Dean's proven Miyoo port
-# must remain byte-for-byte identical. No custom power or launcher handlers.
+# Miyoo-only physical brightness extension, requested after the clean Ver. 11
+# display rebuild remained too dim at SLOT level 9. This does NOT alter the
+# framebuffer, LCD3x effects, OnionOS files, or the original 1..9 PWM rungs.
+# OnionOS can change the PWM period in Tweaks; new rungs are fractions of the
+# live period and never reduce brightness below the original level-9 rung.
+edit("crates/slot-store/src/slot_state.rs", [
+    ("pub const BRIGHTNESS_MAX: u8 = 9;", "pub const BRIGHTNESS_MAX: u8 = 12;"),
+])
+edit("crates/slot-ui/src/quick_menu.rs", [
+    ('''    Level9,
+    ScaleActual,''',
+     '''    Level9,
+    Level10,
+    Level11,
+    Level12,
+    ScaleActual,'''),
+    ('''    pub const ALL: [QuickValue; 38]''',
+     '''    pub const ALL: [QuickValue; 41]'''),
+    ('''        QuickValue::Level9,
+        QuickValue::ScaleActual,''',
+     '''        QuickValue::Level9,
+        QuickValue::Level10,
+        QuickValue::Level11,
+        QuickValue::Level12,
+        QuickValue::ScaleActual,'''),
+    ('''    pub const LEVELS: [QuickValue; 10]''',
+     '''    pub const LEVELS: [QuickValue; 13]'''),
+    ('''        QuickValue::Level9,
+    ];
+
+    pub const LID_OFF:''',
+     '''        QuickValue::Level9,
+        QuickValue::Level10,
+        QuickValue::Level11,
+        QuickValue::Level12,
+    ];
+
+    pub const LID_OFF:'''),
+    ('''            QuickValue::Level9 => "9",''',
+     '''            QuickValue::Level9 => "9",
+            QuickValue::Level10 => "10",
+            QuickValue::Level11 => "11",
+            QuickValue::Level12 => "12",'''),
+])
+edit("crates/slot-power/src/device.rs", [
+    ('''            Some(Backlight::Pwm(_)) => PWM_STEPS[TOP_STEP as usize],''',
+     '''            Some(Backlight::Pwm(dir)) => {
+                // Max UI brightness is now 50% of this panel's PWM period.
+                // Include the old level-9 duty if Onion uses a shorter period.
+                let period = read_number(&dir.join("period")).unwrap_or(800);
+                (period / 2).max(PWM_STEPS[TOP_STEP as usize].min(period))
+            },'''),
+    ('''                let duty = PWM_STEPS[step as usize].min(cap);''',
+     '''                let duty = if step <= TOP_STEP as u8 {
+                    // Preserve all of Dean's original levels 0..9 exactly.
+                    PWM_STEPS[step as usize].min(cap)
+                } else {
+                    // OnionOS allows 100..1000 as the PWM period (800
+                    // by default), and restores its own brightness on wake.
+                    // The old absolute-value table only covered 0..9.
+                    // 10/11/12 target 20%/30%/50% duty of the *live*
+                    // period, without exceeding the sysfs maximum.
+                    let period = if cap == u32::MAX { 800 } else { cap };
+                    let percent: u32 = match step {
+                        10 => 20,
+                        11 => 30,
+                        _ => 50,
+                    };
+                    let scaled = ((period as u64 * percent as u64 + 50) / 100) as u32;
+                    scaled.max(PWM_STEPS[TOP_STEP as usize].min(cap)).min(cap)
+                };'''),
+])
+# Unit tests for 800 (Onion default), 400 (custom frequency), 100 (short).
+edit("crates/slot-power/tests/device.rs", [
+    ('''#[test]
+fn a_shorter_period_clamps_rather_than_failing() {''',
+     '''#[test]
+fn extended_brightness_respects_live_onion_pwm_period() {
+    let d = pwm_sysfs("800");
+    let mut p = platform(&d);
+    for (step, expected) in [(9, 112), (10, 160), (11, 240), (12, 400)] {
+        p.set_backlight(step);
+        assert_eq!(duty(&d), expected, "800 period step {step}");
+    }
+    let period = d.path().join("class/pwm/pwmchip0/pwm0/period");
+    fs::write(&period, "400\\n").unwrap();
+    for (step, expected) in [(9, 112), (10, 112), (11, 120), (12, 200)] {
+        p.set_backlight(step);
+        assert_eq!(duty(&d), expected, "400 period step {step}");
+    }
+    fs::write(&period, "100\\n").unwrap();
+    for step in [9, 10, 11, 12] {
+        p.set_backlight(step);
+        assert_eq!(duty(&d), 100, "100 period saturated at step {step}");
+    }
+}
+
+#[test]
+fn a_shorter_period_clamps_rather_than_failing() {'''),
+])
+
+# Invariants: only allow the two explicit PWM backlight edits above in
+# slot-power; framebuffer and compositor source stay original. Launcher,
+# keymon, theme, screen-off / power lifecycle paths are never patched.
 allowed = {
     "crates/slot-store/src/core.rs",
     "crates/slot-store/src/slot_state.rs",
@@ -463,6 +565,8 @@ allowed = {
     "crates/slot/src/video_mode.rs",
     "crates/slot/src/app.rs",
     "crates/slot-ui/src/quick_menu.rs",
+    "crates/slot-power/src/device.rs",
+    "crates/slot-power/tests/device.rs",
 }
 if set(changes) != allowed:
     raise RuntimeError(f"rebuild source changed unexpected paths: {sorted(set(changes) ^ allowed)}")
@@ -472,8 +576,8 @@ for path, diff in changes.items():
         if not (line.startswith("+") or line.startswith("-")) or line.startswith(("+++", "---")):
             continue
         if any(term in line for term in (
-            "set_backlight", "self.state.brightness", "SLOT_ONION_",
-            "blue_light_gain", "onion_splash", "PWM_STEPS",
+            "SLOT_ONION_",
+            "blue_light_gain", "onion_splash",
             "fn sleep(", "fn wake(", "fn doze(",
         )):
             raise RuntimeError(f"forbidden brightness/power patch in {path}: {line}")
@@ -482,4 +586,4 @@ parts = []
 for path, diff in changes.items():
     parts.append(f"diff --git a/{path} b/{path}\n{diff}")
 dest.write_text("".join(parts))
-print(f"Clean Miyoo rebuild patch: {len(changes)} non-hardware files only; display/backlight untouched")
+print(f"Miyoo extended brightness: {len(changes)} sources, original framebuffer and power lifecycle preserved")
