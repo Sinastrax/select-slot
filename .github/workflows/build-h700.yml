@@ -3,6 +3,8 @@ name: Build custom Slot H700
 on:
   workflow_dispatch:
   push:
+    branches:
+      - main
     tags:
       - "v*-rgsp.*"
     paths:
