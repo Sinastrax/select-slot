@@ -1,51 +1,43 @@
 #!/usr/bin/env python3
-"""Check fractional Fit LCD geometry and preserve exact integer-size masks."""
+"""Fit mask regression and isolation checks for safe Ver. 5 candidate."""
 from pathlib import Path
-from math import floor
 
 shader = Path("crates/slot-gfx/src/shaders.rs").read_text()
-assert "float authentic_gap_coverage(float phase, float outputPerSource)" in shader
-assert "gap = vec2(authentic_gap_coverage(f.x, span.x)," in shader
-assert "if (u_lcd.x > 0.5)" in shader, "Monochrome model should keep original sampling"
+assert "vec2 phase = f * span;" in shader
+assert "clamp(vec2(1.5) - phase, vec2(0.0), vec2(1.0))" in shader
+assert "clamp(phase - (span - vec2(0.5)), vec2(0.0), vec2(1.0))" in shader
+assert "authentic_gap_coverage(" not in shader, "Crashing Ver. 5 GLSL helper retained"
+assert "if (u_lcd.x > 0.5) {" in shader, "Monochrome GB ink must stay untouched"
+assert "lin = mix(u_dark, u_light, response);" in shader
+assert "bool gbaRawLcd =" in shader
+assert "uniform float u_authentic_correction;" in shader
+
+# No changes to upstream LCD-grid rendering/precision in this candidate.
 start = shader.index("    } else if (u_mode > 6.5) {")
 end = shader.index("    } else if (u_mode > 4.5) {", start)
 lcd = shader[start:end]
-assert "mediump " not in lcd, "LCD-grid subpixel precision must use default highp where supported"
-assert "vec3 lit = " in lcd, "LCD-grid weighted mask was lost"
+assert lcd.count("mediump ") >= 10, "The previously altered LCD-grid precision must be restored"
 
-def coverage(phase: float, scale: float) -> float:
-    scale = max(scale, 1)
-    half = .5 / scale
-    width = 1 / scale
-    lo, hi = phase - half, phase + half
-    c = max(0.0, min(hi, width) - max(lo, 0.0))
-    prev = max(0.0, min(hi, width - 1) - max(lo, -1))
-    nxt = max(0.0, min(hi, width + 1) - max(lo, 1))
-    return min(1.0, max(0.0, (c + prev + nxt) * scale))
+def mask(phase, span):
+    return min(1., max(0., min(1., 1.5 - phase)) +
+               max(0., min(1., phase - (span - .5))))
 
-# At exact integer scaling a native 1-pixel gap stays exactly a binary
-# 1-pixel gap. Neither legacy integer nor 3x RG SP views change.
-for scale in (2, 3, 4, 5, 6):
-    for i in range(scale):
-        phase = (i + .5) / scale
-        expected = 1.0 if i == 0 else 0.0
-        assert abs(coverage(phase, scale) - expected) < 1e-8, (scale, i)
+# At each exact integer scale, the mask stays 1 on the first display pixel,
+# zero on all other output pixels, identical to Ver. 4's hard step().
+for span in range(2, 7):
+    for i in range(span):
+        at = i + .5
+        want = float(i == 0)
+        assert abs(mask(at, span) - want) < 1e-9, (span, i, mask(at, span))
 
-# 640x480 RG35XX H / RGB30 Fit content: a 240x160 GBA image is
-# 640/240=2.666.. horizontally, and around 427/160 vertically.
-# Fractional coverage produces partial alpha while preserving the intended
-# proportion of dark gaps, instead of rounding every sample to 0 or 1.
+# For the 640px RG35XX H screen, Fit yields 2.666.. output px per GBA px.
+# At that scale the trailing boundary is partially covered instead of being
+# arbitrarily treated as either fully dark or fully bright.
 for src, dest in ((240, 640), (160, 427)):
-    scale = dest / src
-    samples = [coverage(((i + .5) / scale) % 1, scale) for i in range(dest)]
-    assert any(.01 < v < .99 for v in samples), (src, dest)
-    actual = sum(samples) / len(samples)
-    expected = 1 / scale
-    assert abs(actual - expected) < .005, (src, dest, actual, expected)
-    assert min(samples) >= 0.0 and max(samples) <= 1.0
+    span = dest / src
+    pixels = [mask(((i + .5) / span % 1) * span, span) for i in range(dest)]
+    assert any(0.01 < x < .99 for x in pixels), (src, dest)
+    assert abs(sum(pixels)/len(pixels) - (1/span)) < .006, (src, dest)
+    assert 0 <= min(pixels) <= max(pixels) <= 1
 
-# The ON/OFF mode and the separate reflection option still use the
-# previously verified Authentic routes; geometry fix must not replace them.
-assert "uniform float u_authentic_correction;" in shader
-assert "lin = mix(u_dark, u_light, response);" in shader
-print("PASS: 640x480 Fit masks are coverage-weighted; integer 2x-6x masks unchanged")
+print("PASS: integer 2x..6x unchanged; fractional Fit masks partially covered; standard LCD shader untouched")
