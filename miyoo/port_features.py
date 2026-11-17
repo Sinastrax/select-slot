@@ -122,7 +122,11 @@ source = source.replace(
 
 # Reuse the verified pvaibhav Gambatte palette-name mapping, without SGB hardware.
 palette = "crates/slot-store/src/gb_palette.rs"
-edit(palette, "    pub fn label(self) -> &'static str {", """    pub fn gambatte_name(self) -> &'static str {
+edit(palette, "    pub fn core_name(self) -> &'static str {\n        NAMES[self.index()]\n    }\n\n    pub fn label(self) -> &'static str {", """    pub fn core_name(self) -> &'static str {
+        NAMES[self.index()]
+    }
+
+    pub fn gambatte_name(self) -> &'static str {
         const GBC: [&str; 12] = [
             "GBC - Brown", "GBC - Red", "GBC - Dark Brown", "GBC - Pastel Mix",
             "GBC - Orange", "GBC - Yellow", "GBC - Blue", "GBC - Dark Blue",
