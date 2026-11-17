@@ -410,6 +410,24 @@ edit("crates/slot/src/app.rs", [
 '''),
 ])
 
+# Newly added QuickRow variants must be exhaustively handled in the legacy
+# source's two action dispatch matches. Their real behavior is above.
+edit("crates/slot/src/app.rs", [
+    ('''            | QuickRow::AutoLoad
+            | QuickRow::EjectSave''',
+     '''            | QuickRow::AutoLoad
+            | QuickRow::Scaling
+            | QuickRow::ResumePowerOn
+            | QuickRow::MenuScreenOff
+            | QuickRow::MenuPowerOff
+            | QuickRow::EjectSave'''),
+    ('''            | QuickRow::LidOff => return,''',
+     '''            | QuickRow::LidOff
+            | QuickRow::Scaling
+            | QuickRow::MenuScreenOff
+            | QuickRow::MenuPowerOff => return,'''),
+])
+
 # A software renderer cannot use the H700 GLSL effects; Authentic is deferred
 # pending a measured LUT/lookup-table implementation. Do not fake it.
 
