@@ -9,7 +9,7 @@ PORT="$WORK/slot-miyoo"
 STAGE="$PORT/release/stage"
 PORT_COMMIT="d096bdb87f25f3aba62de6b40ef859b61d841e43"
 SLOT_VERSION="1.8.1"
-CUSTOM_VERSION="1"
+CUSTOM_VERSION="2"
 ZIP="$WORK/custom-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo.zip"
 
 for command in git task docker zip unzip python3 file; do
@@ -84,11 +84,13 @@ Port: https://github.com/deanmarano/slot-miyoo
 Port commit: $PORT_COMMIT
 Original Slot: https://github.com/slot-cfw/slot
 Custom source: https://github.com/Sinastrax/slot-rgsp-mod
-Custom change: Auto Load Off remains on the cartridge shelf at startup
+Resume on Power On and Resume on Insert are independent settings
+Menu Screen Off: Off/1/3/5/10/15/30 min (default 3)
+Menu Power Off: Off/1/3/5/10/15/30 min (default 15)
 GB/GBC default: Gambatte
 GBA default: gpSP
 Authentic renderer: NOT YET PORTED
-Extended scaling: NOT YET PORTED
+Scaling: Original, Integer, Aspect Fit, Fill/Crop, Full Stretch (per game)
 State: experimental; this custom variant has not been hardware-tested
 EOF
 
