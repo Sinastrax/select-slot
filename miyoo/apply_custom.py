@@ -1021,10 +1021,10 @@ edit("crates/slot/src/app.rs", [
 ])
 
 
-# Ver. 24: expose a global default scaling mode in the shelf Screen -> General
-# menu while keeping the existing in-game per-ROM Scaling override. Store the
-# global default in Config/video_mode.txt under key 'default'; upgrade from
-# existing files without changing any saved per-game entries.
+# Ver. 25: separate, persisted GB / GBC / GBA scaling defaults in
+# Screen -> Game Boy / Game Boy Color / Game Boy Advance.
+# Per-ROM scaling stays the highest priority. The old Ver.24 'default' key
+# remains a *read-only* fallback for users who installed that release.
 edit("crates/slot/src/video_mode.rs", [
     ('''pub fn video_mode_for(root: &Path, stem: &str) -> VideoMode {
     ini::value(root, VIDEO_MODE_FILE, stem)
@@ -1032,23 +1032,40 @@ edit("crates/slot/src/video_mode.rs", [
         .and_then(VideoMode::parse)
         .unwrap_or_default()
 }''',
-     '''pub fn default_video_mode(root: &Path) -> VideoMode {
-    ini::value(root, VIDEO_MODE_FILE, "default")
+     '''fn platform_default_key(platform: Platform) -> &'static str {
+    match platform {
+        Platform::Gb => "default_gb",
+        Platform::Gbc => "default_gbc",
+        Platform::Gba => "default_gba",
+    }
+}
+
+pub fn default_video_mode(root: &Path, platform: Platform) -> VideoMode {
+    ini::value(root, VIDEO_MODE_FILE, platform_default_key(platform))
         .as_deref()
         .and_then(VideoMode::parse)
+        // Preserve the old Ver. 24 global default until each system is
+        // configured explicitly. Never overwrite or delete per-ROM values.
+        .or_else(|| ini::value(root, VIDEO_MODE_FILE, "default")
+            .as_deref()
+            .and_then(VideoMode::parse))
         .unwrap_or(VideoMode::Actual)
 }
 
-pub fn write_default_video_mode(root: &Path, mode: VideoMode) -> std::io::Result<()> {
-    ini::write(root, VIDEO_MODE_FILE, "default", mode.as_str())
+pub fn write_default_video_mode(root: &Path, platform: Platform, mode: VideoMode) -> std::io::Result<()> {
+    ini::write(root, VIDEO_MODE_FILE, platform_default_key(platform), mode.as_str())
 }
 
-pub fn video_mode_for(root: &Path, stem: &str) -> VideoMode {
+pub fn video_mode_for(root: &Path, stem: &str, platform: Platform) -> VideoMode {
     ini::value(root, VIDEO_MODE_FILE, stem)
         .as_deref()
         .and_then(VideoMode::parse)
-        .unwrap_or_else(|| default_video_mode(root))
+        .unwrap_or_else(|| default_video_mode(root, platform))
 }'''),
+])
+edit("crates/slot/src/session.rs", [
+    ('''            .set_video_mode(crate::video_mode::video_mode_for(&self.root, stem));''',
+     '''            .set_video_mode(crate::video_mode::video_mode_for(&self.root, stem, platform));'''),
 ])
 edit("crates/slot-ui/src/quick_menu.rs", [
     ('''    MenuPowerOff,
@@ -1056,42 +1073,100 @@ edit("crates/slot-ui/src/quick_menu.rs", [
 
 impl QuickRow''',
      '''    MenuPowerOff,
-    DefaultScaling,
+    GbaScaling,
+    GbScaling,
+    GbcScaling,
 }
 
 impl QuickRow'''),
-    ('''    pub const ALL: [QuickRow; 84]''', '''    pub const ALL: [QuickRow; 85]'''),
+    ('''    pub const ALL: [QuickRow; 84]''', '''    pub const ALL: [QuickRow; 87]'''),
     ('''        QuickRow::MenuPowerOff,
     ];
 
     pub const MAIN:''',
      '''        QuickRow::MenuPowerOff,
-        QuickRow::DefaultScaling,
+        QuickRow::GbaScaling,
+        QuickRow::GbScaling,
+        QuickRow::GbcScaling,
     ];
 
     pub const MAIN:'''),
-    ('''    pub const SCREEN_GENERAL: [QuickRow; 2] = [QuickRow::Brightness, QuickRow::BlueLight];''',
-     '''    pub const SCREEN_GENERAL: [QuickRow; 3] = [
-        QuickRow::Brightness,
-        QuickRow::BlueLight,
-        QuickRow::DefaultScaling,
+    ('''    pub const SCREEN_GBA: [QuickRow; 3] = [
+        QuickRow::GbaShader,
+        QuickRow::GbaColourCorrection,
+        QuickRow::GbaBezel,
+    ];''',
+     '''    pub const SCREEN_GBA: [QuickRow; 4] = [
+        QuickRow::GbaScaling,
+        QuickRow::GbaShader,
+        QuickRow::GbaColourCorrection,
+        QuickRow::GbaBezel,
     ];'''),
-    ('''            QuickRow::Brightness | QuickRow::BlueLight => &QuickRow::SCREEN_GENERAL,''',
-     '''            QuickRow::Brightness | QuickRow::BlueLight | QuickRow::DefaultScaling => &QuickRow::SCREEN_GENERAL,'''),
+    ('''    pub const SCREEN_GBC: [QuickRow; 3] = [
+        QuickRow::GbcShader,
+        QuickRow::GbcColourCorrection,
+        QuickRow::GbcBezel,
+    ];''',
+     '''    pub const SCREEN_GBC: [QuickRow; 4] = [
+        QuickRow::GbcScaling,
+        QuickRow::GbcShader,
+        QuickRow::GbcColourCorrection,
+        QuickRow::GbcBezel,
+    ];'''),
+    ('''    pub const SCREEN_GB: [QuickRow; 4] = [
+        QuickRow::GbShader,
+        QuickRow::GbColourCorrection,
+        QuickRow::GbPalette,
+        QuickRow::GbBezel,
+    ];''',
+     '''    pub const SCREEN_GB: [QuickRow; 5] = [
+        QuickRow::GbScaling,
+        QuickRow::GbShader,
+        QuickRow::GbColourCorrection,
+        QuickRow::GbPalette,
+        QuickRow::GbBezel,
+    ];'''),
+    ('''            QuickRow::GbaShader | QuickRow::GbaColourCorrection | QuickRow::GbaBezel => {
+                &QuickRow::SCREEN_GBA
+            }''',
+     '''            QuickRow::GbaShader | QuickRow::GbaColourCorrection | QuickRow::GbaBezel
+            | QuickRow::GbaScaling => {
+                &QuickRow::SCREEN_GBA
+            }'''),
+    ('''            QuickRow::GbcShader | QuickRow::GbcColourCorrection | QuickRow::GbcBezel => {
+                &QuickRow::SCREEN_GBC
+            }''',
+     '''            QuickRow::GbcShader | QuickRow::GbcColourCorrection | QuickRow::GbcBezel
+            | QuickRow::GbcScaling => {
+                &QuickRow::SCREEN_GBC
+            }'''),
+    ('''            | QuickRow::GbBezel => &QuickRow::SCREEN_GB,''',
+     '''            | QuickRow::GbBezel
+            | QuickRow::GbScaling => &QuickRow::SCREEN_GB,'''),
     ('''            QuickRow::MenuPowerOff => "Menu Power Off",''',
      '''            QuickRow::MenuPowerOff => "Menu Power Off",
-            QuickRow::DefaultScaling => "Default Scaling",'''),
+            QuickRow::GbaScaling | QuickRow::GbScaling | QuickRow::GbcScaling => "Scaling",'''),
 ])
 edit("crates/slot/src/app.rs", [
     ('''            QuickRow::Scaling => Some(match self.video_mode {
                 VideoMode::Actual => QuickValue::ScaleActual,''',
-     '''            QuickRow::DefaultScaling => Some(match self.root.as_deref().map(video_mode::default_video_mode).unwrap_or(VideoMode::Actual) {
-                VideoMode::Actual => QuickValue::ScaleActual,
-                VideoMode::Integer => QuickValue::ScaleInteger,
-                VideoMode::Stretch | VideoMode::Aspect => QuickValue::ScaleAspect,
-                VideoMode::Fill => QuickValue::ScaleFill,
-                VideoMode::FullStretch => QuickValue::ScaleFull,
-            }),
+     '''            QuickRow::GbaScaling | QuickRow::GbScaling | QuickRow::GbcScaling => {
+                let platform = match row {
+                    QuickRow::GbaScaling => Platform::Gba,
+                    QuickRow::GbcScaling => Platform::Gbc,
+                    _ => Platform::Gb,
+                };
+                let mode = self.root.as_deref()
+                    .map(|root| video_mode::default_video_mode(root, platform))
+                    .unwrap_or(VideoMode::Actual);
+                Some(match mode {
+                    VideoMode::Actual => QuickValue::ScaleActual,
+                    VideoMode::Integer => QuickValue::ScaleInteger,
+                    VideoMode::Stretch | VideoMode::Aspect => QuickValue::ScaleAspect,
+                    VideoMode::Fill => QuickValue::ScaleFill,
+                    VideoMode::FullStretch => QuickValue::ScaleFull,
+                })
+            },
             QuickRow::Scaling => Some(match self.video_mode {
                 VideoMode::Actual => QuickValue::ScaleActual,'''),
     ('''        if row == QuickRow::Scaling {
@@ -1099,13 +1174,18 @@ edit("crates/slot/src/app.rs", [
             self.set_picture(to);
             return;
         }''',
-     '''        if row == QuickRow::DefaultScaling {
+     '''        if matches!(row, QuickRow::GbaScaling | QuickRow::GbScaling | QuickRow::GbcScaling) {
             if let Some(root) = &self.root {
-                let now = video_mode::default_video_mode(root);
+                let platform = match row {
+                    QuickRow::GbaScaling => Platform::Gba,
+                    QuickRow::GbcScaling => Platform::Gbc,
+                    _ => Platform::Gb,
+                };
+                let now = video_mode::default_video_mode(root, platform);
                 let to = if right { now.next() } else { now.previous() };
-                let written = video_mode::write_default_video_mode(root, to);
+                let written = video_mode::write_default_video_mode(root, platform, to);
                 if let Err(e) = &written {
-                    eprintln!("slot: video: cannot save default scaling: {e}");
+                    eprintln!("slot: video: cannot save system scaling: {e}");
                 }
                 self.card_writes.wrote("video_mode.txt", &written);
             }
@@ -1122,16 +1202,19 @@ edit("crates/slot/src/app.rs", [
 
     fn change_setting''',
      '''            | QuickRow::MenuPowerOff
-            | QuickRow::DefaultScaling => {}
+            | QuickRow::GbaScaling
+            | QuickRow::GbScaling
+            | QuickRow::GbcScaling => {}
         }
     }
 
     fn change_setting'''),
     ('''            | QuickRow::MenuPowerOff => return,''',
      '''            | QuickRow::MenuPowerOff
-            | QuickRow::DefaultScaling => return,'''),
+            | QuickRow::GbaScaling
+            | QuickRow::GbScaling
+            | QuickRow::GbcScaling => return,'''),
 ])
-
 
 # OnionOS keymon starts its own shutdown/deepsleep at about 0.5s of POWER
 # hold, before Slot's upstream 1000ms PowerHold event. Shorten the Miyoo
@@ -1180,6 +1263,7 @@ allowed = {
     "crates/slot/src/core.rs",
     "crates/slot/src/session.rs",
     "crates/slot/src/video_mode.rs",
+    "crates/slot/src/session.rs",
     "crates/slot/src/app.rs",
     "crates/slot-ui/src/quick_menu.rs",
     "crates/slot-power/src/device.rs",
