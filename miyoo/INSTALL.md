@@ -1,8 +1,8 @@
-# select. slot. 1.8.1 Ver. 15 — use Onion's physical PWM backlight
+# select. slot. 1.8.1 Ver. 16 — use Onion's physical PWM backlight
 
 **Experimental ARMv7 Miyoo Mini / Mini Plus / Flip application, not H700 firmware.** This version is based on the pinned [deanmarano/slot-miyoo](https://github.com/deanmarano/slot-miyoo) commit `d096bdb87f25f3aba62de6b40ef859b61d841e43` and Slot upstream 1.8.1.
 
-## Ver. 15: actual hardware backlight priority on the original Mini
+## Ver. 16: restore the original Miyoo emulator defaults\n\nThe GB/GBC default is restored from Gambatte to the original Miyoo mGBA, retaining gpSP for GBA. Gambatte remains optional for compatibility, rather than being mandatory. The original renderer, launcher, PWM implementation, Onion keymon coordination and working BMO handoff are kept. Existing per-game core choices may continue to override the default, so test using a title without an explicit Gambatte selection. This is an experimental core-path correction, not a proven cure for the physical darkness.\n\n## Ver. 15: actual hardware backlight priority on the original Mini
 
 This release preserves the **working Ver. 14 OnionOS standby / BMO handoff**. The remaining problem was a dark game/display even when the new SLOT brightness scale reached level 12.
 
@@ -60,7 +60,7 @@ This upper boost is **not validated for the original Mini's display durability**
 4. Start **select. slot.**. In the SLOT **Brightness** menu or using mapped brightness shortcuts, choose 10 first and then 11 or 12 only if needed.
 5. If brightness falls back after standby, the new automatic resume reapply should restore the selected SLOT level. If a change in OnionOS settings is pending, its keymon remains responsible for its own global value.
 
-GB/GBC default core is Gambatte; GBA default is gpSP with mGBA available for legacy selections. Existing palette and per-game scaling features (Original, Integer, Aspect Fit, Fill/Crop, Full Stretch) and separate Resume on Power On/Resume on Insert settings remain included. The framebuffer, LCD3x and hardware orientation remain the original Miyoo implementation. Menu-idle power timers, custom sleep animations, Authentic GLSL shaders and H700 OTA are not included.
+GB/GBC default core is the original Miyoo ARMv7 mGBA, with Gambatte still available as an optional alternative. GBA defaults to gpSP, with mGBA as the compatibility alternative. This restores the original port's preferred GB/GBC emulator path without replacing existing saves or affecting Onion/BMO. The display-darkness issue is not yet verified resolved on hardware. Existing palette and per-game scaling features (Original, Integer, Aspect Fit, Fill/Crop, Full Stretch) and separate Resume on Power On/Resume on Insert settings remain included. The framebuffer, LCD3x and hardware orientation remain the original Miyoo implementation. Menu-idle power timers, custom sleep animations, Authentic GLSL shaders and H700 OTA are not included.
 
 ## Build validation and limitations
 
