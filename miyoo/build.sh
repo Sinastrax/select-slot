@@ -91,7 +91,7 @@ Platform: Miyoo Mini / Mini Plus / Mini Flip (ARMv7)
 Port: https://github.com/deanmarano/slot-miyoo
 Port commit: $PORT_COMMIT
 Original Slot: https://github.com/slot-cfw/slot
-Custom source: https://github.com/Sinastrax/slot-rgsp-mod
+Custom source: https://github.com/Sinastrax/select-slot
 Resume on Power On and Resume on Insert are independent settings
 Menu Screen Off: Off/1/3/5/10/15/30 min (default 3)
 Menu Power Off: Off/1/3/5/10/15/30 min (default 15)
