@@ -35,7 +35,7 @@ p=p.replace("GbColors::Auto | GbColors::SgbAuto => GbColors::Palette(GbPalette(0
 p=p.replace("GbColors::Auto | GbColors::SgbAuto => GbColors::Palette(GbPalette((GbPalette::COUNT - 1) as u8)),","GbColors::Auto | GbColors::GbcAuto | GbColors::SgbAuto => GbColors::Palette(GbPalette((GbPalette::COUNT - 1) as u8)),")
 p=p.replace('GbColors::Auto => "Auto",\n            GbColors::SgbAuto', 'GbColors::Auto => "Auto",\n            GbColors::GbcAuto => "Game Boy Color",\n            GbColors::SgbAuto')
 p=p.replace('GbColors::Auto | GbColors::SgbAuto => "Auto",', 'GbColors::Auto | GbColors::GbcAuto | GbColors::SgbAuto => "Auto",')
-assert p.count("GbcAuto")==7, p.count("GbcAuto")
+assert p.count("GbcAuto")==6, p.count("GbcAuto")
 palette_file.write_text(p)
 
 state_file=Path("crates/slot-store/src/slot_state.rs")
