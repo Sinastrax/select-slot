@@ -39,4 +39,21 @@ replace_once('          echo "gpsp        {{.GPSP_COMMIT}}"\n',
              '          echo "gpsp        {{.GPSP_COMMIT}}"\n          echo "gambatte    77f2567d718b8973d02caa2daa8dce4953faf811"\n')
 task.write_text(text)
 (port / "cores/gambatte").mkdir(parents=True, exist_ok=True)
-print("Gambatte cross-build, artefact and source archive registered")
+
+# Enable the non-destructive OnionOS theme bridge from both the optional
+# autoboot hook and manual App/Slot launches. Stock/Allium are unaffected.
+launch = port / "card/System/launch_frontend.sh"
+body = launch.read_text()
+needle = 'export SLOT_ROOT="$SD"\n'
+if body.count(needle) != 1:
+    raise RuntimeError("Miyoo launcher: unexpected SLOT_ROOT block")
+body = body.replace(needle, needle + """
+# Only for OnionOS: its own theme renderer supplies transitions. Do not
+# replace Onion's runtime.sh or boot assets, and support user opt-out.
+if [ -f "$SD/.tmp_update/onionVersion/version.txt" ] \\
+    && [ -f "$SYS/onion-splash.sh" ]; then
+    export SLOT_ONION_VISUALS=1
+fi
+""", 1)
+launch.write_text(body)
+print("Gambatte core and optional OnionOS visuals integration registered")
