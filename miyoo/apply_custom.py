@@ -190,6 +190,49 @@ edit("crates/slot/src/app.rs", [
     ("self.set_picture(VideoMode::Actual)", "self.set_picture(self.video_mode.previous())"),
 ])
 
+# Expose per-game scaling in the existing in-game Screen menu, including GBA
+# (whose shoulder buttons must remain bound to the game).
+edit("crates/slot-ui/src/quick_menu.rs", [
+    ("    AutoLoad,\n}\n\nimpl QuickRow", "    AutoLoad,\n    Scaling,\n}\n\nimpl QuickRow"),
+    ("pub const ALL: [QuickRow; 80]", "pub const ALL: [QuickRow; 81]"),
+    ("        QuickRow::AutoLoad,\n    ];\n\n    pub const MAIN:",
+     "        QuickRow::AutoLoad,\n        QuickRow::Scaling,\n    ];\n\n    pub const MAIN:"),
+    ("pub const PLAY_SCREEN: [QuickRow; 6]", "pub const PLAY_SCREEN: [QuickRow; 7]"),
+    ("        QuickRow::Shader,\n        QuickRow::Bezel,",
+     "        QuickRow::Shader,\n        QuickRow::Scaling,\n        QuickRow::Bezel,"),
+    ("QuickRow::Shader | QuickRow::ColourCorrection | QuickRow::Palette | QuickRow::Bezel => {",
+     "QuickRow::Shader | QuickRow::Scaling | QuickRow::ColourCorrection | QuickRow::Palette | QuickRow::Bezel => {"),
+    ('            QuickRow::AutoLoad => "Load State on Insert",',
+     '            QuickRow::AutoLoad => "Load State on Insert",\n            QuickRow::Scaling => "Scaling",'),
+    ("    Level9,\n}\n\nimpl QuickValue",
+     "    Level9,\n    ScaleActual,\n    ScaleInteger,\n    ScaleAspect,\n    ScaleFill,\n    ScaleFull,\n}\n\nimpl QuickValue"),
+    ("pub const ALL: [QuickValue; 33]", "pub const ALL: [QuickValue; 38]"),
+    ("        QuickValue::Level9,\n    ];\n\n    pub const LEVELS:",
+     "        QuickValue::Level9,\n        QuickValue::ScaleActual,\n        QuickValue::ScaleInteger,\n        QuickValue::ScaleAspect,\n        QuickValue::ScaleFill,\n        QuickValue::ScaleFull,\n    ];\n\n    pub const LEVELS:"),
+    ('            QuickValue::Level9 => "9",',
+     '            QuickValue::Level9 => "9",\n            QuickValue::ScaleActual => "Original",\n            QuickValue::ScaleInteger => "Integer",\n            QuickValue::ScaleAspect => "Aspect Fit",\n            QuickValue::ScaleFill => "Fill / Crop",\n            QuickValue::ScaleFull => "Full Stretch",'),
+])
+edit("crates/slot/src/app.rs", [
+    ("            QuickRow::Brightness => Some(QuickValue::level(self.state.brightness)),",
+     '''            QuickRow::Scaling => Some(match self.video_mode {
+                VideoMode::Actual => QuickValue::ScaleActual,
+                VideoMode::Integer => QuickValue::ScaleInteger,
+                VideoMode::Stretch | VideoMode::Aspect => QuickValue::ScaleAspect,
+                VideoMode::Fill => QuickValue::ScaleFill,
+                VideoMode::FullStretch => QuickValue::ScaleFull,
+            }),
+            QuickRow::Brightness => Some(QuickValue::level(self.state.brightness)),'''),
+    ('''        let row = self.playing_row(row);
+        if let QuickRow::Brightness | QuickRow::BlueLight = row {''',
+     '''        let row = self.playing_row(row);
+        if row == QuickRow::Scaling {
+            let to = if right { self.video_mode.next() } else { self.video_mode.previous() };
+            self.set_picture(to);
+            return;
+        }
+        if let QuickRow::Brightness | QuickRow::BlueLight = row {'''),
+])
+
 # A software renderer cannot use the H700 GLSL effects; Authentic is deferred
 # pending a measured LUT/lookup-table implementation. Do not fake it.
 
