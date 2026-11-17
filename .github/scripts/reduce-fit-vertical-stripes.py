@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reduce LCD vertical stripe contrast only at non-integer output scales.
+"""Preserve visible LCD pixel separation with mild fractional-scale antialiasing.
 
 At e.g. GBA 240 -> 640 pixels, a simulated one-output-pixel vertical LCD
 gap repeats every 2 2/3 pixels and looks like a high-contrast column pattern.
@@ -35,9 +35,9 @@ replace_exact(
         if (u_lcd.x > 0.5) {""",
     """                + max(vec2(0.0), vec2(1.0) - abs(phase - span - vec2(0.5))));
             // Fractional Fit creates uneven vertical line widths.
-            // Keep the mean 1/scale gap and soften only its modulation.
+            // Keep the mean 1/scale gap and soften only its modulation, retaining at least 85% of the original contrast.
             float fractional = abs(span.x - floor(span.x + 0.5));
-            float soften = 0.85 * smoothstep(0.03, 0.28, fractional);
+            float soften = 0.15 * smoothstep(0.03, 0.28, fractional);
             gap.x = mix(gap.x, min(1.0, 1.0 / max(span.x, 1.0)), soften);
         }
         if (u_lcd.x > 0.5) {""",
@@ -46,7 +46,7 @@ replace_exact(
 
 # The LCD-grid shader is automatically chosen on the RG35XX H. It already
 # integrates RGB stripes against source pixels. Preserve precision,
-# horizontal scanlines, and area integration; only reduce x stripe contrast
+# horizontal scanlines, and area integration; only slightly reduce x stripe contrast
 # when the display scale is fractional.
 replace_exact(
     """    } else if (u_mode > 6.5) {
@@ -55,7 +55,7 @@ replace_exact(
         vec2 lcdSpan = u_rect.zw * u_fbo / (u_uv.zw * u_src);
         float stripeFractional = abs(lcdSpan.x - floor(lcdSpan.x + 0.5));
         float stripeStrength = lcd_stripe
-            * (1.0 - 0.85 * smoothstep(0.03, 0.28, stripeFractional));
+            * (1.0 - 0.15 * smoothstep(0.03, 0.28, stripeFractional));
         vec2 hp = 0.5 * u_uv.zw * u_src / (u_rect.zw * u_fbo);""",
     "LCD-grid scale-dependent stripe attenuation",
 )
