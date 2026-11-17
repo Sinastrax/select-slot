@@ -2,7 +2,7 @@
 
 <img src="https://raw.githubusercontent.com/slot-cfw/slot/main/.github/resources/hero.webp" width="100%" alt="slot — Game Boy-centric custom firmware for Anbernic H700 handhelds">
 
-[![Download](https://img.shields.io/badge/Download-Latest%20release-238636?style=for-the-badge)](https://github.com/Sinastrax/slot-rgsp-mod/releases/latest)
+[![Download](https://img.shields.io/badge/Download-Latest%20release-238636?style=for-the-badge)](https://github.com/Sinastrax/select-slot/releases/latest)
 [![Original slot](https://img.shields.io/badge/Original-slot-555?style=for-the-badge)](https://github.com/slot-cfw/slot)
 [![pvaibhav's fork](https://img.shields.io/badge/Based%20on-pvaibhav%2Fslot-555?style=for-the-badge)](https://github.com/pvaibhav/slot)
 [![Guide](https://img.shields.io/badge/Guide-slot--cfw.fyi-555?style=for-the-badge)](https://slot-cfw.fyi)
@@ -49,6 +49,7 @@ These are the **custom changes in this project**, on top of both upstream Slot a
 - **Independent settings for Gambatte and mGBA.** GB/GBC screen appearance and color-correction behavior can differ by emulator core without interfering with the other.
 - **Separate color-correction switches.** Keep the Authentic pixel grid, reflections and visual treatment while disabling the calibrated RGB color transfer. Monochrome LCD tint remains part of the model simulation.
 - **Fast-forward adjustments.** Authentic LCD ghosting is suppressed during fast-forward and restored for normal play.
+- **Fit-scaled LCD pixels on 640×480 devices.** Authentic GBA/GBC and the standard LCD shader reduce uneven vertical stripe contrast at fractional scaling ratios (e.g. 240 → 640 pixels), while retaining the original patterns at exact integer scales.
 
 ### Emulation and audio
 
@@ -68,7 +69,7 @@ These are the **custom changes in this project**, on top of both upstream Slot a
 
 ### Online updates
 
-- **Custom update channel** from **Settings → System → Check for Updates**. Updates come from [this repository's releases](https://github.com/Sinastrax/slot-rgsp-mod/releases), not an upstream build.
+- **Custom update channel** from **Settings → System → Check for Updates**. Updates come from [this repository's releases](https://github.com/Sinastrax/select-slot/releases), not an upstream build.
 - **Full releases only:** the updater downloads a complete H700 package, checks its size and SHA-256 checksum, then stages it for installation at restart.
 - **No forced background updates.** The user chooses whether to install. ROMs, saves and personal settings are not bundled in releases.
 
@@ -78,7 +79,7 @@ See [ONLINE_UPDATES.md](ONLINE_UPDATES.md) for technical packaging and release p
 
 1. Install a compatible [BaseOS](https://github.com/pvaibhav/BaseOS) setup for your handheld and prepare the SD2 card following the [original Slot guide](https://slot-cfw.fyi).
 2. Back up saves, save states, and `Config/` before upgrading.
-3. Download the **latest full H700 ZIP** from [Releases](https://github.com/Sinastrax/slot-rgsp-mod/releases/latest).
+3. Download the **latest full H700 ZIP** from [Releases](https://github.com/Sinastrax/select-slot/releases/latest).
 4. Extract the contents of the included device folder to the **root of SD2**, so `System/slot` is in the SD2 `System` directory. Do not copy the containing device folder itself.
 5. Restart the handheld. Once running a select. slot. build with online updates, subsequent updates are available under **Settings → System → Check for Updates**.
 
@@ -86,9 +87,9 @@ Do not interchange save states made by different emulator cores; in-game battery
 
 ## Versions and release notes
 
-Release titles follow **select. slot. 1.16.0 Ver. 5**: the upstream Slot version is immediately after the project name, followed by our revision number. The published Ver. 5 keeps its historical tag `v1.16.0-rgsp.5` and archive name. To preserve updates from existing installations, the next functional release can use a compatible `-custom.N` tag while introducing `-select.N` support; subsequent functional releases use `-select.N`. Old tags and archives are never rewritten. A naming change alone does not generate a firmware release.
+Release titles follow **select. slot. 1.16.0 Ver. 6**: the upstream Slot version appears immediately after the project name, followed by the custom revision number. For compatibility with existing OTA installations, Ver. 6 retains the technical version `1.16.0-rgsp.6` and tag `v1.16.0-rgsp.6`. Future functional versions increment the revision and include complete firmware updates; renaming alone does not generate a new release.
 
-**[Latest release](https://github.com/Sinastrax/slot-rgsp-mod/releases/latest)** · **[Changes in the latest version](RELEASE_NOTES.md)**
+**[Latest release](https://github.com/Sinastrax/select-slot/releases/latest)** · **[Changes in the latest version](RELEASE_NOTES.md)**
 
 Release notes list **only the additions and fixes since the previous release**, rather than repeating the complete feature list. This README is the permanent place for the full feature overview.
 
