@@ -554,7 +554,7 @@ edit("crates/slot/src/app.rs", [
     fn copy_card_log(&self, power: &Power) {'''),
 ])
 edit("crates/slot/src/frontend.rs", [
-    ('''        let dt = self.last.elapsed().as_secs_f32();
+    ('''        let dt = self.last.elapsed().as_secs_f32().min(MAX_DT);
         self.last = Instant::now();
         self.session.update(dt);''',
      '''        let elapsed = self.last.elapsed();
@@ -563,7 +563,7 @@ edit("crates/slot/src/frontend.rs", [
             // Reapply once, not continuously and not on every game frame.
             self.session.app_mut().restore_onion_backlight();
         }
-        let dt = elapsed.as_secs_f32();
+        let dt = elapsed.as_secs_f32().min(MAX_DT);
         self.last = Instant::now();
         self.session.update(dt);'''),
 ])
