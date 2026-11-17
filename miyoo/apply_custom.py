@@ -33,7 +33,7 @@ def edit(path, operations):
     desired[path] = new
     changes[path] = diff
 
-# Isolated GB/GBC Gambatte + GBA gpSP defaults; untouched original framebuffer.
+# Use the known-good original Miyoo mGBA for GB/GBC and gpSP for GBA; untouched framebuffer.
 edit("crates/slot-store/src/core.rs", [
     ("    Gpsp,\n}", "    Gpsp,\n    Gambatte,\n}"),
     ('            Core::Gpsp => "gpsp",', '            Core::Gpsp => "gpsp",\n            Core::Gambatte => "gambatte",'),
@@ -42,10 +42,10 @@ edit("crates/slot-store/src/core.rs", [
     ('            Core::Gpsp => platform == Platform::Gba,',
      '            Core::Gpsp => platform == Platform::Gba,\n            Core::Gambatte => platform != Platform::Gba,'),
     ('            Platform::Gba | Platform::Gb | Platform::Gbc => Core::Mgba,',
-     '            Platform::Gba => Core::Gpsp,\n            Platform::Gb | Platform::Gbc => Core::Gambatte,'),
+     '            Platform::Gba => Core::Gpsp,\n            Platform::Gb | Platform::Gbc => Core::Mgba,'),
 ])
-# Keep the classic two-chip GBA picker unchanged. GB/GBC now default to Gambatte.
-# mGBA remains available for explicit legacy selections; no SGB mode is added.
+# Keep the classic two-chip GBA picker unchanged. GB/GBC default to mGBA.
+# Gambatte remains an optional compatibility alternative; no SGB mode is added.
 
 edit("crates/slot/src/core.rs", [
     ('        Core::Gpsp => Some((\n            "gpsp_color_correction",',
@@ -730,4 +730,4 @@ parts = []
 for path, diff in changes.items():
     parts.append(f"diff --git a/{path} b/{path}\n{diff}")
 dest.write_text("".join(parts))
-print(f"Miyoo extended brightness: {len(changes)} sources, original framebuffer and power lifecycle preserved")
+print(f"Miyoo mGBA-default rebuild: {len(changes)} sources, original framebuffer and power lifecycle preserved")
