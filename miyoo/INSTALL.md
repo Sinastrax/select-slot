@@ -1,4 +1,4 @@
-# select. slot. 1.8.1 Ver. 18 — GB/GBC Fit-aware Dot
+# select. slot. 1.8.1 Ver. 19 — Shimmerless scaling only
 
 **Experimental ARMv7 Miyoo Mini / Mini Plus / Flip application, not H700 firmware.** This version is based on the pinned [deanmarano/slot-miyoo](https://github.com/deanmarano/slot-miyoo) commit `d096bdb87f25f3aba62de6b40ef859b61d841e43` and Slot upstream 1.8.1.
 
@@ -7,6 +7,14 @@
 Successful Miyoo builds on the development branch now publish a **GitHub prerelease** with a distinct `miyoo-v…-preview.RUN.ATTEMPT` tag. Each prerelease includes the complete card-root Miyoo ZIP and its SHA-256 checksum. Unlike temporary workflow artifacts, published release assets do not have the 30-day Actions artifact retention limit. Find them at [GitHub Releases](https://github.com/Sinastrax/select-slot/releases?q=miyoo).
 
 The publishing job only runs after the build and package checks succeed and only for trusted branch pushes/manual builds; pull requests do not publish releases. Miyoo prereleases use `--prerelease --latest=false`, so the H700 stable release and OTA channel remain separate. Release publication does **not** establish hardware compatibility, frame-rate or shader accuracy.
+
+## Ver. 19: Shimmerless only (Miyoo CPU renderer)
+
+The only selectable shader modes are **Off** (the original neutral, nearest-neighbour gameplay path) and **Shimmerless** for GB, GBC and GBA. LCD3x, Dot, Grid and Simpletex have been removed from the selectable lists because they either rendered poorly or were never implemented in this CPU port. Existing saved shader selections outside the new list revert to Off.
+
+Shimmerless is a software port of the newer official Slot scaling method: for each output pixel it calculates the fractional native pixel coverage and blends at most two source pixels per axis. Horizontal source rows are cached across output scanlines to reduce repeated sampling on the Miyoo's CPU. The effect uses no LCD mask, no RGB tint and no brightness adjustment; the original Off path remains untouched. On the 640×480 Miyoo it is intended primarily for Aspect Fit scaling.
+
+The build checks the menu choice tables, persisted name, HUD label, frontend routing and CPU renderer to prevent a recurrence of the missing-GB/GBC-menu issue. Compilation and package validation are automated, but real device image quality and frame-time still need to be evaluated. The user-confirmed mGBA brightness, OnionOS/BMO standby and separate H700 release channel remain untouched.
 
 ## Ver. 18: make Dot selectable for GB and GBC
 
