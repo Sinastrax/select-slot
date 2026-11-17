@@ -696,6 +696,95 @@ fn onion_prefers_real_pwm_over_other_reported_display_backlights() {
 fn extended_brightness_respects_live_onion_pwm_period() {'''),
 ])
 
+
+# Fit-aware Dot on the *Miyoo software framebuffer*. The other effects remain
+# untouched. This renderer supports fractional scaling without drifting pixel
+# gaps, and avoids per-output-pixel trig or texture lookups.
+edit("crates/slot-gfx/src/soft/mod.rs", [
+    ('''#[derive(Clone, Copy, PartialEq)]
+struct ColKey {''',
+     '''/// Average a source-pixel dot's active area over one destination sample.
+/// Integrating the area (rather than sampling its centre) avoids uneven
+/// black rows/columns at 3.33x / 2.67x Fit and at other fractional scales.
+/// One call per output column or row, never per RGB component or game pixel.
+fn dot_axis_factor(centre: f32, footprint: f32) -> f32 {
+    const GAP: f32 = 0.12;
+    fn integrated(x: f32) -> f32 {
+        let whole = x.floor();
+        whole * (1.0 - 2.0 * GAP) + (x - whole - GAP).clamp(0.0, 1.0 - 2.0 * GAP)
+    }
+    let half = footprint.max(0.0001) * 0.5;
+    let coverage = ((integrated(centre + half) - integrated(centre - half))
+        / (2.0 * half)).clamp(0.0, 1.0);
+    // Near-neutral mean luminance at native and fractional scaling.
+    0.82 + 0.24 * coverage
+}
+
+#[derive(Clone, Copy, PartialEq)]
+struct ColKey {'''),
+    ('''    pic: [u32; 4],
+    lcd: bool,
+    img_w: u32,''',
+     '''    pic: [u32; 4],
+    lcd: bool,
+    dot: bool,
+    img_w: u32,'''),
+    ('''    pic: [f32; 4],
+    lcd: bool,
+    img_w: u32,''',
+     '''    pic: [f32; 4],
+    lcd: bool,
+    dot: bool,
+    img_w: u32,'''),
+    ('''        // The gain, folded into the mask that was going to be applied anyway.
+        if grade != [256; 3] {''',
+     '''        // Dot is a neutral-colour luminance mask in native-pixel space.
+        // Integrate each output column over its native-pixel footprint, so
+        // fractional Fit scaling cannot randomly lose or thicken pixel gaps.
+        if dot && inside {
+            let factor = dot_axis_factor(u * sw, (src[2] * sw / rw).abs());
+            let fixed = (factor * 256.0).round() as u32;
+            for channel in &mut k {
+                *channel = ((*channel as u32 * fixed) >> 8).min(u16::MAX as u32) as u16;
+            }
+        }
+        // The gain, folded into the mask that was going to be applied anyway.
+        if grade != [256; 3] {'''),
+    ('''        let lcd = self.effect == ScreenEffect::Lcd3x;
+        let bright = screen_brightness(self.power);''',
+     '''        let lcd = self.effect == ScreenEffect::Lcd3x;
+        let dot = self.effect == ScreenEffect::Dot;
+        let bright = screen_brightness(self.power);'''),
+    ('''            pic: bits(self.pic),
+            lcd,
+            img_w: img.w,''',
+     '''            pic: bits(self.pic),
+            lcd,
+            dot,
+            img_w: img.w,'''),
+    ('''                self.pic,
+                lcd,
+                img.w,''',
+     '''                self.pic,
+                lcd,
+                dot,
+                img.w,'''),
+    ('''            let yk = if lcd && row_inside {
+                let fy = (v * sh).fract();
+                (BRIGHTEN_SCANLINES + (2.0 * PI * fy).sin()) / (BRIGHTEN_SCANLINES + 1.0) * bright
+            } else {
+                bright
+            };''',
+     '''            let yk = if lcd && row_inside {
+                let fy = (v * sh).fract();
+                (BRIGHTEN_SCANLINES + (2.0 * PI * fy).sin()) / (BRIGHTEN_SCANLINES + 1.0) * bright
+            } else if dot && row_inside {
+                dot_axis_factor(v * sh, (src[3] * sh / rh).abs()) * bright
+            } else {
+                bright
+            };'''),
+])
+
 # Invariants: only allow the two explicit PWM backlight edits above in
 # slot-power; framebuffer and compositor source stay original. Launcher,
 # keymon, theme, screen-off / power lifecycle paths are never patched.
@@ -711,6 +800,7 @@ allowed = {
     "crates/slot-power/src/device.rs",
     "crates/slot-power/tests/device.rs",
     "crates/slot/src/frontend.rs",
+    "crates/slot-gfx/src/soft/mod.rs",
 }
 if set(changes) != allowed:
     raise RuntimeError(f"rebuild source changed unexpected paths: {sorted(set(changes) ^ allowed)}")
@@ -730,4 +820,4 @@ parts = []
 for path, diff in changes.items():
     parts.append(f"diff --git a/{path} b/{path}\n{diff}")
 dest.write_text("".join(parts))
-print(f"Miyoo mGBA-default rebuild: {len(changes)} sources, original framebuffer and power lifecycle preserved")
+print(f"Miyoo Fit-aware Dot preview: {len(changes)} sources, original mGBA and PWM preserved")
