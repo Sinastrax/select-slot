@@ -1,14 +1,14 @@
-# select. slot. 1.8.1 Ver. 12 — Miyoo brightness boost
+# select. slot. 1.8.1 Ver. 13 — Miyoo PWM ownership correction
 
 **Experimental ARMv7 Miyoo Mini / Mini Plus / Flip application, not H700 firmware.** This version is based on the pinned [deanmarano/slot-miyoo](https://github.com/deanmarano/slot-miyoo) commit `d096bdb87f25f3aba62de6b40ef859b61d841e43` and Slot upstream 1.8.1.
 
 ## Why it exists
 
-On the user's original Miyoo Mini, the entire image appears too dark even with Slot at its maximum value **9**. The original Dean Miyoo version previously looked correct on the same handheld, and the Ver. 9 and clean Ver. 11 repairs did not restore it. This release changes **real hardware PWM backlight brightness** and coordinates with OnionOS power management. It does not artificially brighten game colors, alter LCD3x, or apply gamma or screen filters.
+On the user's original Miyoo Mini, the entire image appears too dark even with Slot at its maximum value **9**. The original Dean Miyoo version previously looked correct on the same handheld, and the Ver. 9 and clean Ver. 11 repairs did not restore it. This release maintains **real hardware PWM backlight brightness** and coordinates with OnionOS power management. It does not artificially brighten game colors, alter LCD3x, or apply gamma or screen filters.
 
 ## Brightness levels
 
-Slot upstream saves and exposes `BRIGHTNESS_MAX=9`; Dean's PWM calibration writes fixed values `[0,5,7,11,16,23,34,49,72,112]`, where level 9 writes duty 112. The hardware PWM period on OnionOS is configurable and defaults to 800. Ver. 12:
+Slot upstream saves and exposes `BRIGHTNESS_MAX=9`; Dean's PWM calibration writes fixed values `[0,5,7,11,16,23,34,49,72,112]`, where level 9 writes duty 112. The hardware PWM period on OnionOS is configurable and defaults to 800. Ver. 12 and later:
 
 - Leaves **all original levels 0–9 identical**.
 - Extends settings, on-screen controls, and saved-state parsing to 12.
@@ -18,11 +18,19 @@ Slot upstream saves and exposes `BRIGHTNESS_MAX=9`; Dean's PWM calibration write
 
 This upper boost is **not validated for the original Mini's display durability**. Dean documented trying duty 400 on a **Mini Flip**, describing it as exceptionally bright; that is not a brightness/safety measurement on every Mini panel. Start with 10, then 11; use 12 only if necessary. Higher brightness can cause more power consumption, heat or display stress, and shorter battery life.
 
+## Ver. 13: correct an actual PWM override while SLOT is running
+
+In Ver. 12, the reapply logic only ran when the frontend detected a **one-second suspend/resume gap**. It would not correct brightness changes made by Onion `keymon` during ordinary button handling. As verified in Onion source, `keymon` can restore Onion's independent global brightness to the **same PWM sysfs duty_cycle** that SLOT uses. The condition depends on keymon's view of the current app; this is **a plausible but not yet demonstrated cause** of the physical Mini's dimness.
+
+Ver. 13 caches SLOT's last requested PWM duty whenever it actually sets the backlight. Every **400 milliseconds**, while OnionOS is detected and SLOT is running, it checks the **current** duty_cycle. If another process has replaced it, SLOT restores its selected level once. If unchanged, it does **not write**. The check is skipped while SLOT's own screen is asleep; Onion retains its normal keymon, app launcher, BMO theme, suspend and shutdown handling. No log files, debug prompts, screenshots or color/shader adjustments are added.
+
+**Important limitation:** This check detects a competing software writer, not an ineffective PWM device or a separate LCD hardware calibration setting. It is an attempt to resolve one precise conflict, **not a confirmed fix**. The original Ver. 12 10/11/12 levels remain and should still be approached cautiously on an unverified original Mini panel.
+
 ## OnionOS settings and interactions
 
 **OnionOS has its own global hardware brightness (0–10)**. In [Onion's source](https://github.com/OnionUI/Onion/blob/main/src/common/system/display.h), `display_setBrightness(level)` writes an exponential PWM duty. Level 10 is about **100** at the standard period, slightly *lower* than Slot's original level 9 of 112. Onion and Slot control the **same** `/sys/class/pwm/pwmchip0/pwm0/duty_cycle` interface.
 
-**Onion keymon restores its global brightness after suspend/wake**. It can also reassert that setting while it believes the MainUI is active. This build writes Onion's supported temporary `/tmp/state_changed` notification on Slot app startup (when the Onion keymon binary is present), then reapplies the saved Slot level **once after a long process-suspension gap**. It does **not** stop keymon, replace Onion's `runtime.sh`, edit global preferences, or continuously rewrite backlight hardware.
+**Onion keymon restores its global brightness after suspend/wake**. It can also reassert that setting while it believes the MainUI is active. This build writes Onion's temporary `/tmp/state_changed` notification on Slot app startup (when the Onion keymon binary is present), and checks for changes to the PWM output during active use, automatically restoring the selected SLOT level only when it has actually been overwritten. It does **not** stop keymon, replace Onion's `runtime.sh`, edit global preferences, or continuously rewrite backlight hardware.
 
 **PWM frequency:** OnionOS **Apps → Tweaks → Advanced → PWM frequency** offers 100–1000; **800 Hz (Default)** is the baseline used for the table above. It changes the sysfs `period`. Onion's documentation warns lower values can cause flicker, while the setting also affects audible buzzing. For a reproducible brightness comparison, use **800 Hz (Default)**. Do not assume "level 9" means the same effective duty ratio with other PWM frequencies.
 
@@ -33,10 +41,10 @@ This upper boost is **not validated for the original Mini's display durability**
 ## Installation
 
 1. Back up the card, especially `Config/slot.state`, `Saves/`, and any existing `System/slot`.
-2. Download the `select-slot-miyoo-brightness-boost` artifact from the successful GitHub Actions build; inside is `select-slot-1.8.1-ver12-miyoo.zip` plus SHA-256 checksum.
+2. Download the `select-slot-miyoo-pwm-ownership` artifact from the successful GitHub Actions build; inside is `select-slot-1.8.1-ver13-miyoo.zip` plus SHA-256 checksum.
 3. Extract **the contents of the inner ZIP** to the SD-card root. `System/slot`, `App/Slot/`, and `Apps/slot.pak/` must be at the card root, not inside a new folder.
 4. Start **select. slot.**. In the SLOT **Brightness** menu or using mapped brightness shortcuts, choose 10 first and then 11 or 12 only if needed.
-5. If brightness falls back after standby, the new automatic resume reapply should restore the selected SLOT level. If a change in OnionOS settings is pending, its keymon remains responsible for its own global value.
+5. If brightness falls back after standby, the readback-based reconciliation should restore the selected SLOT level. If a change in OnionOS settings is pending, its keymon remains responsible for its own global value.
 
 GB/GBC default core is Gambatte; GBA default is gpSP with mGBA available for legacy selections. Existing palette and per-game scaling features (Original, Integer, Aspect Fit, Fill/Crop, Full Stretch) and separate Resume on Power On/Resume on Insert settings remain included. The framebuffer, LCD3x and hardware orientation remain the original Miyoo implementation. Menu-idle power timers, custom sleep animations, Authentic GLSL shaders and H700 OTA are not included.
 
