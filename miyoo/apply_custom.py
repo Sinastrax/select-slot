@@ -69,7 +69,8 @@ edit("crates/slot/src/core.rs", [
                 core.set_option("gambatte_gb_colorization", "internal");
                 core.set_option("gambatte_gb_internal_palette", name);
             }
-            _ => core.set_option("gambatte_gb_colorization", "GBC"),
+            Some(slot_store::GbColors::Auto) => core.set_option("gambatte_gb_colorization", "GBC"),
+            Some(slot_store::GbColors::Off) | None => core.set_option("gambatte_gb_colorization", "disabled"),
         }
         if let Some((key, value)) = colour_option(which, platform, colour) {
             core.set_option(key, value);
@@ -103,8 +104,10 @@ edit("crates/slot/src/session.rs", [
                             };
                             emu.set_option("gambatte_gb_colorization", "internal");
                             emu.set_option("gambatte_gb_internal_palette", name);
-                        } else {
+                        } else if p == slot_store::GbColors::Auto {
                             emu.set_option("gambatte_gb_colorization", "GBC");
+                        } else {
+                            emu.set_option("gambatte_gb_colorization", "disabled");
                         }
                     }
                     _ => emu.set_option("mgba_gb_colors", p.core_name()),
@@ -426,6 +429,117 @@ edit("crates/slot/src/app.rs", [
             | QuickRow::Scaling
             | QuickRow::MenuScreenOff
             | QuickRow::MenuPowerOff => return,'''),
+])
+
+# Gambatte "Auto" applies an automatic GBC palette even with filters Off.
+# Keep Auto available but add a genuinely neutral Off and default to Off.
+edit("crates/slot-store/src/gb_palette.rs", [
+    ('''pub enum GbColors {
+    Auto,
+    Palette(GbPalette),
+}''',
+     '''pub enum GbColors {
+    Off,
+    Auto,
+    Palette(GbPalette),
+}'''),
+    ('''        std::iter::once(GbColors::Auto).chain(GbPalette::all().map(GbColors::Palette))''',
+     '''        [GbColors::Off, GbColors::Auto]
+            .into_iter()
+            .chain(GbPalette::all().map(GbColors::Palette))'''),
+    ('''            GbColors::Auto => 0,
+            GbColors::Palette(p) => p.index() + 1,''',
+     '''            GbColors::Off => 0,
+            GbColors::Auto => 1,
+            GbColors::Palette(p) => p.index() + 2,'''),
+    ('''            GbColors::Auto => GbColors::Palette(GbPalette(0)),
+            GbColors::Palette(p) if p.index() + 1 == GbPalette::COUNT => GbColors::Auto,''',
+     '''            GbColors::Off => GbColors::Auto,
+            GbColors::Auto => GbColors::Palette(GbPalette(0)),
+            GbColors::Palette(p) if p.index() + 1 == GbPalette::COUNT => GbColors::Off,'''),
+    ('''            GbColors::Auto => GbColors::Palette(GbPalette((GbPalette::COUNT - 1) as u8)),
+            GbColors::Palette(p) if p.index() == 0 => GbColors::Auto,''',
+     '''            GbColors::Off => GbColors::Palette(GbPalette((GbPalette::COUNT - 1) as u8)),
+            GbColors::Auto => GbColors::Off,
+            GbColors::Palette(p) if p.index() == 0 => GbColors::Auto,'''),
+    ('''            GbColors::Auto => "Auto",''',
+     '''            GbColors::Off => "Off",
+            GbColors::Auto => "Auto",'''),
+])
+edit("crates/slot-store/src/slot_state.rs", [
+    ('''    pub gb_palettes: bool,
+    pub gb_palette: GbPalette,''',
+     '''    pub gb_palettes: bool,
+    pub gb_colors_off: bool,
+    pub gb_palette: GbPalette,'''),
+    ('''    pub fn gb_colors(&self) -> GbColors {
+        match self.gb_palettes {
+            true => GbColors::Palette(self.gb_palette),
+            false => GbColors::Auto,
+        }
+    }
+
+    pub fn set_gb_colors(&mut self, to: GbColors) {
+        match to {
+            GbColors::Auto => self.gb_palettes = false,
+            GbColors::Palette(p) => {
+                self.gb_palettes = true;
+                self.gb_palette = p;
+            }
+        }
+    }''',
+     '''    pub fn gb_colors(&self) -> GbColors {
+        if self.gb_colors_off {
+            GbColors::Off
+        } else if self.gb_palettes {
+            GbColors::Palette(self.gb_palette)
+        } else {
+            GbColors::Auto
+        }
+    }
+
+    pub fn set_gb_colors(&mut self, to: GbColors) {
+        match to {
+            GbColors::Off => {
+                self.gb_colors_off = true;
+                self.gb_palettes = false;
+            }
+            GbColors::Auto => {
+                self.gb_colors_off = false;
+                self.gb_palettes = false;
+            }
+            GbColors::Palette(p) => {
+                self.gb_colors_off = false;
+                self.gb_palettes = true;
+                self.gb_palette = p;
+            }
+        }
+    }'''),
+    ('''            gb_palettes: false,
+            gb_palette: GbPalette::DEFAULT,''',
+     '''            gb_palettes: false,
+            gb_colors_off: true,
+            gb_palette: GbPalette::DEFAULT,'''),
+    ('''    text.push_str(&format!(
+        "colour_correction_gbc={}\\n",''',
+     '''    text.push_str(&format!("gb_colors_off={}\\n", s.gb_colors_off as u8));
+    text.push_str(&format!(
+        "colour_correction_gbc={}\\n",'''),
+    ('''    let mut gb_palettes = None;
+    let mut gb_palette = None;''',
+     '''    let mut gb_palettes = None;
+    let mut gb_colors_off = None;
+    let mut gb_palette = None;'''),
+    ('''            "gb_palettes" => gb_palettes = flag(value),''',
+     '''            "gb_palettes" => gb_palettes = flag(value),
+            "gb_colors_off" => gb_colors_off = flag(value),'''),
+    ('''        gb_palettes: gb_palettes.unwrap_or(fallback.gb_palettes),
+        gb_palette: gb_palette.unwrap_or(fallback.gb_palette),''',
+     '''        gb_palettes: gb_palettes.unwrap_or(fallback.gb_palettes),
+        // Preserve selected palettes from existing Slot installations.
+        // Older Auto setups migrate to neutral Off.
+        gb_colors_off: gb_colors_off.unwrap_or(!gb_palettes.unwrap_or(false)),
+        gb_palette: gb_palette.unwrap_or(fallback.gb_palette),'''),
 ])
 
 # A software renderer cannot use the H700 GLSL effects; Authentic is deferred
