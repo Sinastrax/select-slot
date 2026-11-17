@@ -36,7 +36,7 @@ for text in (
     assert text in shared, f"Missing shared Pocket rendering: {text}"
 assert shared.count("if (u_lcd.x > 1.5 && inside)") == 1
 assert shared.count("vec3 panelRgb = raw;") == 1
-assert shared.count("if (u_lcd.x < 2.5) {") == 1
+assert shared.count("if (u_authentic_correction > 0.5 && u_lcd.x < 2.5) {") == 1
 assert shared.count("else if (u_authentic_correction > 0.5) {") == 1
 assert "vec3 sgbCode = floor(raw * 31.0 + vec3(0.5));" in shared
 assert "panelRgb = mix(sgbLow, sgbHigh, step(vec3(16.5), sgbCode));" in shared
