@@ -9,7 +9,7 @@ PORT="$WORK/slot-miyoo"
 STAGE="$PORT/release/stage"
 PORT_COMMIT="d096bdb87f25f3aba62de6b40ef859b61d841e43"
 SLOT_VERSION="1.8.1"
-CUSTOM_VERSION="25"
+CUSTOM_VERSION="26"
 ZIP="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo.zip"
 ZIP_ONION="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo-onion-autoboot.zip"
 ZIP_STOCK="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo-stock-autoboot.zip"
@@ -108,6 +108,17 @@ if grep -Fq '+            QuickRow::DefaultScaling' "$shader_patch"; then
   exit 1
 fi
 echo "Verified three saved system scaling defaults, per-ROM overrides, and no general scaling row"
+# Scaling became the first item on all three pages in Ver. 25.
+# parent() must match the first row; otherwise B jumps to the shelf.
+check_patch '+            QuickRow::GbaScaling => Some(QuickRow::ScreenGba),'
+check_patch '+            QuickRow::GbcScaling => Some(QuickRow::ScreenGbc),'
+check_patch '+            QuickRow::GbScaling => Some(QuickRow::ScreenGb),'
+if grep -Eq '^\+.*QuickRow::(Gba|Gbc|Gb)Shader => Some\(QuickRow::Screen(Gba|Gbc|Gb)\),' "$shader_patch"; then
+  echo "ERROR: old shader-first parent mapping reintroduced" >&2
+  exit 1
+fi
+echo "Verified GB, GBC and GBA B-button returns to Screen menu"
+
 # The earlier OnionOS POWER passthrough is still used for short presses,
 # while long hold must request real shutdown before keymon sleeps the app.
 check_patch '+pub const POWER_HOLD_MS: Millis = 350;'
@@ -177,7 +188,7 @@ echo 'Verified legacy brightness 0–9 and compatibility migration'
 cp "$ROOT/miyoo/onion-autoboot.sh" "$STAGE/System/autoboot/onion-startup.sh"
 cp "$ROOT/miyoo/INSTALL.md" "$STAGE/System/select-slot-install.md"
 cat > "$STAGE/System/select-slot-version.txt" <<EOF
-select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - copy-paste autoboot; per-system persistent scaling; shaders off; brightness 1-9
+select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - correct system-screen B navigation; per-system scaling; shaders off; brightness 1-9
 Base: https://github.com/deanmarano/slot-miyoo
 Pinned original: $PORT_COMMIT
 GB/GBC: Miyoo-native mGBA default; Gambatte optional; GBA: gpSP default (mGBA alternative)
