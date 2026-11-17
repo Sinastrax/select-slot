@@ -107,7 +107,6 @@ glass_new = """        compositor.set_authentic_screen(authentic_screen(self.ses
         compositor.set_authentic_glass(
             !bezel_has_glass && app.reflection(platform),
             !bezel_has_glass,
-        );
         );"""
 frontend = replace_once(frontend, glass_old, glass_new, "Reflection setting wiring")
 frontend_path.write_text(frontend)
