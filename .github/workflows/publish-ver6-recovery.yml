@@ -1,0 +1,68 @@
+name: Publish verified select. slot. Ver. 6 OTA
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publish-ver6-recovery.yml"
+
+permissions:
+  actions: read
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Download the successful Ver. 6 main-branch build
+        uses: actions/download-artifact@v4
+        with:
+          run-id: 44134166638
+          name: select-slot-complete-h700
+          path: release
+          github-token: \${{ github.token }}
+
+      - name: Verify and publish tested firmware to existing OTA channel
+        env:
+          GH_TOKEN: \${{ github.token }}
+          HEAD_SHA: e34810c4603a506ba59b251f62768af49b206181
+        shell: bash
+        run: |
+          set -euo pipefail
+          repo="$GITHUB_REPOSITORY"
+          tag=v1.16.0-rgsp.6
+          version=1.16.0-rgsp.6
+          test "$repo" = "Sinastrax/select-slot"
+          current="$(gh api "repos/$repo/contents/.github/ota-version.txt" --jq '.content' | base64 -d | tr -d '\r\n')"
+          test "$current" = "$version"
+          python3 - <<'PY'
+          import hashlib, json, pathlib
+          root = pathlib.Path("release")
+          manifest = json.loads((root / "versions.json").read_text())["stable"]
+          assert manifest["version"] == "1.16.0-rgsp.6"
+          assert manifest["tag"] == "v1.16.0-rgsp.6"
+          assert manifest["zip"] == "slot-v1.16.0-rgsp.6-h700.zip"
+          archive = root / manifest["zip"]
+          assert archive.is_file()
+          assert archive.stat().st_size == manifest["size"]
+          assert hashlib.sha256(archive.read_bytes()).hexdigest() == manifest["sha256"]
+          PY
+          if gh release view "$tag" --repo "$repo" >/dev/null 2>&1; then
+            echo "Ver. 6 is already public; leaving it unchanged."
+            exit 0
+          fi
+          tag_sha="$(gh api "repos/$repo/git/ref/tags/$tag" --jq '.object.sha' 2>/dev/null || true)"
+          if [ -z "$tag_sha" ]; then
+            gh api -X POST "repos/$repo/git/refs" \
+              -f ref="refs/tags/$tag" -f sha="$HEAD_SHA" >/dev/null
+          else
+            test "$tag_sha" = "$HEAD_SHA"
+          fi
+          gh api "repos/$repo/contents/RELEASE_NOTES.md?ref=$HEAD_SHA" --jq '.content' | base64 -d > notes.md
+          test -s notes.md
+          gh release create "$tag" \
+            release/slot-v1.16.0-rgsp.6-h700.zip release/versions.json \
+            --repo "$repo" --target "$HEAD_SHA" --latest \
+            --title "select. slot. 1.16.0 Ver. 6" --notes-file notes.md
+          gh api "repos/$repo/releases/latest" --jq '.tag_name' | grep -Fx "$tag"
+          echo "Published verified Ver. 6 to OTA."
