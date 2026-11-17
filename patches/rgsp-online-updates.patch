@@ -51,7 +51,28 @@ diff --git a/crates/slot/src/update.rs b/crates/slot/src/update.rs
 diff --git a/crates/slot/tests/update.rs b/crates/slot/tests/update.rs
 --- a/crates/slot/tests/update.rs
 +++ b/crates/slot/tests/update.rs
-@@ -224,7 +224,7 @@
+@@ -166,7 +166,7 @@
+     assert_eq!(r.version, "1.11.0");
+     assert_eq!(
+         r.url,
+-        "https://github.com/pvaibhav/slot/releases/download/v1.11.0/slot-v1.11.0-h700.zip"
++        "https://github.com/Sinastrax/slot-rgsp-mod/releases/download/v1.11.0/slot-v1.11.0-h700.zip"
+     );
+     assert_eq!(r.size, 6919551);
+     assert_eq!(&r.sha256[..2], &[0xe7, 0x8b]);
+@@ -203,7 +203,10 @@
+ 
+ #[test]
+ fn newer_counts_fork_releases_of_the_same_upstream_version() {
+-    assert!(newer("1.14.0-pvaibhav.2", "1.14.0-pvaibhav.1"));
++    assert!(newer("1.15.3-rgsp.1", "1.15.3-pvaibhav.1"));
++    assert!(newer("1.15.3-rgsp.2", "1.15.3-rgsp.1"));
++    assert!(!newer("1.15.3-rgsp.1", "1.15.3-rgsp.1"));
++    assert!(newer("1.14.0-pvaibhav.2", "1.14.0-pvaibhav.1"));
+     assert!(newer("1.14.0-pvaibhav.10", "1.14.0-pvaibhav.9"));
+     assert!(newer("1.14.0-pvaibhav.1", "1.13.0-pvaibhav.3"));
+     assert!(newer("1.14.0-pvaibhav.1", "1.14.0"));
+@@ -224,7 +227,7 @@
      assert_eq!(release.version, "1.14.0-pvaibhav.1");
      assert_eq!(
          release.url,
@@ -60,3 +81,12 @@ diff --git a/crates/slot/tests/update.rs b/crates/slot/tests/update.rs
      );
  }
  
+@@ -744,7 +747,7 @@
+     assert_eq!(r.version, "1.11.0");
+     assert_eq!(
+         r.url,
+-        "https://github.com/pvaibhav/slot/releases/download/v1.11.0/slot-v1.11.0-rgdsplus.zip"
++        "https://github.com/Sinastrax/slot-rgsp-mod/releases/download/v1.11.0/slot-v1.11.0-rgdsplus.zip"
+     );
+     assert_eq!(r.size, 8000000);
+     assert_eq!(&r.sha256[..2], &[0xaa, 0x8b]);
