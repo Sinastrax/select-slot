@@ -81,4 +81,39 @@ assert q.count(old_count) == 1, "Upstream system settings layout changed"
 q = q.replace(old_count, "pub const SYSTEM: [QuickRow; 9] = [", 1)
 menu.write_text(q)
 
-print("Integrated Slot 1.16 GPU blending and new System nickname row with Custom slot controls")
+power = Path("crates/slot-power/src/power.rs")
+p = power.read_text()
+old = "    pub fn battery(&self) -> Option<Battery> {"
+new = """    // Slot 1.16 bottom-panel control, retained alongside our menu-only idle blanking.
+    pub fn set_bottom_backlight(&mut self, on: bool) {
+        self.platform.set_bottom_backlight(on);
+    }
+
+    pub fn battery(&self) -> Option<Battery> {"""
+assert p.count(old) == 1 and "pub fn set_bottom_backlight(" not in p
+power.write_text(p.replace(old, new, 1))
+
+app = Path("crates/slot/src/app.rs")
+a = app.read_text()
+old = "        let turbo_off = slot_store::legacy_turbo_off(root);\n"
+assert a.count(old) == 1, "Removed upstream legacy turbo migration changed"
+a = a.replace(old, "", 1)
+old = """        if turbo_off {
+            app.turbo_off_moves_to_controls(root);
+        }
+"""
+assert a.count(old) == 1, "Removed upstream turbo migration block changed"
+a = a.replace(old, "", 1)
+app.write_text(a)
+
+invite = Path("crates/slot/src/invite.rs")
+i = invite.read_text()
+old = "        Core::Gambatte => 3,"
+new = """        Core::Gambatte => 3,
+        // SameBoy was removed from Custom slot's bundled emulator choices.
+        // Do not incorrectly announce it as a playable link core.
+        Core::Sameboy => 0,"""
+assert i.count(old) == 1, "Slot 1.16 invite core mapping changed"
+invite.write_text(i.replace(old, new, 1))
+
+print("Integrated GPU blending, nickname, USB/dual-panel APIs and removed turbo setting")
