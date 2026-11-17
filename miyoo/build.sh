@@ -31,16 +31,31 @@ test "$(git -C "$PORT" rev-parse HEAD)" = "$PORT_COMMIT"
 # The port owns its ARMv7 patches and builds those plus our changes in order.
 # Keeping these separate avoids applying H700/GLES-only patches to the Miyoo.
 cp "$ROOT"/miyoo/patches/*.patch "$PORT/patches/"
-git -C "$PORT/upstream/slot" apply --check "$ROOT/miyoo/patches/0027-custom-auto-load-off.patch"
+cp "$ROOT/miyoo/build-gambatte.sh" "$PORT/cores/gambatte-build-miyoo.sh"
+# The Taskfile expects a standalone subdirectory.
+mkdir -p "$PORT/cores/gambatte"
+cp "$ROOT/miyoo/build-gambatte.sh" "$PORT/cores/gambatte/build-miyoo.sh"
+python3 "$ROOT/miyoo/prepare_port.py" "$PORT"
 
+# Assemble the Miyoo port's exact patch baseline first. The custom patch is
+# generated against that baseline, then all patches are cleanly reapplied by
+# the port's normal release task. This avoids assuming the H700 source layout.
 (
   cd "$PORT"
+  task patch
+)
+python3 "$ROOT/miyoo/apply_custom.py" "$PORT/upstream/slot" "$PORT/patches/0028-custom-gambatte-defaults.patch"
+(
+  cd "$PORT"
+  task unpatch
   task release OUT=release
 )
 
 test -s "$STAGE/System/slot"
 test -s "$STAGE/System/mgba_libretro.so"
 test -s "$STAGE/System/gpsp_libretro.so"
+test -s "$STAGE/System/gambatte_libretro.so"
+test -s "$STAGE/System/licenses/gambatte-src.tar.gz"
 test -s "$STAGE/System/licenses/build-info.txt"
 file "$STAGE/System/slot" | grep -q 'ELF 32-bit LSB .*ARM'
 
@@ -70,6 +85,10 @@ Port commit: $PORT_COMMIT
 Original Slot: https://github.com/slot-cfw/slot
 Custom source: https://github.com/Sinastrax/slot-rgsp-mod
 Custom change: Auto Load Off remains on the cartridge shelf at startup
+GB/GBC default: Gambatte
+GBA default: gpSP
+Authentic renderer: NOT YET PORTED
+Extended scaling: NOT YET PORTED
 State: experimental; this custom variant has not been hardware-tested
 EOF
 
