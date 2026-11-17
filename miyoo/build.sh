@@ -45,17 +45,17 @@ python3 "$ROOT/miyoo/prepare_port.py" "$PORT"
   task patch
 )
 python3 "$ROOT/miyoo/apply_custom.py" "$PORT/upstream/slot" "$PORT/patches/0028-custom-gambatte-defaults.patch"
-# Verify Dot is a selectable shader on GB/GBC, not merely compiled into
-# the software backend. Fail the build if either UI mapping is missing.
-shader_state="$PORT/upstream/slot/crates/slot-store/src/slot_state.rs"
+# Check the generated custom patch, not the still-original source tree.
+# task release applies this patch after task unpatch; verifying upstream now
+# would incorrectly claim that the feature does not exist.
+shader_patch="$PORT/patches/0028-custom-gambatte-defaults.patch"
 shader_frontend="$PORT/upstream/slot/crates/slot/src/frontend.rs"
-shader_renderer="$PORT/upstream/slot/crates/slot-gfx/src/soft/mod.rs"
-grep -Fqx '    pub const GB: [Shader; 3] = [Shader::Off, Shader::Lcd3x, Shader::Dot];' "$shader_state"
-grep -Fqx '    pub const GBA: [Shader; 3] = [Shader::Off, Shader::Lcd3x, Shader::Dot];' "$shader_state"
+grep -Fq '+    pub const GB: [Shader; 3] = [Shader::Off, Shader::Lcd3x, Shader::Dot];' "$shader_patch"
+grep -Fq '+    pub const GBA: [Shader; 3] = [Shader::Off, Shader::Lcd3x, Shader::Dot];' "$shader_patch"
 grep -Fq 'slot_store::Shader::Dot => ScreenEffect::Dot' "$shader_frontend"
-grep -Fq 'let dot = self.effect == ScreenEffect::Dot;' "$shader_renderer"
-grep -Fq 'dot_axis_factor(v * sh,' "$shader_renderer"
-echo "Verified Dot selection on GB/GBC/GBA and software renderer mapping"
+grep -Fq '+        let dot = self.effect == ScreenEffect::Dot;' "$shader_patch"
+grep -Fq '+                dot_axis_factor(v * sh,' "$shader_patch"
+echo "Verified generated Dot selector patch for GB/GBC/GBA and frontend-to-renderer mapping"
 (
   cd "$PORT"
   task unpatch
