@@ -718,6 +718,31 @@ edit("crates/slot/src/app.rs", [
         power.set_backlight(self.state.brightness);'''),
 ])
 
+# Two mGBA-only calls in the original Miyoo Slot remain outside the core
+# opening routine. The first is already adapted above; the second runs while
+# an emulator becomes ready and otherwise repeatedly sends mGBA options to
+# Gambatte (visible in user-provided slot.log.1). Skip mGBA-only setup there.
+# Gambatte's palette is set at opening and its live updates use its own API.
+edit("crates/slot/src/session.rs", [
+    ('''                if let (true, Some(emu)) = (self.app.palette_live(), &self.emu) {
+                    emu.set_option("mgba_gb_colors", self.app.gb_colors().core_name());
+                }''',
+     '''                if let (true, Some(emu)) = (self.app.palette_live(), &self.emu) {
+                    if self.app.core() == slot_store::Core::Mgba {
+                        emu.set_option("mgba_gb_colors", self.app.gb_colors().core_name());
+                    }
+                }'''),
+])
+
+# Gambatte has no `gambatte_frameskip` core option. Do not send a nonexistent
+# option at startup; the existing mGBA and gpSP setup remains untouched.
+edit("crates/slot/src/core.rs", [
+    ('''    core.set_option(&format!("{}_frameskip", which.as_str()), "auto");''',
+     '''    if which != Core::Gambatte {
+        core.set_option(&format!("{}_frameskip", which.as_str()), "auto");
+    }'''),
+])
+
 # A software renderer cannot use the H700 GLSL effects; Authentic is deferred
 # pending a measured LUT/lookup-table implementation. Do not fake it.
 
