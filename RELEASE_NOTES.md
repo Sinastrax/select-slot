@@ -1,13 +1,11 @@
-# select. slot. 1.16.0 Ver. 8
+# select. slot. 1.16.0 Ver. 9
 
-## Changes since select. slot. 1.16.0 Ver. 7
+## Changes since select. slot. 1.16.0 Ver. 8
 
-- **Authentic GBA/GBC, Fit scaling:** restores visible LCD pixel-gap separation. The previous fractional-scale anti-aliasing removed up to 85% of the vertical contrast; now it reduces at most 15%, while preserving the gap coverage and the existing calibrated On/uncorrected Off colors.
-- **Standard LCD shader, Fit scaling:** retains 85% of its original RGB stripe modulation instead of 15%. Existing analytic coverage integration and integer-scale appearance remain intact.
-- **Grid shader:** replaces the flattened near-uniform fractional-scale grid with the area-weighted *union* of its vertical and horizontal bands. Grid intersections now have coherent coverage at noninteger Fit sizes.
-- **Dot shader:** keeps 85% of the original dot-mask contrast at fractional Fit instead of flattening 55% of the detail. Exact integer scaling remains unchanged.
-- **Pocket SGB:** stronger, clearly separated Pocket-style pixel gaps with a subtle neighboring-dot shadow. No longer treats SGB palette saturation as monochrome Pocket ink.
-- **SGB Color Correction:** **Off** preserves the emulator's SGB/SNES RGB palette. **On** uses Near's documented 32-code SNES CRT gamma approximation; it never applies the GBC LCD calibration to SGB colors. The separate LCD geometry and Reflection setting remain active in both modes.
-- Updated source and numeric regression tests, including a check of all 32 SNES gamma values. The CI build validates the resulting OpenGL ES shader.
+- **Authentic at Fit scaling:** the previous filter measured its LCD gap as one *output-screen pixel*, making it proportionally different at 2.67× or 3.33× than at integer scaling. The pixel-gap width now comes from the nearest native integer-size reference grid (e.g. 3×), with actual pixel coverage integrated against the display's fractional Fit scale.
+- **Authentic GBA/GBC brightness:** the LCD brightness compensation now uses that same reference gap width, avoiding a mismatch between visual gap coverage and the brighter LCD pixel centres. Color Correction On/Off and measured color response remain unchanged.
+- **Standard LCD:** removed the extra Fit-only attenuation, leaving the original area-integrated RGB stripe calculations and integer-scale rendering in place.
+- **Pocket SGB performance:** SGB now has a dedicated shader branch *before* the expensive monochrome Pocket ink, multi-tap shadow and reflector calculations. The old code computed those effects and discarded them. The existing SGB color-correction toggle, optional reflection and dot separation are preserved.
+- Added analytical reference-grid, integer-parity and shader-source regression tests. The H700 build compiles the final OpenGL ES shader.
 
-*The SNES CRT gamma ramp is a documented approximation, not a measured colorimetric calibration for your specific TV or handheld. RG35XX H and RG SP display appearance still require physical verification.*
+**Fit cannot be pixel-for-pixel identical to Integer on a 640×480 display:** a 240-pixel GBA line would require 720 pixels at 3×, so fitting it into 640 pixels necessarily combines some adjacent LCD features. This update targets consistent *native-pixel geometry* and avoids additional contrast fading. Exact physical RG35XX H display appearance and mGBA SGB full-speed performance still require device verification.
