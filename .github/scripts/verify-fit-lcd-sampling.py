@@ -8,7 +8,7 @@ assert "float authentic_gap_coverage(float phase, float outputPerSource)" in sha
 assert "gap = vec2(authentic_gap_coverage(f.x, span.x)," in shader
 assert "if (u_lcd.x > 0.5)" in shader, "Monochrome model should keep original sampling"
 start = shader.index("    } else if (u_mode > 6.5) {")
-end = shader.index("    } else if (!inside) {", start)
+end = shader.index("    } else if (u_mode > 4.5) {", start)
 lcd = shader[start:end]
 assert "mediump " not in lcd, "LCD-grid subpixel precision must use default highp where supported"
 assert "vec3 lit = " in lcd, "LCD-grid weighted mask was lost"
