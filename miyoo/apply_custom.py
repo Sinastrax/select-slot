@@ -1006,6 +1006,146 @@ edit("crates/slot/src/app.rs", [
         }'''),
 ])
 
+
+# Ver. 24: expose a global default scaling mode in the shelf Screen -> General
+# menu while keeping the existing in-game per-ROM Scaling override. Store the
+# global default in Config/video_mode.txt under key 'default'; upgrade from
+# existing files without changing any saved per-game entries.
+edit("crates/slot/src/video_mode.rs", [
+    ('''pub fn video_mode_for(root: &Path, stem: &str) -> VideoMode {
+    ini::value(root, VIDEO_MODE_FILE, stem)
+        .as_deref()
+        .and_then(VideoMode::parse)
+        .unwrap_or_default()
+}''',
+     '''pub fn default_video_mode(root: &Path) -> VideoMode {
+    ini::value(root, VIDEO_MODE_FILE, "default")
+        .as_deref()
+        .and_then(VideoMode::parse)
+        .unwrap_or(VideoMode::Actual)
+}
+
+pub fn write_default_video_mode(root: &Path, mode: VideoMode) -> std::io::Result<()> {
+    ini::write(root, VIDEO_MODE_FILE, "default", mode.as_str())
+}
+
+pub fn video_mode_for(root: &Path, stem: &str) -> VideoMode {
+    ini::value(root, VIDEO_MODE_FILE, stem)
+        .as_deref()
+        .and_then(VideoMode::parse)
+        .unwrap_or_else(|| default_video_mode(root))
+}'''),
+])
+edit("crates/slot-ui/src/quick_menu.rs", [
+    ('''    MenuPowerOff,
+}
+
+impl QuickRow''',
+     '''    MenuPowerOff,
+    DefaultScaling,
+}
+
+impl QuickRow'''),
+    ('''    pub const ALL: [QuickRow; 84]''', '''    pub const ALL: [QuickRow; 85]'''),
+    ('''        QuickRow::MenuPowerOff,
+    ];
+
+    pub const MAIN:''',
+     '''        QuickRow::MenuPowerOff,
+        QuickRow::DefaultScaling,
+    ];
+
+    pub const MAIN:'''),
+    ('''    pub const SCREEN_GENERAL: [QuickRow; 2] = [QuickRow::Brightness, QuickRow::BlueLight];''',
+     '''    pub const SCREEN_GENERAL: [QuickRow; 3] = [
+        QuickRow::Brightness,
+        QuickRow::BlueLight,
+        QuickRow::DefaultScaling,
+    ];'''),
+    ('''            QuickRow::Brightness | QuickRow::BlueLight => &QuickRow::SCREEN_GENERAL,''',
+     '''            QuickRow::Brightness | QuickRow::BlueLight | QuickRow::DefaultScaling => &QuickRow::SCREEN_GENERAL,'''),
+    ('''            QuickRow::MenuPowerOff => "Menu Power Off",''',
+     '''            QuickRow::MenuPowerOff => "Menu Power Off",
+            QuickRow::DefaultScaling => "Default Scaling",'''),
+])
+edit("crates/slot/src/app.rs", [
+    ('''            QuickRow::Scaling => Some(match self.video_mode {
+                VideoMode::Actual => QuickValue::ScaleActual,''',
+     '''            QuickRow::DefaultScaling => Some(match self.root.as_deref().map(video_mode::default_video_mode).unwrap_or(VideoMode::Actual) {
+                VideoMode::Actual => QuickValue::ScaleActual,
+                VideoMode::Integer => QuickValue::ScaleInteger,
+                VideoMode::Stretch | VideoMode::Aspect => QuickValue::ScaleAspect,
+                VideoMode::Fill => QuickValue::ScaleFill,
+                VideoMode::FullStretch => QuickValue::ScaleFull,
+            }),
+            QuickRow::Scaling => Some(match self.video_mode {
+                VideoMode::Actual => QuickValue::ScaleActual,'''),
+    ('''        if row == QuickRow::Scaling {
+            let to = if right { self.video_mode.next() } else { self.video_mode.previous() };
+            self.set_picture(to);
+            return;
+        }''',
+     '''        if row == QuickRow::DefaultScaling {
+            if let Some(root) = &self.root {
+                let now = video_mode::default_video_mode(root);
+                let to = if right { now.next() } else { now.previous() };
+                let written = video_mode::write_default_video_mode(root, to);
+                if let Err(e) = &written {
+                    eprintln!("slot: video: cannot save default scaling: {e}");
+                }
+                self.card_writes.wrote("video_mode.txt", &written);
+            }
+            return;
+        }
+        if row == QuickRow::Scaling {
+            let to = if right { self.video_mode.next() } else { self.video_mode.previous() };
+            self.set_picture(to);
+            return;
+        }'''),
+    ('''            | QuickRow::MenuPowerOff => {}
+        }
+    }
+
+    fn change_setting''',
+     '''            | QuickRow::MenuPowerOff
+            | QuickRow::DefaultScaling => {}
+        }
+    }
+
+    fn change_setting'''),
+    ('''            | QuickRow::MenuPowerOff => return,''',
+     '''            | QuickRow::MenuPowerOff
+            | QuickRow::DefaultScaling => return,'''),
+])
+
+# Ver. 24: shutting down is a terminal state, not an active menu. Ignore all
+# controller actions once shutdown begins (including repeated power/menu
+# actions). Slot's own shutdown overlay remains available for stock firmware.
+# On OnionOS hand control to the runtime immediately for its selected theme's
+# Screen_Off image instead of allowing another interactive frame.
+edit("crates/slot/src/app.rs", [
+    ('''    pub fn apply(&mut self, action: Action) {
+        // The first intentional button press only wakes a dark menu.''',
+     '''    pub fn apply(&mut self, action: Action) {
+        // Shutdown means no new menu, game, or controller actions.
+        if self.shutting_down() {
+            return;
+        }
+        // The first intentional button press only wakes a dark menu.'''),
+    ('''            self.begin_power_off();
+            return;
+        }
+        let blank = self.state.menu_screen_off_min;''',
+     '''            self.begin_power_off();
+            // Fast shutdown: no interactive delay. OnionOS will present the
+            // active theme's shutdown image once Slot relinquishes the FB.
+            if self.menu_shutdown_onion {
+                self.act_at = self.now();
+            }
+            return;
+        }
+        let blank = self.state.menu_screen_off_min;'''),
+])
 # Invariants: keep PWM brightness untouched. The only power-layer addition is
 # menu-only backlight blank/restore, preserving the stored brightness level.
 # Never patch the frame-buffer, keymon, theme files or OnionOS runtime.
