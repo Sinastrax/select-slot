@@ -104,6 +104,20 @@ jobs:
           git diff --stat HEAD~1 HEAD | tail -25
           echo "Merged latest upstream with our previous complete custom modifications"
 
+      - name: Capture merged source for integration review
+        uses: actions/upload-artifact@v4
+        with:
+          name: custom-slot-upstream-merge-inspection
+          path: |
+            upstream/crates/slot-gfx/src/
+            upstream/crates/slot/src/
+            upstream/crates/slot-store/src/
+            upstream/crates/slot-ui/src/
+            upstream/crates/slot-input/src/
+            upstream/crates/slot-power/src/
+            upstream/crates/slot/tests/
+          if-no-files-found: error
+
       - name: Install required tools
         shell: bash
         run: |
