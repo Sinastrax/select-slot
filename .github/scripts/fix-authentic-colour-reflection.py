@@ -35,10 +35,10 @@ corrector = """vec3 lcd_ramp(vec3 x) {
     vec3 u = fract(x + 0.5) - 0.5;
     return u - 2.0 * u * abs(u);
 }
-// Colour correction affects only chroma, not the calibrated LCD's pixels,
-// glass, brightness, or neutral axis. Work in linear light and preserve Y.
-// Compress out-of-gamut chroma toward the same grey instead of independently
-// clipping R/G/B (which can cause ugly hue shifts).
+// Colour correction affects only colour, not the LCD's pixels or glass.
+// Work in linear light and keep Y where the corrected chroma fits the RGB
+// gamut. For bright saturated input, shift Y rather than whitening the colour.
+// Neutrals remain neutral; no individual-channel clipping or hue discontinuity.
 vec3 authentic_corrected_linear(vec3 sourceRgb, vec3 measured, vec3 response) {
     vec3 sourceLinear = pow(sourceRgb, vec3(2.2));
     float sourceY = dot(sourceLinear, luma_coeff);
@@ -48,12 +48,18 @@ vec3 authentic_corrected_linear(vec3 sourceRgb, vec3 measured, vec3 response) {
     vec3 chroma = response - calibratedGrey;
     chroma -= vec3(dot(chroma, luma_coeff));
 
-    vec3 room = mix(vec3(sourceY), vec3(1.0 - sourceY),
-                    step(vec3(0.0), chroma));
-    vec3 magnitude = max(abs(chroma), vec3(0.0001));
-    float gain = min(1.0, min(room.r / magnitude.r,
-                            min(room.g / magnitude.g, room.b / magnitude.b)));
-    return clamp(vec3(sourceY) + gain * chroma, 0.0, 1.0);
+    // Chroma-first gamut mapping: a bright saturated yellow has very little
+    // room above its original Y. Forcing that Y and shrinking chroma makes the
+    // yellow nearly white. Prefer shifting Y into the available interval while
+    // keeping the measured hue/saturation; compress chroma only if its span
+    // would exceed the entire 0..1 gamut.
+    float low = min(min(chroma.r, chroma.g), chroma.b);
+    float high = max(max(chroma.r, chroma.g), chroma.b);
+    chroma *= min(1.0, 1.0 / max(high - low, 0.0001));
+    low = min(min(chroma.r, chroma.g), chroma.b);
+    high = max(max(chroma.r, chroma.g), chroma.b);
+    float correctedY = clamp(sourceY, max(0.0, -low), min(1.0, 1.0 - high));
+    return clamp(vec3(correctedY) + chroma, 0.0, 1.0);
 }
 void main() {"""
 shader = replace_once(shader, anchor, corrector, "Authentic helper insertion")
