@@ -35,6 +35,16 @@ pocket_new = """                    // Match the measured GBC panel response use
                     vec3 gbcBlack = pow(vec3(14.0, 25.0, 28.0) / 255.0, vec3(2.2));
                     panelRgb = pow(mix(gbcBlack, gbcWhite, response), vec3(1.0 / 2.2));"""
 shader = replace_once(shader, pocket_old, pocket_new, "Pocket Color response")
+# Do not apply GBC calibration to Pocket SGB: that mode uses SNES/SGB palettes
+# and has no equivalent upstream GBC LCD to simulate.
+shader = replace_once(
+    shader,
+    """if (u_authentic_correction > 0.5) {
+                    vec3 code = (floor((raw * 255.0 + 0.5) / 8.0) + 0.5) / 32.0;""",
+    """if (u_lcd.x < 2.5 && u_authentic_correction > 0.5) {
+                    vec3 code = (floor((raw * 255.0 + 0.5) / 8.0) + 0.5) / 32.0;""",
+    "Pocket SGB should keep its hardware palette",
+)
 
 colour_old = """                float rawY = dot(lin, luma_coeff);
                 float correctedY = dot(response, luma_coeff);
