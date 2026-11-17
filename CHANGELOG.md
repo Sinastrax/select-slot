@@ -2,7 +2,7 @@
 
 Release notes contain **only changes made in each version**. The [README](README.md) is the cumulative feature overview.
 
-## Custom slot. 1.16.0 Ver. 1 (`v1.16.0-custom.1`)
+## Custom slot. 1.16.0 Ver. 1 (`v1.16.0-rgsp.1`)
 - Integrated official Slot v1.16.0 and pvaibhav v1.16.0-pvaibhav.1.
 - Added handwritten missing-art cartridge titles, multiplayer invitations/nicknames, USB-C audio playback and PNG overlays.
 - Updated GPU frame blending across cores and removed the obsolete global Turbo Buttons toggle.
