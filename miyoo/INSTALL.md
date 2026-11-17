@@ -1,4 +1,4 @@
-# select. slot. 1.8.1 Ver. 19 — Shimmerless scaling only
+# select. slot. 1.8.1 Ver. 20 — unfiltered Miyoo rendering
 
 **Experimental ARMv7 Miyoo Mini / Mini Plus / Flip application, not H700 firmware.** This version is based on the pinned [deanmarano/slot-miyoo](https://github.com/deanmarano/slot-miyoo) commit `d096bdb87f25f3aba62de6b40ef859b61d841e43` and Slot upstream 1.8.1.
 
@@ -7,6 +7,12 @@
 Successful Miyoo builds on the development branch now publish a **GitHub prerelease** with a distinct `miyoo-v…-preview.RUN.ATTEMPT` tag. Each prerelease includes the complete card-root Miyoo ZIP and its SHA-256 checksum. Unlike temporary workflow artifacts, published release assets do not have the 30-day Actions artifact retention limit. Find them at [GitHub Releases](https://github.com/Sinastrax/select-slot/releases?q=miyoo).
 
 The publishing job only runs after the build and package checks succeed and only for trusted branch pushes/manual builds; pull requests do not publish releases. Miyoo prereleases use `--prerelease --latest=false`, so the H700 stable release and OTA channel remain separate. Release publication does **not** establish hardware compatibility, frame-rate or shader accuracy.
+
+## Ver. 20: disable shaders completely
+
+The Miyoo build uses **only the original, unfiltered software rendering path** for GB, GBC and GBA. It no longer patches the graphics backend with LCD, Dot or Shimmerless effects. Both in-game and global Shader menu rows are hidden. Shader next/previous shortcuts do nothing, and the frontend always sets `ScreenEffect::None` even when an older saved configuration contains a shader selection. The existing config, saves and states are not deleted.
+
+Existing **Aspect Fit, Integer, Original, Crop and Stretch scaling**, mGBA/gpSP core preferences, PWM brightness, OnionOS BMO standby and the source Miyoo display path are unchanged. This release does not affect the H700 firmware or its authentic shaders.
 
 ## Ver. 19: Shimmerless only (Miyoo CPU renderer)
 
