@@ -119,6 +119,8 @@ jobs:
           python3 ../.github/scripts/verify-authentic-colour.py
           python3 ../.github/scripts/reduce-fit-vertical-stripes.py
           python3 ../.github/scripts/verify-fit-vertical-stripes.py
+          python3 ../.github/scripts/fix-rg35xxh-dot-grid-sgb.py
+          python3 ../.github/scripts/verify-rg35xxh-dot-grid-sgb.py
 
       - name: Capture merged source for integration review
         uses: actions/upload-artifact@v4
