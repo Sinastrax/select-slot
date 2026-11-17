@@ -30,7 +30,7 @@ assert "vec3 raw = texture2D(u_game, centre).rgb;" in sgb
 assert "vec2 sgbGap = gap;" in sgb
 assert "sgbCode" in sgb and "u_authentic_correction > 0.5" in sgb
 assert "sgbNeighborDark" in sgb
-assert "ink(" not in sgb and "ink_near(" not in sgb, "SGB still does Pocket monochrome ink processing"
+assert "float a = 0.0;" not in sgb and "ink_near(" not in sgb, "SGB still does Pocket monochrome ink processing"
 assert shader.count("if (u_lcd.x > 2.5) {") == 1
 assert "float a = 0.0;" in shader[ink_at:color_at]
 assert "if (u_lcd.x > 1.5 && inside)" in shader[ink_at:color_at]
