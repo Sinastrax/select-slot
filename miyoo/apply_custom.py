@@ -462,8 +462,19 @@ edit("crates/slot-store/src/gb_palette.rs", [
      '''            GbColors::Off => GbColors::Palette(GbPalette((GbPalette::COUNT - 1) as u8)),
             GbColors::Auto => GbColors::Off,
             GbColors::Palette(p) if p.index() == 0 => GbColors::Auto,'''),
-    ('''            GbColors::Auto => "Auto",''',
-     '''            GbColors::Off => "Off",
+    ('''    pub fn label(self) -> &'static str {
+        match self {
+            GbColors::Auto => "Auto",''',
+     '''    pub fn label(self) -> &'static str {
+        match self {
+            GbColors::Off => "Off",
+            GbColors::Auto => "Auto",'''),
+    ('''    pub fn core_name(self) -> &'static str {
+        match self {
+            GbColors::Auto => "Auto",''',
+     '''    pub fn core_name(self) -> &'static str {
+        match self {
+            GbColors::Off => "Off",
             GbColors::Auto => "Auto",'''),
 ])
 edit("crates/slot-store/src/slot_state.rs", [
