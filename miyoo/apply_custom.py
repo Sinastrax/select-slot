@@ -657,6 +657,25 @@ edit("crates/slot/src/app.rs", [
         // blanked wakes the screen but does not activate menu selections.'''),
 ])
 
+# OnionOS owns a device-wide brightness preference (0..10) through
+# /customer/app/jsonval. Slot v1.8.1 instead defaults to its own level 5.
+# Respect Onion's preference on entry: before Slot writes the PWM backlight
+# the first time, import the level. Existing Slot controls remain usable.
+# The UI brightness field is 1..9: convert Onion 10 -> Slot 9.
+edit("crates/slot/src/app.rs", [
+    ('''    pub fn set_power(&mut self, mut power: Power) {
+        power.set_backlight(self.state.brightness);''',
+     '''    pub fn set_power(&mut self, mut power: Power) {
+        if let Ok(level) = std::env::var("SLOT_ONION_BRIGHTNESS") {
+            if let Ok(level) = level.parse::<u8>() {
+                if level <= 10 {
+                    self.state.brightness = level.clamp(1, 9);
+                }
+            }
+        }
+        power.set_backlight(self.state.brightness);'''),
+])
+
 # A software renderer cannot use the H700 GLSL effects; Authentic is deferred
 # pending a measured LUT/lookup-table implementation. Do not fake it.
 
