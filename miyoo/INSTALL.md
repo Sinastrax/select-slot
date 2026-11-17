@@ -1,6 +1,16 @@
-# select. slot. 1.8.1 Ver. 12 — Miyoo brightness boost
+# select. slot. 1.8.1 Ver. 14 — Onion power handoff + brightness
 
 **Experimental ARMv7 Miyoo Mini / Mini Plus / Flip application, not H700 firmware.** This version is based on the pinned [deanmarano/slot-miyoo](https://github.com/deanmarano/slot-miyoo) commit `d096bdb87f25f3aba62de6b40ef859b61d841e43` and Slot upstream 1.8.1.
+
+## BMO standby / shutdown artwork and the POWER-button conflict
+
+The actual **BMO by forevertuesday** theme (OnionUI/Themes) includes `skin/extra/Screen_Off.png`, `skin/extra/Screen_Off_Save.png`, and `skin/extra/bootScreen.png`. Onion's `bootScreen End` and `End_Save` code renders those actual files into its framebuffer.
+
+The preceding experimental SLOT application was also handling the physical POWER press. Slot's `doze()` calls `power.on_close()`, which immediately writes PWM brightness 0. Onion's theme program may draw its shutdown picture afterward, but a black backlight makes it **invisible**, even if the image is in the framebuffer. This is a real potential race, especially on long-power/shutdown transitions.
+
+Ver. 14 delegates POWER events **exclusively to OnionOS's already running keymon** whenever Onion's runtime is detected, while immediately flushing SLOT's save on POWER press. This prevents SLOT from turning the screen black before Onion's artwork can render, and does not modify or overwrite BMO theme assets or OnionOS binaries. On non-Onion firmware the original SLOT POWER handling is preserved.
+
+**Important distinction:** A *short POWER press into Onion standby* is handled by `keymon` and ordinarily simply blanks the LCD, whereas the `Screen_Off` and `Screen_Off_Save` pictures are called by Onion's explicit shutdown routines. This change preserves those shutdown pictures but does **not** invent a brand-new always-on standby display or guarantee an image remains lit while asleep. Test the usual BMO shutdown transition separately from short standby. The screen darkness during normal operation is a **separate and still unresolved** issue; PWM boost levels 10–12 remain available but are experimental.
 
 ## Why it exists
 
@@ -33,7 +43,7 @@ This upper boost is **not validated for the original Mini's display durability**
 ## Installation
 
 1. Back up the card, especially `Config/slot.state`, `Saves/`, and any existing `System/slot`.
-2. Download the `select-slot-miyoo-brightness-boost` artifact from the successful GitHub Actions build; inside is `select-slot-1.8.1-ver12-miyoo.zip` plus SHA-256 checksum.
+2. Download the `select-slot-miyoo-onion-power-ownership` artifact from the successful GitHub Actions build; inside is `select-slot-1.8.1-ver14-miyoo.zip` plus SHA-256 checksum.
 3. Extract **the contents of the inner ZIP** to the SD-card root. `System/slot`, `App/Slot/`, and `Apps/slot.pak/` must be at the card root, not inside a new folder.
 4. Start **select. slot.**. In the SLOT **Brightness** menu or using mapped brightness shortcuts, choose 10 first and then 11 or 12 only if needed.
 5. If brightness falls back after standby, the new automatic resume reapply should restore the selected SLOT level. If a change in OnionOS settings is pending, its keymon remains responsible for its own global value.
