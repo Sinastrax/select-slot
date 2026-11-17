@@ -1,4 +1,4 @@
-name: Build custom Slot H700
+name: Build Custom slot H700
 
 on:
   workflow_dispatch:
@@ -6,7 +6,7 @@ on:
     branches:
       - main
     tags:
-      - "v*-rgsp.*"
+      - "v*-custom.*"
     paths:
       - "patches/**"
       - ".github/workflows/build-h700.yml"
@@ -119,29 +119,29 @@ jobs:
         run: |
           set -euo pipefail
           export SLOT_VERSION="$(cat ../.github/ota-version.txt)"
-          task dist:device OUT=slot-rgsp-custom
+          task dist:device OUT=custom-slot-h700
 
       - name: Replace stock mGBA with the verified older core
         working-directory: upstream
         shell: bash
         run: |
           set -euo pipefail
-          bash ../.github/scripts/build-stable-mgba.sh slot-rgsp-custom
-          test -s slot-rgsp-custom/System/licenses/mgba-stable.sha256
-          test -s slot-rgsp-custom/System/licenses/mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz
+          bash ../.github/scripts/build-stable-mgba.sh custom-slot-h700
+          test -s custom-slot-h700/System/licenses/mgba-stable.sha256
+          test -s custom-slot-h700/System/licenses/mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz
 
       - name: Verify the complete firmware tree
         working-directory: upstream
         shell: bash
         run: |
           set -euo pipefail
-          sh tools/check-card-tree.sh slot-rgsp-custom
-          test ! -f slot-rgsp-custom/System/sameboy_libretro.so
-          sha256sum -c slot-rgsp-custom/System/licenses/mgba-stable.sha256
+          sh tools/check-card-tree.sh custom-slot-h700
+          test ! -f custom-slot-h700/System/sameboy_libretro.so
+          sha256sum -c custom-slot-h700/System/licenses/mgba-stable.sha256
           # Both boot scripts and every core must be in an OTA update.
-          test -s slot-rgsp-custom/System/launch_frontend.sh
-          test -s slot-rgsp-custom/System/gpsp_libretro.so
-          test -s slot-rgsp-custom/System/gambatte_libretro.so
+          test -s custom-slot-h700/System/launch_frontend.sh
+          test -s custom-slot-h700/System/gpsp_libretro.so
+          test -s custom-slot-h700/System/gambatte_libretro.so
 
       - name: Package full firmware and OTA release manifest
         working-directory: upstream
@@ -150,7 +150,7 @@ jobs:
           set -euo pipefail
           version="$(cat ../.github/ota-version.txt)"
           zip="slot-v${version}-h700.zip"
-          zip -qry "../$zip" slot-rgsp-custom
+          zip -qry "../$zip" custom-slot-h700
           VERSION="$version" ZIP="$zip" python3 - <<'PY'
           import hashlib, json, os, pathlib
           filename = pathlib.Path("..") / os.environ["ZIP"]
@@ -169,7 +169,7 @@ jobs:
       - name: Upload complete OTA-ready firmware
         uses: actions/upload-artifact@v4
         with:
-          name: slot-rgsp-complete-h700
+          name: custom-slot-complete-h700
           path: |
             slot-v*-h700.zip
             versions.json
@@ -185,7 +185,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          name: slot-rgsp-complete-h700
+          name: custom-slot-complete-h700
           path: release
 
       - name: Verify version and archive checksum before publication
@@ -206,6 +206,8 @@ jobs:
           print("Validated", archive.name, d["sha256"])
           PY
 
+      - uses: actions/checkout@v4
+
       - name: Publish update assets on GitHub Releases
         env:
           GH_TOKEN: ${{ github.token }}
@@ -217,5 +219,5 @@ jobs:
           test -s "$zip"
           gh release create "$RELEASE_TAG" "$zip" release/versions.json \
             --repo "$GITHUB_REPOSITORY" \
-            --title "Custom Slot $RELEASE_TAG (H700)" \
-            --notes "Complete custom Slot H700 release. Includes existing Authentic shaders, SGB support, hotkeys and the pinned older mGBA core. Source and GPL-3.0 license: https://github.com/$GITHUB_REPOSITORY. Back up saves before installing."
+            --title "Custom slot. Ver. ${RELEASE_TAG#v}" \
+            --notes-file RELEASE_NOTES.md
