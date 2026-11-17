@@ -2,7 +2,7 @@
 
 <img src="https://raw.githubusercontent.com/slot-cfw/slot/main/.github/resources/hero.webp" width="100%" alt="slot — Game Boy-centric custom firmware for Anbernic H700 handhelds">
 
-[![Download](https://img.shields.io/badge/Download-Latest%20release-238636?style=for-the-badge)](https://github.com/Sinastrax/slot-rgsp-mod/releases/latest)
+[![Download](https://img.shields.io/badge/Download-Latest%20release-238636?style=for-the-badge)](https://github.com/Sinastrax/select-slot/releases/latest)
 [![Original slot](https://img.shields.io/badge/Original-slot-555?style=for-the-badge)](https://github.com/slot-cfw/slot)
 [![pvaibhav's fork](https://img.shields.io/badge/Based%20on-pvaibhav%2Fslot-555?style=for-the-badge)](https://github.com/pvaibhav/slot)
 [![Guide](https://img.shields.io/badge/Guide-slot--cfw.fyi-555?style=for-the-badge)](https://slot-cfw.fyi)
@@ -26,14 +26,14 @@ Its name is **Custom slot**, not RGSP: the H700 build is intended for other comp
 
 A separate **ARMv7 / software-rendered** build targets the **original Miyoo Mini**, Miyoo Mini Plus and Miyoo Mini Flip. It is based on [deanmarano's Miyoo port](https://github.com/deanmarano/slot-miyoo) rather than the H700/aarch64 build. The port author has tested the original Mini with OnionOS 4.3.1; **our custom build has not yet been tested on hardware**.
 
-- **Preview name:** Custom slot. 1.8.1 Ver. 3 (Miyoo). The Slot upstream is v1.8.1, pinned by Dean's port.
+- **Preview name:** Custom slot. 1.8.1 Ver. 4 (Miyoo). The Slot upstream is v1.8.1, pinned by Dean's port.
 - **Emulators:** **Gambatte for GB/GBC** and **gpSP for GBA**, both ARMv7. mGBA remains optional for compatibility but Super Game Boy hardware/border modes are not included.
 - **Scaling:** Original, true integer scaling, aspect fit, fill/crop and full stretch. Select under the in-game **Settings → Screen → Scaling** menu; options persist per game. GB/GBC shoulder buttons cycle choices if not used by the game.
 - **System:** Independent **Resume on Power On** and **Resume on Insert**, with the earlier auto-start bug fixed; **Menu Screen Off** and **Menu Power Off** timers default to 3 and 15 minutes respectively and exclude gameplay.
 - **Authentic display effects are NOT YET PORTED:** DMG, Pocket, Light, GBC, GBA and Pocket Color Authentic shaders require a real CPU software-rendering implementation. The Miyoo's LCD3x is not equivalent. The advanced H700 per-model correction, ghosting, extra hotkeys and OTA have not been ported. SGB is deliberately out of scope.
 - **Validation:** A full GitHub Actions ARMv7 cross-build and ZIP verification passed; the enhanced preview has **not** been tested on physical Miyoo hardware.
 - **OnionOS autoboot:** optional startup script provided at `System/autoboot/onion-startup.sh`. Copy to `.tmp_update/startup/custom-slot.sh` to enter Custom slot on power-on while preserving Onion's `runtime.sh`. Removing the file restores the normal boot. Not enabled by default; hardware testing pending.
-- **OnionOS theme visuals:** the native Onion boot splash stays unchanged; this variant reuses the active Onion theme's **End_Save** screen for Slot shutdown and sleep, and **Boot** on wake. It uses Onion's existing `bootScreen` renderer and is only enabled when Onion is detected. No OS files replaced. Sleep/wake interaction with Onion keymon remains untested; opt out by creating `.tmp_update/config/.skip-custom-slot-splashes`.
+- **OnionOS power and BMO theme:** native Onion boot splash remains unchanged; Slot-driven shutdown uses the active theme's `Screen_Off_Save`. When Onion `keymon` is active, it exclusively owns POWER sleep/wake and display blanking; Slot saves on key-down but no longer competes with Onion's suspend sequence. BMO themes have no separate sleep/wake assets. Ver. 4 also fixes accidental 180° Flip framebuffer rotation on the original Mini / Mini Plus. This integration is hardware-untested.
 - **Delivery:** an independent, manually triggered or CI-built experimental ZIP that installs as an app on the Miyoo SD card. The original Miyoo Mini has no Wi-Fi, so it does not support the H700 OTA workflow.
 - **Platform separation:** this edition never uses the H700 SD2 firmware package, and the Miyoo build does not modify the H700 build.
 
@@ -73,7 +73,7 @@ These are the **H700-specific custom changes**, on top of both upstream Slot and
 
 ### Online updates
 
-- **Custom update channel** from **Settings → System → Check for Updates**. Updates come from [this repository's releases](https://github.com/Sinastrax/slot-rgsp-mod/releases), not an upstream build.
+- **Custom update channel** from **Settings → System → Check for Updates**. Updates come from [this repository's releases](https://github.com/Sinastrax/select-slot/releases), not an upstream build.
 - **Full releases only:** the updater downloads a complete H700 package, checks its size and SHA-256 checksum, then stages it for installation at restart.
 - **No forced background updates.** The user chooses whether to install. ROMs, saves and personal settings are not bundled in releases.
 
@@ -83,7 +83,7 @@ See [ONLINE_UPDATES.md](ONLINE_UPDATES.md) for technical packaging and release p
 
 1. Install a compatible [BaseOS](https://github.com/pvaibhav/BaseOS) setup for your handheld and prepare the SD2 card following the [original Slot guide](https://slot-cfw.fyi).
 2. Back up saves, save states, and `Config/` before upgrading.
-3. Download the **latest full H700 ZIP** from [Releases](https://github.com/Sinastrax/slot-rgsp-mod/releases/latest).
+3. Download the **latest full H700 ZIP** from [Releases](https://github.com/Sinastrax/select-slot/releases/latest).
 4. Extract the contents of the included device folder to the **root of SD2**, so `System/slot` is in the SD2 `System` directory. Do not copy the containing device folder itself.
 5. Restart the handheld. Once running a Custom slot build with online updates, subsequent updates are available under **Settings → System → Check for Updates**.
 
@@ -93,7 +93,7 @@ Do not interchange save states made by different emulator cores; in-game battery
 
 Releases are titled **Custom slot. Ver. 1.15.3.1**, **Custom slot. Ver. 1.15.3.2**, etc. Technical release tags and ZIP filenames retain their original version suffixes for update compatibility. The product name is not repeated in the version number.
 
-**[Latest release](https://github.com/Sinastrax/slot-rgsp-mod/releases/latest)** · **[Changes in the latest version](RELEASE_NOTES.md)**
+**[Latest release](https://github.com/Sinastrax/select-slot/releases/latest)** · **[Changes in the latest version](RELEASE_NOTES.md)**
 
 Release notes list **only the additions and fixes since the previous release**, rather than repeating the complete feature list. This README is the permanent place for the full feature overview.
 
