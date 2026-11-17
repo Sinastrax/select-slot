@@ -1,19 +1,13 @@
 # Custom slot — version history
 
-Release notes describe only what changed compared with the previous release.
-The [front page](README.md) contains the complete cumulative feature list.
+Release notes contain **only changes made in each version**. The [README](README.md) is the cumulative feature overview. Release titles use numeric-only version numbers. Technical tags and files remain unchanged for updater compatibility.
 
-## 1.15.3-custom.1
-- Rebranded version and release naming to **Custom slot** for all supported H700 devices.
-- Updated the online updater to recognize `custom` releases while accepting earlier `rgsp` builds as upgrade sources.
-- Redesigned GitHub front page and credits to link to original Slot and pvaibhav's fork.
+## Ver. 1.15.3.3 (`v1.15.3-rgsp.3`)
+- Fixed **Resume on Power On**: Off boots to the shelf without automatically launching the previously played game.
+- **Resume on Insert** remains independent.
 
-## 1.15.3-rgsp.3
-- Fixed **Resume on Power On**: Off now boots to the selected game shelf without automatically launching the game.
-- Preserved **Resume on Insert** as an independent setting.
+## Ver. 1.15.3.2 (`v1.15.3-rgsp.2`)
+- Added separate menu-only screen-off and shutdown inactivity timers, configurable under System.
 
-## 1.15.3-rgsp.2
-- Added menu-only screen-off and graceful power-off timers with separate configurable intervals.
-
-## 1.15.3-rgsp.1
-- Added the built-in custom GitHub release update channel and complete OTA packages.
+## Ver. 1.15.3.1 (`v1.15.3-rgsp.1`)
+- Added the custom GitHub update channel and complete OTA packages.
