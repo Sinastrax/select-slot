@@ -95,8 +95,7 @@ frontend_path = Path("crates/slot/src/frontend.rs")
 frontend = frontend_path.read_text()
 if "compositor.set_authentic_glass(" in frontend:
     raise AssertionError("Frontend already controls Authentic glass: review upstream changes")
-glass_old = """        compositor.set_authentic_screen(authentic_screen(self.session.app()));
-        compositor.set_lcd(self.session.app().lcd());"""
+glass_old = "        compositor.set_authentic_screen(authentic_screen(self.session.app()));"
 glass_new = """        compositor.set_authentic_screen(authentic_screen(self.session.app()));
         // Reflection is separate from the LCD colour correction and pixel grid.
         // Default Authentic bezel art already draws its own glass. Otherwise,
@@ -109,7 +108,7 @@ glass_new = """        compositor.set_authentic_screen(authentic_screen(self.ses
             !bezel_has_glass && app.reflection(platform),
             !bezel_has_glass,
         );
-        compositor.set_lcd(self.session.app().lcd());"""
+        );"""
 frontend = replace_once(frontend, glass_old, glass_new, "Reflection setting wiring")
 frontend_path.write_text(frontend)
 
