@@ -77,21 +77,29 @@ grep -Fq '+        self.tick_menu_idle();' "$shader_patch"
 grep -Fq '+            if std::fs::write("/tmp/.offOrder", b"").is_ok() {' "$shader_patch"
 grep -Fq '+                std::process::exit(0);' "$shader_patch"
 echo "Verified independent menu timers and OnionOS shutdown handoff"
+# Emit a useful failure explaining which verification is missing, instead of
+# aborting the build without context when one hunk is not in the generated patch.
+check_patch() {
+  if ! grep -Fq "$1" "$shader_patch"; then
+    printf 'Missing Ver. 24 patch wiring: %s\n' "$1" >&2
+    exit 1
+  fi
+}
 # Menu scaling must be available on the shelf and persist globally as an INI
 # default without dropping existing per-ROM scaling overrides.
-grep -Fq '+    pub const SCREEN_GENERAL: [QuickRow; 3]' "$shader_patch"
-grep -Fq '+            QuickRow::DefaultScaling => "Default Scaling",' "$shader_patch"
-grep -Fq '+pub fn default_video_mode(root: &Path) -> VideoMode {' "$shader_patch"
-grep -Fq '+    ini::write(root, VIDEO_MODE_FILE, "default", mode.as_str())' "$shader_patch"
-grep -Fq '+        .unwrap_or_else(|| default_video_mode(root))' "$shader_patch"
-grep -Fq '+            QuickRow::DefaultScaling => Some(match self.root.as_deref()' "$shader_patch"
+check_patch '+    pub const SCREEN_GENERAL: [QuickRow; 3]'
+check_patch '+            QuickRow::DefaultScaling => "Default Scaling",'
+check_patch '+pub fn default_video_mode(root: &Path) -> VideoMode {'
+check_patch '+    ini::write(root, VIDEO_MODE_FILE, "default", mode.as_str())'
+check_patch '+        .unwrap_or_else(|| default_video_mode(root))'
+check_patch '+            QuickRow::DefaultScaling => Some(match self.root.as_deref()'
 # The earlier OnionOS POWER passthrough is still used for short presses,
 # while long hold must request real shutdown before keymon sleeps the app.
-grep -Fq '+pub const POWER_HOLD_MS: Millis = 350;' "$shader_patch"
-grep -Fq '+                Action::PowerHold => {' "$shader_patch"
-grep -Fq '+                    self.menu_shutdown_onion = true;' "$shader_patch"
-grep -Fq '+        if self.shutting_down() {' "$shader_patch"
-grep -Fq '+                    && root.join(".tmp_update/onionVersion/version.txt").is_file()' "$shader_patch"
+check_patch '+pub const POWER_HOLD_MS: Millis = 350;'
+check_patch '+                Action::PowerHold => {'
+check_patch '+                    self.menu_shutdown_onion = true;'
+check_patch '+        if self.shutting_down() {'
+check_patch '+                    && root.join(".tmp_update/onionVersion/version.txt").is_file()'
 echo "Verified menu scaling persistence, quick shutdown, and input lock"
 
 
