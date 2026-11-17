@@ -235,6 +235,46 @@ edit("crates/slot/src/app.rs", [
         if let QuickRow::Brightness | QuickRow::BlueLight = row {'''),
 ])
 
+# Separate Power On resume from manual insertion, matching the H700 setting.
+# Backward compatibility: existing auto_load value seeds resume_power_on once.
+edit("crates/slot-store/src/slot_state.rs", [
+    ("    pub auto_load: bool,\n    pub eject_save: bool,",
+     "    pub auto_load: bool,\n    pub resume_power_on: bool,\n    pub eject_save: bool,"),
+    ("            auto_load: true,\n            eject_save: true,",
+     "            auto_load: true,\n            resume_power_on: true,\n            eject_save: true,"),
+    ('    text.push_str(&format!("auto_load={}\\n", s.auto_load as u8));',
+     '    text.push_str(&format!("auto_load={}\\n", s.auto_load as u8));\n    text.push_str(&format!("resume_power_on={}\\n", s.resume_power_on as u8));'),
+    ("    let mut auto_load = None;\n    let mut eject_save = None;",
+     "    let mut auto_load = None;\n    let mut resume_power_on = None;\n    let mut eject_save = None;"),
+    ('            "auto_load" => auto_load = flag(value),',
+     '            "auto_load" => auto_load = flag(value),\n            "resume_power_on" => resume_power_on = flag(value),'),
+    ("        auto_load: auto_load.unwrap_or(fallback.auto_load),",
+     "        auto_load: auto_load.unwrap_or(fallback.auto_load),\n        resume_power_on: resume_power_on.or(auto_load).unwrap_or(fallback.resume_power_on),"),
+])
+edit("crates/slot/src/app.rs", [
+    ('''                if self.state.auto_load {
+                    self.insert(false);''',
+     '''                if self.state.resume_power_on {
+                    self.insert(false);'''),
+    ("            QuickRow::AutoLoad => Some(QuickValue::flag(self.state.auto_load)),",
+     "            QuickRow::AutoLoad => Some(QuickValue::flag(self.state.auto_load)),\n            QuickRow::ResumePowerOn => Some(QuickValue::flag(self.state.resume_power_on)),"),
+    ("            QuickRow::AutoLoad => s.auto_load = !s.auto_load,",
+     "            QuickRow::AutoLoad => s.auto_load = !s.auto_load,\n            QuickRow::ResumePowerOn => s.resume_power_on = !s.resume_power_on,"),
+])
+edit("crates/slot-ui/src/quick_menu.rs", [
+    ("    Scaling,\n}\n\nimpl QuickRow", "    Scaling,\n    ResumePowerOn,\n}\n\nimpl QuickRow"),
+    ("pub const ALL: [QuickRow; 81]", "pub const ALL: [QuickRow; 82]"),
+    ("        QuickRow::Scaling,\n    ];\n\n    pub const MAIN:",
+     "        QuickRow::Scaling,\n        QuickRow::ResumePowerOn,\n    ];\n\n    pub const MAIN:"),
+    ("pub const GAME: [QuickRow; 8]", "pub const GAME: [QuickRow; 9]"),
+    ("        QuickRow::AutoLoad,\n        QuickRow::EjectSave,",
+     "        QuickRow::AutoLoad,\n        QuickRow::ResumePowerOn,\n        QuickRow::EjectSave,"),
+    ("            | QuickRow::AutoLoad\n            | QuickRow::EjectSave => &QuickRow::GAME,",
+     "            | QuickRow::AutoLoad\n            | QuickRow::ResumePowerOn\n            | QuickRow::EjectSave => &QuickRow::GAME,"),
+    ('            QuickRow::AutoLoad => "Load State on Insert",',
+     '            QuickRow::AutoLoad => "Resume on Insert",\n            QuickRow::ResumePowerOn => "Resume on Power On",'),
+])
+
 # A software renderer cannot use the H700 GLSL effects; Authentic is deferred
 # pending a measured LUT/lookup-table implementation. Do not fake it.
 
