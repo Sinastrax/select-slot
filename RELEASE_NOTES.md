@@ -1,9 +1,9 @@
-# select. slot. 1.16.0 Ver. 10
+# select. slot. 1.16.0 Ver. 11
 
-## Changes since select. slot. 1.16.0 Ver. 9
+## Changes since select. slot. 1.16.0 Ver. 10
 
-- **Game Boy Pocket Authentic at Fit scaling (RG35XX H):** fixed the monochrome shader's handling of partially covered LCD dot separators. Ver. 9 calculated fractional gap coverage, but the final Pocket ink routine still used an all-or-nothing 0.5 threshold. Fit now blends the actual ink contribution of the centre dot, the left/upper gap and their ink-free intersection instead of dropping or snapping partial gaps.
-- **Pixel geometry and performance isolation:** integer-scaled DMG, Pocket and Light dots retain the exact original ink calculation. The independent Pocket SGB fastpath, GBA/GBC color response, Authentic Color Correction On/Off, glass/reflections and other scaling modes are unchanged.
-- Added source-routing checks to confirm that the GB Authentic + Pocket menu choices reach the expected shader path, and numerical tests of fractional Fit coverage and exact integer-scale parity. The H700 pipeline also checks OpenGL ES shader compilation.
+- **Pocket SGB now actually looks like Pocket Color:** removed the visually different SGB-only shader that used arbitrary gap multipliers and a simplified neighboring-dot shadow. Pocket SGB uses Pocket Color's exact LCD pixel-gap, ink, 4-tap shadow, reflector, glass and fractional Fit calculations. Both modes use the same physical LCD settings and ghosting.
+- **Only the colors differ:** Pocket Color retains its measured GBC color response. Pocket SGB takes the SGB colors directly from mGBA, bypassing GBC calibration; its Color Correction Off preserves the core's RGB, and On uses the existing SNES CRT gamma ramp.
+- Added exact source-level checks for the common optical rendering path and its individual palette transforms. Retained the full OTA installation package and previous compatible update identifiers.
 
-**Device verification is still required:** the source-level issue and its mathematical treatment have been corrected, but the exact appearance of the RG35XX H panel cannot be confirmed from build tests alone.
+**Hardware verification required:** sharing Pocket Color's complete shader may increase SGB graphics cost compared with the previous simplified fast path; the CI build checks compilation and packaging, not measured on-device FPS. Real RG35XX H SGB appearance and performance need confirmation.
