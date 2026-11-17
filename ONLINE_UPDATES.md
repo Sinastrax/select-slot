@@ -22,7 +22,7 @@ the inherited Slot updater, not Unslot's separately signed `.pak` format.
 
 ## Complete builds only
 
-Releases always contain all previous working Slot modifications and the pinned old mGBA
+Every release contains all previous working Slot modifications and the pinned older mGBA
 core (`c758314a639aa0066e7b65a8341448181b73c804`). The older core is rebuilt from
 source by `.github/scripts/build-stable-mgba.sh` and replaces the upstream core before
 the release archive is packaged. Its modified source is retained under `System/licenses/`.
@@ -34,12 +34,11 @@ in the update manifest.
 
 ## Publishing a new release
 
-- Update `.github/ota-version.txt` to the next `1.15.3-custom.N` version (or bump
-  upstream version appropriately after rebasing and testing).
+- Update `.github/ota-version.txt` only when shipping a **functional firmware update**. Retain technical version identifiers and previous-release links for OTA compatibility. New builds may use a `-custom.N` suffix, but the GitHub release title is always **Custom slot. Ver. [numeric version]**.
 - Update `RELEASE_NOTES.md` with **only the changes made since the previous release**. Keep the cumulative feature list in `README.md`.
 - Verify the full `Build Custom slot H700` GitHub Actions run succeeds on `main`.
 - A successful verified build on `main` publishes `slot-v<VERSION>-h700.zip` and
-  `versions.json` to GitHub Releases with title **Custom slot. Ver. [version]** and
+  `versions.json` to GitHub Releases with title **Custom slot. Ver. [numeric version]** and
   the change-only notes from that build's `RELEASE_NOTES.md`. The separate tag workflow
   can publish the same tagged release when used.
 - Verify the release on real H700 hardware before recommending it broadly.
