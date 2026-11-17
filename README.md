@@ -77,3 +77,20 @@ be published as an online update.
 **One manual installation** of an OTA-enabled full build is necessary to switch older firmware
 to our release channel. Releases are not offered until the matching firmware version has actually
 been published on GitHub. See [ONLINE_UPDATES.md](ONLINE_UPDATES.md) for the update and release process.
+
+## Main-menu inactivity timers
+
+This custom build adds two independent settings under **Settings → System**:
+
+- **Menu Screen Off**: switches off the physical display backlight after inactivity (default **3 minutes**).
+- **Menu Power Off**: initiates normal, graceful shutdown after inactivity (default **15 minutes**, counted from the last input).
+
+Both offer **Off, 1, 3, 5, 10, 15 and 30 minutes**. A button press wakes the dark display
+without accidentally selecting a game. The saved brightness returns on wake, and closing or
+opening the lid retains its normal behavior. Timers apply to the shelf, system menu and About
+screen **only**; they do not interrupt gameplay, downloads, active Wi-Fi configuration or other
+ongoing operations. Setting either option to Off disables just that action.
+
+The feature is implemented in `patches/menu-idle-settings.patch`,
+`patches/menu-idle-behavior.patch` and `patches/menu-idle-timer.patch`, extending the
+existing Slot power controller without changing the custom mGBA core, shaders or hotkeys.
