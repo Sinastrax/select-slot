@@ -1,6 +1,18 @@
-# select. slot. 1.8.1 Ver. 14 — Onion power handoff + brightness
+# select. slot. 1.8.1 Ver. 15 — use Onion's physical PWM backlight
 
 **Experimental ARMv7 Miyoo Mini / Mini Plus / Flip application, not H700 firmware.** This version is based on the pinned [deanmarano/slot-miyoo](https://github.com/deanmarano/slot-miyoo) commit `d096bdb87f25f3aba62de6b40ef859b61d841e43` and Slot upstream 1.8.1.
+
+## Ver. 15: actual hardware backlight priority on the original Mini
+
+This release preserves the **working Ver. 14 OnionOS standby / BMO handoff**. The remaining problem was a dark game/display even when the new SLOT brightness scale reached level 12.
+
+**What was verified from source:** SLOT's `Shader: Off` selects `ScreenEffect::None` in the unchanged Dean Miyoo renderer, so the LCD3x intensity mask is not applied. Gambatte's `gambatte_dark_filter_level` is explicitly `0`, and its color correction receives `disabled` when Off. This does **not** establish that every possible system display adjustment is neutral, but there is no code path that keeps SLOT's LCD3x filter active after Shader Off.
+
+**More significant discovery:** Dean's original `DevicePlatform::probe()` checks `/sys/class/backlight` first, then `/sys/kernel/debug/dispdbg`, and only **last** the actual `/sys/class/pwm/pwmchip0/pwm0` device. This priority is appropriate for Dean's verified Mini Flip, but OnionOS controls backlight on original Mini/Mini Plus through the PWM device directly. If an alternative display interface exists on the original Mini, selecting it means SLOT's PWM boost code is never called, so 9/10/11/12 can look identically dark even though the menu and saved settings change.
+
+**Targeted correction:** When the **OnionOS runtime** is present on the SD card *and* the PWM channel's `period` and `duty_cycle` nodes are available, prefer the physical Onion PWM channel over older class/dispdbg entries. On stock/Allium firmware, or if PWM is absent, retain Dean's original fallback order. No changes to the software renderer, color palettes, filtering, framebuffer, BMO theme, or OnionOS files. Original brightness levels 0–9 and extended 10–12 remain. An added source-level test simulates a system with both a class backlight and the PWM channel, verifying that the PWM output receives the requested levels only under Onion.
+
+**Limit:** This is a code-grounded compatibility correction, not a physical measurement. The actual display result still requires testing on the Mini. If the dark screen persists, the next issue is likely external to the SLOT shader-Off path (such as another Onion display setting/driver), rather than just raising the brightness number again.
 
 ## BMO standby / shutdown artwork and the POWER-button conflict
 
@@ -43,7 +55,7 @@ This upper boost is **not validated for the original Mini's display durability**
 ## Installation
 
 1. Back up the card, especially `Config/slot.state`, `Saves/`, and any existing `System/slot`.
-2. Download the `select-slot-miyoo-onion-power-ownership` artifact from the successful GitHub Actions build; inside is `select-slot-1.8.1-ver14-miyoo.zip` plus SHA-256 checksum.
+2. Download the `select-slot-miyoo-pwm-priority` artifact from the successful GitHub Actions build; inside is `select-slot-1.8.1-ver15-miyoo.zip` plus SHA-256 checksum.
 3. Extract **the contents of the inner ZIP** to the SD-card root. `System/slot`, `App/Slot/`, and `Apps/slot.pak/` must be at the card root, not inside a new folder.
 4. Start **select. slot.**. In the SLOT **Brightness** menu or using mapped brightness shortcuts, choose 10 first and then 11 or 12 only if needed.
 5. If brightness falls back after standby, the new automatic resume reapply should restore the selected SLOT level. If a change in OnionOS settings is pending, its keymon remains responsible for its own global value.
