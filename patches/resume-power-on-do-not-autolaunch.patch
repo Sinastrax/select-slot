@@ -1,0 +1,123 @@
+diff --git a/crates/slot/src/app.rs b/crates/slot/src/app.rs
+--- a/crates/slot/src/app.rs
++++ b/crates/slot/src/app.rs
+@@ -1326,13 +1326,19 @@
+         self.phase = Phase::Shelf;
+         match seated {
+             Some((at, i)) => {
+-                self.shelf_at = at;
+-                self.shelf_mut().select(i);
+-                self.insert(!self.state.resume_power_on);
+-                if let Phase::Inserting { resumed, t, .. } = &mut self.phase {
+-                    *resumed = true;
+-                    *t = INSERT_S;
+-                }
++                self.shelf_at = at;
++                self.shelf_mut().select(i);
++                if self.state.resume_power_on {
++                    // Resume only when the user explicitly enabled automatic boot resume.
++                    self.insert(false);
++                    if let Phase::Inserting { resumed, t, .. } = &mut self.phase {
++                        *resumed = true;
++                        *t = INSERT_S;
++                    }
++                } else {
++                    // Keep the last cart selected, but do not auto-launch it.
++                    self.name_pending = true;
++                }
+             }
+             None => {
+                 self.state.cart = None;
+diff --git a/crates/slot/tests/boot.rs b/crates/slot/tests/boot.rs
+--- a/crates/slot/tests/boot.rs
++++ b/crates/slot/tests/boot.rs
+@@ -24,25 +24,49 @@
+     );
+ }
+ 
+-#[test]
+-fn resume_on_power_on_alone_decides_whether_boot_reseats_the_cart_fresh() {
+-    for (resume_insert, resume_power_on) in [(true, true), (true, false), (false, true), (false, false)] {
+-        let d = tmp_root_with_carts(&["Emerald"]);
+-        let s = SlotState {
+-            resume_insert,
+-            resume_power_on,
+-            ..seated("Emerald")
+-        };
+-        write_slot_state(d.path(), &s).unwrap();
+-        let a = App::boot(d.path());
+-        assert!(matches!(a.phase(), Phase::Inserting { .. }));
+-        assert_eq!(
+-            a.starting_clean(),
+-            !resume_power_on,
+-            "resume_insert {resume_insert} resume_power_on {resume_power_on}"
+-        );
+-    }
+-}
++#[test]
++fn resume_on_power_on_alone_decides_whether_boot_launches_the_cart() {
++    for (resume_insert, resume_power_on) in [(true, true), (true, false), (false, true), (false, false)] {
++        let d = tmp_root_with_carts(&["Emerald"]);
++        let s = SlotState {
++            resume_insert,
++            resume_power_on,
++            ..seated("Emerald")
++        };
++        write_slot_state(d.path(), &s).unwrap();
++        let a = App::boot(d.path());
++        if resume_power_on {
++            assert!(matches!(a.phase(), Phase::Inserting { .. }));
++            assert!(!a.starting_clean(), "enabled resume should load saved state");
++        } else {
++            assert!(matches!(a.phase(), Phase::Shelf), "disabled resume must show shelf");
++            assert_eq!(a.selected_stem(), Some("Emerald"));
++            assert!(a.seated_cart().is_none(), "disabled resume still seated the cart");
++        }
++    }
++}
++
++#[test]
++fn resume_disabled_still_respects_resume_on_manual_insert() {
++    for resume_insert in [false, true] {
++        let d = tmp_root_with_carts(&["Emerald", "Fusion"]);
++        write_slot_state(
++            d.path(),
++            &SlotState {
++                resume_power_on: false,
++                resume_insert,
++                ..seated("Emerald")
++            },
++        )
++        .unwrap();
++        let mut a = App::boot(d.path());
++        assert!(matches!(a.phase(), Phase::Shelf));
++        assert_eq!(a.selected_stem(), Some("Emerald"));
++        a.apply(Action::Insert);
++        assert!(matches!(a.phase(), Phase::Inserting { .. }));
++        assert_eq!(a.starting_clean(), !resume_insert);
++    }
++}
+ 
+ #[test]
+ fn an_old_auto_load_state_becomes_the_two_resume_rows() {
+@@ -66,10 +90,16 @@
+         std::fs::write(&path, old).unwrap();
+         let s = read_slot_state(d.path());
+         assert_eq!((s.resume_insert, s.resume_power_on), (insert, power_on), "{value}");
+-        let a = App::boot(d.path());
+-        assert_eq!(a.starting_clean(), !power_on, "{value}");
+-    }
+-}
++        let a = App::boot(d.path());
++        if power_on {
++            assert!(matches!(a.phase(), Phase::Inserting { .. }), "{value}");
++            assert!(!a.starting_clean(), "{value}");
++        } else {
++            assert!(matches!(a.phase(), Phase::Shelf), "{value}");
++            assert_eq!(a.selected_stem(), Some("Emerald"));
++        }
++    }
++}
+ 
+ #[test]
+ fn boot_with_an_empty_slot_shows_the_shelf() {
