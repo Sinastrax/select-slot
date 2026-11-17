@@ -1,0 +1,76 @@
+name: Publish confirmed Miyoo Ver. 26 release (keep H700 latest)
+
+on:
+  push:
+    branches:
+      - feature/select-slot-miyoo-pwm-priority
+    paths:
+      - ".github/workflows/publish-confirmed-miyoo-ver26.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish-confirmed-miyoo:
+    runs-on: ubuntu-latest
+    if: github.repository == 'Sinastrax/select-slot'
+    steps:
+      - name: Checkout release documentation
+        uses: actions/checkout@v4
+
+      - name: Publish exact tested Ver. 26 archive set as a separate official release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          repo="$GITHUB_REPOSITORY"
+          preview="miyoo-v1.8.1-ver26-preview.142.1"
+          stable="miyoo-v1.8.1-ver26"
+          source_sha="db66797d5f21004dad34917d915b70bc5138aa3b"
+          notes=".github/release-notes/miyoo-ver26.md"
+          test -s "$notes"
+          test "$(gh api "repos/$repo/releases/tags/$preview" --jq '.target_commitish')" = "$source_sha"
+          test "$(gh api "repos/$repo/releases/tags/$preview" --jq '.assets | length')" = 6
+          h700_latest_before="$(gh api "repos/$repo/releases/latest" --jq .tag_name)"
+          [[ "$h700_latest_before" == v*-rgsp.* ]]
+          mkdir -p dist
+          gh release download "$preview" --repo "$repo" --dir dist --pattern 'select-slot-1.8.1-ver26-miyoo*'
+          mapfile -t all < <(find dist -maxdepth 1 -type f | sort)
+          test "${#all[@]}" -eq 6
+          for variant in \
+            select-slot-1.8.1-ver26-miyoo.zip \
+            select-slot-1.8.1-ver26-miyoo-onion-autoboot.zip \
+            select-slot-1.8.1-ver26-miyoo-stock-autoboot.zip; do
+            test -s "dist/$variant"
+            test -s "dist/$variant.sha256"
+            expected="$(awk 'NR == 1 { print $1 }' "dist/$variant.sha256")"
+            actual="$(sha256sum "dist/$variant" | awk '{ print $1 }')"
+            test "$expected" = "$actual"
+            unzip -t "dist/$variant" | tail -1 | grep -q 'No errors detected'
+            unzip -Z1 "dist/$variant" | grep -qx 'System/slot'
+            unzip -Z1 "dist/$variant" | grep -qx 'System/select-slot-version.txt'
+          done
+          unzip -Z1 dist/select-slot-1.8.1-ver26-miyoo-onion-autoboot.zip | grep -qx '.tmp_update/startup/select-slot.sh'
+          ! unzip -Z1 dist/select-slot-1.8.1-ver26-miyoo-onion-autoboot.zip | grep -qx '.tmp_update/runtime.sh'
+          unzip -Z1 dist/select-slot-1.8.1-ver26-miyoo-stock-autoboot.zip | grep -qx '.tmp_update/runtime.sh'
+          ! unzip -Z1 dist/select-slot-1.8.1-ver26-miyoo-stock-autoboot.zip | grep -qx '.tmp_update/startup/select-slot.sh'
+          ! unzip -Z1 dist/select-slot-1.8.1-ver26-miyoo.zip | grep -q '^.tmp_update/'
+
+          if gh release view "$stable" --repo "$repo" >/dev/null 2>&1; then
+            echo "Official Miyoo Ver. 26 release already exists; leaving its assets unchanged."
+          else
+            gh release create "$stable" dist/*.zip dist/*.sha256 \
+              --repo "$repo" \
+              --target "$source_sha" \
+              --title "select. slot. 1.8.1 Ver. 26 — Miyoo" \
+              --notes-file "$notes" \
+              --latest=false
+          fi
+          test "$(gh api "repos/$repo/releases/tags/$stable" --jq .prerelease)" = false
+          test "$(gh api "repos/$repo/releases/tags/$stable" --jq .draft)" = false
+          test "$(gh api "repos/$repo/releases/tags/$stable" --jq '.assets | length')" = 6
+          h700_latest_after="$(gh api "repos/$repo/releases/latest" --jq .tag_name)"
+          test "$h700_latest_after" = "$h700_latest_before"
+          echo "Published separate official Miyoo release; H700 latest remains $h700_latest_after"
