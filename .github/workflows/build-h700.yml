@@ -6,6 +6,8 @@ on:
     paths:
       - "patches/**"
       - ".github/workflows/build-h700.yml"
+      - ".github/ota-version.txt"
+      - ".github/scripts/**"
 
 permissions:
   contents: read
@@ -62,6 +64,8 @@ jobs:
           git apply ../patches/mgba-gb-buffer-recovery.patch
           git apply --check ../patches/rg34xxsp-extra-hotkeys.patch
           git apply ../patches/rg34xxsp-extra-hotkeys.patch
+          git apply --check ../patches/rgsp-online-updates.patch
+          git apply ../patches/rgsp-online-updates.patch
           echo "Exact-release patches applied"
 
       - name: Install required tools
@@ -91,40 +95,69 @@ jobs:
         shell: bash
         run: cargo fmt --all
 
+      - name: Verify online-update version comparison and ZIP safety
+        working-directory: upstream
+        shell: bash
+        run: cargo test -p slot --test update -- --nocapture
+
       - name: Build the H700 device tree
         working-directory: upstream
         shell: bash
-        run: task dist:device OUT=slot-rgsp-custom
+        run: |
+          set -euo pipefail
+          export SLOT_VERSION="$(cat ../.github/ota-version.txt)"
+          task dist:device OUT=slot-rgsp-custom
 
-      - name: Verify the build artifacts
+      - name: Replace stock mGBA with the verified older core
         working-directory: upstream
         shell: bash
         run: |
+          set -euo pipefail
+          bash ../.github/scripts/build-stable-mgba.sh slot-rgsp-custom
+          test -s slot-rgsp-custom/System/licenses/mgba-stable.sha256
+          test -s slot-rgsp-custom/System/licenses/mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz
+
+      - name: Verify the complete firmware tree
+        working-directory: upstream
+        shell: bash
+        run: |
+          set -euo pipefail
           sh tools/check-card-tree.sh slot-rgsp-custom
-          test -f slot-rgsp-custom/System/mgba_libretro.so
           test ! -f slot-rgsp-custom/System/sameboy_libretro.so
+          sha256sum -c slot-rgsp-custom/System/licenses/mgba-stable.sha256
+          # Both boot scripts and every core must be in an OTA update.
+          test -s slot-rgsp-custom/System/launch_frontend.sh
+          test -s slot-rgsp-custom/System/gpsp_libretro.so
+          test -s slot-rgsp-custom/System/gambatte_libretro.so
 
-      - name: Package the SD2 update
+      - name: Package full firmware and OTA release manifest
         working-directory: upstream
         shell: bash
         run: |
-          zip -qry ../slot-rgsp-custom-h700.zip slot-rgsp-custom
-          # Safe update for users already running the older, stable mGBA core:
-          # overwrite only Slot; preserve System/mgba_libretro.so and all saves.
-          mkdir -p ../hotkeys-update/System
-          cp slot-rgsp-custom/System/slot ../hotkeys-update/System/slot
-          (cd ../hotkeys-update && zip -qry ../Slot_RGSP_Extra_Hotkeys_Update.zip System)
+          set -euo pipefail
+          version="$(cat ../.github/ota-version.txt)"
+          zip="slot-v${version}-h700.zip"
+          zip -qry "../$zip" slot-rgsp-custom
+          VERSION="$version" ZIP="$zip" python3 - <<'PY'
+          import hashlib, json, os, pathlib
+          filename = pathlib.Path("..") / os.environ["ZIP"]
+          payload = filename.read_bytes()
+          result = {"stable": {
+              "version": os.environ["VERSION"],
+              "tag": "v" + os.environ["VERSION"],
+              "zip": os.environ["ZIP"],
+              "size": len(payload),
+              "sha256": hashlib.sha256(payload).hexdigest()}}
+          pathlib.Path("../versions.json").write_text(json.dumps(result, indent=2) + "\n")
+          print(result)
+          PY
+          unzip -t "../$zip" | tail -1
 
-      - name: Upload minimal hotkeys-only update
+      - name: Upload complete OTA-ready firmware
         uses: actions/upload-artifact@v4
         with:
-          name: slot-rgsp-extra-hotkeys-update
-          path: Slot_RGSP_Extra_Hotkeys_Update.zip
-          if-no-files-found: error
-
-      - name: Upload firmware artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: slot-rgsp-custom-h700
-          path: slot-rgsp-custom-h700.zip
+          name: slot-rgsp-complete-h700
+          path: |
+            slot-v*-h700.zip
+            versions.json
           if-no-files-found: error
