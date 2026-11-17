@@ -2,7 +2,8 @@
 
 <img src="https://raw.githubusercontent.com/slot-cfw/slot/main/.github/resources/hero.webp" width="100%" alt="slot — Game Boy-centric custom firmware for Anbernic H700 handhelds">
 
-[![Download](https://img.shields.io/badge/Download-Latest%20release-238636?style=for-the-badge)](https://github.com/Sinastrax/select-slot/releases/latest)
+[![H700](https://img.shields.io/badge/H700-Latest%20release-238636?style=for-the-badge)](https://github.com/Sinastrax/select-slot/releases/latest)
+[![Miyoo](https://img.shields.io/badge/Miyoo-1.8.1%20Ver.%2026-238636?style=for-the-badge)](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver26)
 [![Original slot](https://img.shields.io/badge/Original-slot-555?style=for-the-badge)](https://github.com/slot-cfw/slot)
 [![pvaibhav's fork](https://img.shields.io/badge/Based%20on-pvaibhav%2Fslot-555?style=for-the-badge)](https://github.com/pvaibhav/slot)
 [![Guide](https://img.shields.io/badge/Guide-slot--cfw.fyi-555?style=for-the-badge)](https://slot-cfw.fyi)
@@ -13,14 +14,57 @@
 
 # What is select. slot.?
 
-**select. slot.** is a noncommercial, modified build of [slot](https://github.com/slot-cfw/slot), the Game Boy-centric frontend created by **Brandon Kowalski**, based on [pvaibhav's enhanced fork](https://github.com/pvaibhav/slot).
+**select. slot.** is a noncommercial, modified version of [Slot](https://github.com/slot-cfw/slot), the Game Boy-centric frontend created by **Brandon Kowalski**. It has **separate, non-interchangeable builds** for Anbernic H700 handhelds (based on [pvaibhav's enhanced fork](https://github.com/pvaibhav/slot)) and the Miyoo Mini family (based on [deanmarano's ARMv7 port](https://github.com/deanmarano/slot-miyoo)).
 
-This project builds on **`v1.16.0-pvaibhav.1`** and adds independent GB/GBC shaders, Pocket Color and Super Game Boy modes, per-core color correction, custom input mappings, performance/audio changes, online updates, and menu power management.
+The **H700 build** uses **`v1.16.0-pvaibhav.1`** and adds independent GB/GBC shaders, Pocket Color and Super Game Boy modes, per-core color correction, custom input mappings, performance/audio changes, online updates, and menu power management.
 
-Its name is **select. slot.**, not RGSP: the H700 build is intended for other compatible handhelds as well. The firmware currently supports **Game Boy, Game Boy Color and Game Boy Advance**, not yet NES, SNES, PS1 or N64.
+Its name is **select. slot.**, not RGSP: the H700 build is intended for other compatible handhelds as well. Both builds support **Game Boy, Game Boy Color and Game Boy Advance**, not NES, SNES, PS1 or N64. Their emulators, display paths and available extras differ; the features below labeled H700 must **not** be assumed to exist in the Miyoo version.
 
 > [!IMPORTANT]
 > Use extracted ROM files, not `.zip` or `.7z` archives. Games and proprietary BIOS files are **not** included.
+
+## Choose a build
+
+| Build | Version / download | Hardware and updates |
+| --- | --- | --- |
+| **Anbernic H700** | [Latest H700 release](https://github.com/Sinastrax/select-slot/releases/latest) | H700 ARM64; BaseOS/SD2 installation; its own [OTA update channel](ONLINE_UPDATES.md) and H700-specific Authentic shader features |
+| **Miyoo Mini family** | **[select. slot. 1.8.1 Ver. 26 — Miyoo](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver26)** | ARMv7; standalone SD-card build for compatible Miyoo Mini/Mini Plus/Mini Flip setups; **offline installation only** |
+
+**Do not install an H700 ZIP on a Miyoo or a Miyoo ZIP on an Anbernic H700 device.** The two releases are built from different source versions and are not compatible.
+
+### Miyoo Mini / Mini Plus / Mini Flip — Ver. 26
+
+The Miyoo version is based on [deanmarano/slot-miyoo](https://github.com/deanmarano/slot-miyoo) and **Slot 1.8.1**, not the H700 version's Slot 1.16.0/pvaibhav build. **Ver. 26** is the currently user-confirmed working Miyoo reference. Its most recent fix is correct **B / Back** navigation from the individual GB, GBC and GBA Screen menus.
+
+It includes GB/GBC/GBA emulation (mGBA/Gambatte for GB/GBC; gpSP/mGBA for GBA), **independent persisted scaling defaults for GB, GBC and GBA**, optional per-game scaling overrides, Original/Integer/Aspect Fit/Fill-Crop/Full Stretch modes, original brightness **1–9**, resume settings and independent menu Screen Off/Power Off timers. Display shaders are deliberately **disabled**.
+
+Choose **one** complete ZIP; back up the SD card, then extract the contents at its root, including hidden folders:
+
+| Download | Intended firmware | What it installs |
+| --- | --- | --- |
+| **[OnionOS Autoboot ZIP](https://github.com/Sinastrax/select-slot/releases/download/miyoo-v1.8.1-ver26/select-slot-1.8.1-ver26-miyoo-onion-autoboot.zip)** | **OnionOS 4.3+** on supported Mini / Mini Plus | Automatically launches Slot from `.tmp_update/startup/select-slot.sh`, without replacing OnionOS's boot manager or active theme |
+| **[Stock Firmware Autoboot ZIP](https://github.com/Sinastrax/select-slot/releases/download/miyoo-v1.8.1-ver26/select-slot-1.8.1-ver26-miyoo-stock-autoboot.zip)** | **Genuine stock Miyoo firmware only** | Automatically launches Slot using stock's `.tmp_update/runtime.sh` |
+| **[App-only ZIP](https://github.com/Sinastrax/select-slot/releases/download/miyoo-v1.8.1-ver26/select-slot-1.8.1-ver26-miyoo.zip)** | Manual launch; safest for uncertain/modified firmware | Installs the Slot app **without** any startup hook |
+
+> [!CAUTION]
+> **Never install the Stock Firmware Autoboot ZIP over OnionOS, Allium or another SD-card OS that already uses `.tmp_update/runtime.sh`.** It can overwrite that operating system's boot script. Always back up your card and use only the matching ZIP.
+
+#### Miyoo limitations and compatibility boundaries
+
+- **Only GB, GBC and GBA** are supported. No other console systems are included.
+- **No H700 Authentic/Pocket/SGB shaders, reflections or H700-specific controls.** Miyoo renders unfiltered software pixels; the shader menu is intentionally absent. **Aspect Fit is fractional at 640×480**, so some irregular pixel widths/shimmer are unavoidable without a visual trade-off.
+- **No online updater and no Wi-Fi dependency.** Install new releases by SD card. Battery saves, settings and save states should be backed up before upgrades.
+- **Hardware/firmware support is not universal.** The current OnionOS Miyoo setup has been confirmed working by the project user, but not every stock-firmware/model/autoboot combination is physically tested. Official OnionOS is for Mini/Mini Plus, **not Mini Flip**; choose an appropriate compatible alternative for the Flip. Allium should use app-only unless its launcher is verified.
+- **OS power management still takes priority.** OnionOS manages theme artwork, suspend and shutdown, and its native idle timer may act before Slot's menu timers. Other OS builds can handle these transitions differently.
+- **Core choice and game performance vary.** mGBA/Gambatte/gpSP save states are not guaranteed interchangeable. Different Miyoo variants may have different performance and input hardware. ROMs, proprietary BIOS files and user saves are not in the downloads.
+
+[**Miyoo full release and SHA-256 files**](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver26) · [Miyoo installation notes](miyoo/INSTALL.md) · [Miyoo build source](miyoo/)
+
+---
+
+## H700 features (Slot 1.16.0)
+
+The following feature descriptions, screenshots, online update instructions and Anbernic device list refer to the **H700 build** unless explicitly stated otherwise.
 
 ## Inherited in Slot 1.16.0
 
@@ -38,7 +82,7 @@ These are **upstream improvements**. The separate section below documents our ow
 
 ## What this fork adds
 
-These are the **custom changes in this project**, on top of both upstream Slot and pvaibhav's improvements. Everything listed here is retained in complete release builds.
+These are the **custom changes in the H700 build**, on top of upstream Slot and pvaibhav's improvements. Everything listed here is retained in complete **H700** release builds.
 
 ### Game Boy visuals and color
 
@@ -75,7 +119,7 @@ These are the **custom changes in this project**, on top of both upstream Slot a
 
 See [ONLINE_UPDATES.md](ONLINE_UPDATES.md) for technical packaging and release procedures.
 
-## How to install
+## How to install (H700)
 
 1. Install a compatible [BaseOS](https://github.com/pvaibhav/BaseOS) setup for your handheld and prepare the SD2 card following the [original Slot guide](https://slot-cfw.fyi).
 2. Back up saves, save states, and `Config/` before upgrading.
@@ -86,6 +130,9 @@ See [ONLINE_UPDATES.md](ONLINE_UPDATES.md) for technical packaging and release p
 Do not interchange save states made by different emulator cores; in-game battery saves and emulator save states have different compatibility requirements.
 
 ## Versions and release notes
+
+The H700 and Miyoo versions are independent. The **[Miyoo Ver. 26 official release](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver26)** is deliberately not marked as the H700 `latest` release and is not part of H700 OTA. The full Miyoo requirements and limitations are above.
+
 
 Release titles follow **select. slot. 1.16.0 Ver. 9**: the upstream Slot version appears immediately after the project name, followed by the custom revision number. For compatibility with existing OTA installations, Ver. 9 retains the technical version `1.16.0-rgsp.9` and tag `v1.16.0-rgsp.9`. Future functional versions increment the revision and include complete firmware updates; renaming alone does not generate a new release.
 
@@ -141,6 +188,7 @@ This is **not an RGSP-exclusive firmware**. Device-specific controls such as L3/
 # Credits and licensing
 
 - **Original Slot:** [slot-cfw/slot](https://github.com/slot-cfw/slot), created by **Brandon Kowalski**. The original artwork and interface are credited to their respective authors, including [Markus](https://github.com/MarkusMaribu). The original guide is at [slot-cfw.fyi](https://slot-cfw.fyi).
+- **Miyoo ARMv7 port:** [deanmarano/slot-miyoo](https://github.com/deanmarano/slot-miyoo), used for the separate Mini family build. Its firmware integration and other changes remain credited to Dean Marano and their upstream contributors.
 - **Enhanced Slot base:** [pvaibhav/slot](https://github.com/pvaibhav/slot), including its performance, Authentic shader, CPU scaling and other improvements. Its [wiki](https://github.com/pvaibhav/slot/wiki) documents many inherited features.
 - **select. slot.:** the patches, build scripts and other changes maintained in this repository. Source modifications were developed with AI assistance and reviewed through automated builds and device testing.
 - **Emulator and third-party assets:** mGBA, gpSP, Gambatte, shader sources, bezels and other third-party parts keep their own copyright and license conditions. The device build includes the applicable files in `System/licenses/`.
