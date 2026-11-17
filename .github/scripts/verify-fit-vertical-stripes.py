@@ -10,7 +10,7 @@ import math
 
 shader = Path("crates/slot-gfx/src/shaders.rs").read_text()
 assert shader.count("float fractional = abs(span.x - floor(span.x + 0.5));") == 1
-assert "float soften = 0.85 * smoothstep(0.03, 0.28, fractional);" in shader
+assert "float soften = 0.15 * smoothstep(0.03, 0.28, fractional);" in shader
 assert "gap.x = mix(gap.x, min(1.0, 1.0 / max(span.x, 1.0)), soften);" in shader
 assert shader.count("float stripeFractional = abs(lcdSpan.x - floor(lcdSpan.x + 0.5));") == 1
 assert "float stripeStrength = lcd_stripe" in shader
@@ -31,7 +31,7 @@ assert "mediump float wt" in lcd and "mediump float wb" in lcd
 def fade(scale: float) -> float:
     distance = abs(scale - math.floor(scale + 0.5))
     t = max(0.0, min(1.0, (distance - 0.03) / (0.28 - 0.03)))
-    return 0.85 * t * t * (3.0 - 2.0 * t)
+    return 0.15 * t * t * (3.0 - 2.0 * t)
 
 
 def gap(phase: float, scale: float) -> float:
@@ -63,14 +63,14 @@ for src, output in ((240, 640), (160, 427), (160, 533)):
         phase = ((x + 0.5) / scale % 1.0) * scale
         before.append(gap(phase, scale))
         after.append(softened(phase, scale))
-    assert fade(scale) > 0.7, (src, output, fade(scale))
-    assert max(after) - min(after) < (max(before) - min(before)) * 0.3
+    assert 0.12 < fade(scale) <= 0.15, (src, output, fade(scale))
+    assert max(after) - min(after) > (max(before) - min(before)) * 0.8
     assert abs(sum(after) / output - 1.0 / scale) < 0.005
     assert abs(sum(before) / output - sum(after) / output) < 0.005
 
 # At an exactly 3x output scale, Authentic is identical to the original.
-# At Fit, standard LCD-grid subpixel intensity falls to 15% of its old
+# At Fit, standard LCD-grid subpixel intensity retains 85% of its old
 # strength, with its horizontal LCD scanline effects unchanged.
-assert abs(0.9 * (1 - fade(640/240)) - 0.135) < .001
+assert abs(0.9 * (1 - fade(640/240)) - 0.765) < .001
 
 print("PASS: integer LCD grids unchanged, Fit vertical contrast reduced, average brightness preserved")
