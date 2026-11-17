@@ -61,3 +61,19 @@ Earlier experiments integrated SameBoy and developed the Pocket Color/Pocket SGB
 - With Authentic **Color Correction Off**, Pocket Color/Pocket SGB use neutral reflector white, and GBC/GBA shader branches use neutral (0,0,0) grid/black instead of calibrated panel tint. Pixel-gap geometry, grain, glass and LCD response timings are not changed. With correction **On**, the established calibrated/tinted look is unchanged.
 - The supplied minimal update contains only `System/slot`. Back up the old executable, `Config/slot.state`, and saves before replacing it.
 - **Physical hardware testing is required.** If sound clicks persist, the queue's overflow counters need measurement instead of increasing the resampler pitch deviation again.
+
+## Online updates (custom release channel)
+
+The original Slot **Settings → System → Check for Updates** interface is retained, but the
+`rgsp-online-updates.patch` routes future downloads to this repository's own GitHub Releases,
+**not** to the unmodified upstream or pvaibhav firmware. The updater verifies release size and
+SHA-256, stages the complete `System/` folder and installs on restart.
+
+Release ZIPs are built from all current patches, replace upstream's mGBA with the verified older
+core `c758314a639aa0066e7b65a8341448181b73c804`, and retain the standard licenses and
+source records. This is a **complete-build-only** release channel; an incomplete zip must never
+be published as an online update.
+
+**One manual installation** of an OTA-enabled full build is necessary to switch older firmware
+to our release channel. Releases are not offered until the matching firmware version has actually
+been published on GitHub. See [ONLINE_UPDATES.md](ONLINE_UPDATES.md) for the update and release process.
