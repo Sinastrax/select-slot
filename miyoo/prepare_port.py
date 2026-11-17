@@ -91,5 +91,31 @@ body = body.replace(old_keymon, '''    if [ -x /customer/app/jsonval ]; then
     if pgrep -x keymon >/dev/null 2>&1; then
         export SLOT_ONION_POWER_OWNER=1
     fi''', 1)
+# Opt-in physical display logging for diagnosing actual PWM vs software LCD
+# rendering. Captures launch and 2s / 10s afterwards without changing pixels.
+# The user can enable it by creating Config/trace-display.txt on their card.
+# No diagnostics are run unless explicitly enabled.
+trace_needle = '# Diagnostics, off by default because each writes a line per frame or per event'
+if body.count(trace_needle) != 1:
+    raise RuntimeError("Miyoo launcher: diagnostics anchor changed")
+body = body.replace(trace_needle, """# Opt-in display diagnostic (no brightness writes, or extra per-frame logging).
+if [ -f "$SD/Config/trace-display.txt" ]; then
+    (
+        duty=/sys/class/pwm/pwmchip0/pwm0/duty_cycle
+        for delay in 0 2 8; do
+            [ "$delay" -eq 0 ] || sleep "$delay"
+            echo "-- display check after cumulative $delay second(s) --"
+            echo "onion_brightness=\${SLOT_ONION_BRIGHTNESS:-unset}"
+            echo "onion_power_owner=\${SLOT_ONION_POWER_OWNER:-unset}"
+            echo "rotation=\${SLOT_FB_ROTATE:-unset}"
+            echo -n "pwm_duty="; cat "$duty" 2>/dev/null || echo unavailable
+            echo -n "pwm_enable="; cat /sys/class/pwm/pwmchip0/pwm0/enable 2>/dev/null || echo unavailable
+            echo -n "slot_saved_brightness="; sed -n 's/^brightness=//p' "$SD/Config/slot.state" 2>/dev/null | head -1
+            echo "process_keymon=$(pgrep -x keymon 2>/dev/null | head -1)"
+        done
+    ) >> "$LOGS/slot-display-debug.log" 2>&1 &
+fi
+
+""" + trace_needle, 1)
 launch.write_text(body)
 print("Gambatte, original framebuffer rotation, Onion power ownership and brightness sync registered")
