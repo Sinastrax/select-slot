@@ -135,6 +135,11 @@ jobs:
           # Pocket geometry may blend into the reflector at LCD dot gaps.
           python3 ../.github/scripts/fix-mgba-sgb-optical-chroma.py
           python3 ../.github/scripts/verify-mgba-sgb-optical-chroma.py
+          # Match Pocket Color's entire reflector/ink response, not just
+          # its physical gap outline; also render synthetic palette-swap
+          # frames and compare optical contrast at Integer and Fit scales.
+          python3 ../.github/scripts/fix-pocket-sgb-full-optics.py
+          python3 ../.github/scripts/verify-pocket-sgb-full-optics.py
 
       - name: Capture merged source for integration review
         uses: actions/upload-artifact@v4
@@ -147,6 +152,7 @@ jobs:
             upstream/crates/slot-ui/src/
             upstream/crates/slot-input/src/
             upstream/crates/slot-power/src/
+            upstream/pocket-sgb-visual-parity.ppm
             upstream/crates/slot/tests/
           if-no-files-found: error
 

@@ -1,9 +1,9 @@
-# select. slot. 1.16.0 Ver. 12
+# select. slot. 1.16.0 Ver. 13
 
-## Changes since select. slot. 1.16.0 Ver. 11
+## Changes since select. slot. 1.16.0 Ver. 12
 
-- **mGBA Pocket SGB visual regression:** Ver. 11 passed pre-colorized SGB pixels through Pocket Color's grayscale-ink-based reflector blend; saturated source colors could become dominated by the neutral reflector. The SGB path now preserves each dot's SGB RGB and uses the Pocket LCD's actual fractional/int-indexed separator coverage for its reflector instead of computing SGB color coverage from brightness. The original Pocket Color palette, physical optical model and other GB/GBA shaders are unchanged.
-- **Visible Fit pixel separation:** SGB uses the same integer-reference dot-gap geometry as Pocket Color, analytically integrated at fractional Fit sizes. Color Correction Off/On, mGBA hardware/palette settings, and reflection controls remain independent and unchanged.
-- Added source and analytical tests of SGB source-RGB conservation at pixel interiors, gap visibility and mGBA routing. Firmware is built and published as a full OTA-compatible update.
+- **Pocket SGB now reuses Pocket Color's full optical treatment, not just its pixel-gap outline.** Ver. 12 overrode Pocket Color's ink-derived reflector calculation with a raw geometric mask. That made roughly half the synthetic Fit image act like reflector, instead of approximately 6% with Pocket Color's physical optical model. Ver. 13 restores the same Pocket Color ink-dependent gap response, multi-tap shadow, ghosting, reflector and glass calculations for SGB.
+- **Keep the correct mGBA SGB colors.** SGB source RGB is unchanged at dot interiors. The real geometric gap is only an upper bound on reflector coverage to prevent Ver. 11's gray/washed-out saturated SGB pixels. The calibrated GBC transfer remains exclusive to Pocket Color, the optional SNES CRT response remains exclusive to SGB.
+- Added CPU-modeled rendered reference frames for two distinct SGB palettes against the Pocket Color optical reference, including fractional Fit gaps. The CI stores a visual comparison preview and checks optical-gap coverage. All previous mGBA, Pocket Color, shader, settings, and OTA compatibility tests remain.
 
-**Hardware verification required:** CI can prove the GLSL compiles and the SGB path preserves chromatic pixel interiors and geometric LCD gaps, but cannot verify the precise screen appearance or mGBA FPS on physical RG35XX H hardware.
+**Hardware check:** Synthetic reference renders and OpenGL ES compilation cannot replace a photograph or FPS measurement from a real H700 device. Verify SGB appearance and performance on RG35XX H before considering the issue fully resolved.
