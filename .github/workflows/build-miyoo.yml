@@ -1,4 +1,4 @@
-name: Build select. slot. Miyoo Fit-aware Dot
+name: Build select. slot. Miyoo Shimmerless
 
 on:
   workflow_dispatch:
@@ -38,7 +38,7 @@ jobs:
           curl -fsSL https://taskfile.dev/install.sh | sh -s -- -b "$HOME/.local/bin"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-      - name: Build Miyoo fit-aware Dot preview
+      - name: Build Miyoo Shimmerless-only preview
         shell: bash
         run: bash miyoo/build.sh
 
