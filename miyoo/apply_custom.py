@@ -9,22 +9,24 @@ import sys
 src = Path(sys.argv[1])
 dest = Path(sys.argv[2])
 changes = {}
+desired = {}
 
 def edit(path, operations):
     file = src / path
-    old = file.read_text()
-    new = old
+    original = file.read_text()
+    new = desired.get(path, original)
     for before, after in operations:
         count = new.count(before)
         if count != 1:
             raise RuntimeError(f"{path}: expected exactly one match, found {count}: {before[:100]!r}")
         new = new.replace(before, after, 1)
     diff = "".join(unified_diff(
-        old.splitlines(keepends=True), new.splitlines(keepends=True),
+        original.splitlines(keepends=True), new.splitlines(keepends=True),
         fromfile=f"a/{path}", tofile=f"b/{path}", n=4
     ))
     if not diff:
         raise RuntimeError(f"{path}: no changes")
+    desired[path] = new
     changes[path] = diff
 
 edit("crates/slot-store/src/core.rs", [
