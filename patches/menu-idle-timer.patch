@@ -1,0 +1,96 @@
+diff --git a/crates/slot/src/menu_idle.rs b/crates/slot/src/menu_idle.rs
+new file mode 100644
+--- /dev/null
++++ b/crates/slot/src/menu_idle.rs
+@@ -0,0 +1,91 @@
++use slot_ui::Millis;
++
++/// Tracks inactivity on the shelf and system menus, not during gameplay.
++#[derive(Default)]
++pub struct MenuIdle {
++    last_input: Millis,
++    blanked: bool,
++}
++
++#[derive(Debug, Clone, Copy, PartialEq, Eq)]
++pub enum Event {
++    None,
++    ScreenOff,
++    ScreenOn,
++    Shutdown,
++}
++
++impl MenuIdle {
++    /// A real input begins a new interval. Return true when the screen needs waking.
++    pub fn input(&mut self, now: Millis) -> bool {
++        self.last_input = self.last_input.max(now);
++        std::mem::take(&mut self.blanked)
++    }
++
++    /// Background activity isn't inactivity: completing work starts a fresh interval.
++    pub fn tick(&mut self, now: Millis, screen_off_min: u8, power_off_min: u8, allowed: bool) -> Event {
++        if !allowed {
++            self.last_input = now;
++            return if std::mem::take(&mut self.blanked) {
++                Event::ScreenOn
++            } else {
++                Event::None
++            };
++        }
++        let elapsed = now.saturating_sub(self.last_input);
++        if power_off_min != 0 && elapsed >= u64::from(power_off_min) * 60_000 {
++            return Event::Shutdown;
++        }
++        if screen_off_min != 0 && elapsed >= u64::from(screen_off_min) * 60_000 && !self.blanked {
++            self.blanked = true;
++            return Event::ScreenOff;
++        }
++        Event::None
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::{Event, MenuIdle};
++
++    #[test]
++    fn screen_blanks_then_wakes_and_resets_shutdown_timer() {
++        let mut idle = MenuIdle::default();
++        assert_eq!(idle.tick(179_999, 3, 15, true), Event::None);
++        assert_eq!(idle.tick(180_000, 3, 15, true), Event::ScreenOff);
++        assert_eq!(idle.tick(240_000, 3, 15, true), Event::None);
++        assert!(idle.input(240_000));
++        assert_eq!(idle.tick(419_999, 3, 15, true), Event::None);
++        assert_eq!(idle.tick(420_000, 3, 15, true), Event::ScreenOff);
++        assert_eq!(idle.tick(1_140_000, 3, 15, true), Event::Shutdown);
++    }
++
++    #[test]
++    fn games_and_busy_operations_never_accumulate_idle_time() {
++        let mut idle = MenuIdle::default();
++        assert_eq!(idle.tick(200_000, 3, 5, false), Event::None);
++        assert_eq!(idle.tick(200_001, 3, 5, true), Event::None);
++        assert_eq!(idle.tick(500_000, 3, 5, false), Event::None);
++        assert_eq!(idle.tick(500_001, 3, 5, true), Event::None);
++    }
++
++    #[test]
++    fn disabling_both_timers_is_supported() {
++        let mut idle = MenuIdle::default();
++        assert_eq!(idle.tick(12_000_000, 0, 0, true), Event::None);
++    }
++
++    #[test]
++    fn busy_state_relights_a_blanked_screen() {
++        let mut idle = MenuIdle::default();
++        assert_eq!(idle.tick(60_000, 1, 5, true), Event::ScreenOff);
++        assert_eq!(idle.tick(60_001, 1, 5, false), Event::ScreenOn);
++        assert!(!idle.input(60_001));
++    }
++
++    #[test]
++    fn shutdown_can_precede_screen_off_if_configured() {
++        let mut idle = MenuIdle::default();
++        assert_eq!(idle.tick(300_000, 15, 5, true), Event::Shutdown);
++    }
++}
