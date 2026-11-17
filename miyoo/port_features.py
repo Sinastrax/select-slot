@@ -191,9 +191,8 @@ edit(video, "impl VideoMode {\n", """impl VideoMode {
         Self::ALL[(i + Self::ALL.len() - 1) % Self::ALL.len()]
     }
 """)
-edit(video,
-     "if mode == VideoMode::Actual || (w, h) == (SRC_W, SRC_H)",
-     "if matches!(mode, VideoMode::Actual | VideoMode::Integer) || (w, h) == (SRC_W, SRC_H)")
+# The Miyoo port's source_rect already returns WHOLE_TEXTURE for every mode.
+# Scaling is entirely in base_size, so preserve this existing invariant.
 
 # The effective scaled picture is proportional to each platform's visible
 # picture; the surrounding 240x160 backing texture may be clipped by design.
