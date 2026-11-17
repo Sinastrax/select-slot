@@ -9,7 +9,7 @@ PORT="$WORK/slot-miyoo"
 STAGE="$PORT/release/stage"
 PORT_COMMIT="d096bdb87f25f3aba62de6b40ef859b61d841e43"
 SLOT_VERSION="1.8.1"
-CUSTOM_VERSION="19"
+CUSTOM_VERSION="20"
 ZIP="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo.zip"
 
 for command in git task docker zip unzip python3 file; do
@@ -45,22 +45,20 @@ python3 "$ROOT/miyoo/prepare_port.py" "$PORT"
   task patch
 )
 python3 "$ROOT/miyoo/apply_custom.py" "$PORT/upstream/slot" "$PORT/patches/0028-custom-gambatte-defaults.patch"
-# The patched source is temporarily the original upstream tree; validate
-# generated changes BEFORE task release applies the generated patch.
+# Verify every control path is disabled in the generated patch before release.
 shader_patch="$PORT/patches/0028-custom-gambatte-defaults.patch"
-grep -Fq '+    pub const GB: [Shader; 2] = [Shader::Off, Shader::Shimmerless];' "$shader_patch"
-grep -Fq '+    pub const GBA: [Shader; 2] = [Shader::Off, Shader::Shimmerless];' "$shader_patch"
-grep -Fq '+            slot_store::Shader::Shimmerless => ScreenEffect::Shimmerless,' "$shader_patch"
-grep -Fq '+        Shader::Shimmerless => QuickValue::Shimmerless,' "$shader_patch"
-grep -Fq '+            Shader::Shimmerless => Toast::ShaderShimmerless,' "$shader_patch"
-grep -Fq '+            QuickValue::Shimmerless => "Shimmerless",' "$shader_patch"
-grep -Fq '+        if self.effect == ScreenEffect::Shimmerless {' "$shader_patch"
-grep -Fq '+fn draw_shimmerless(' "$shader_patch"
-grep -Fq '+fn shimmer_axis(' "$shader_patch"
-grep -Fq '+    pub const ALL: [QuickValue; 42]' "$shader_patch"
-# No LCD, Dot, Grid or Simpletex in the platform-visible shader choices.
-! grep -E '^\+    pub const (GBA|GB): .*Shader::(Dot|Lcd3x|Grid|Simpletex)' "$shader_patch"
-echo "Verified Off/Shimmerless-only menu, persisted value, toast, frontend and scaler"
+grep -Fq '+        compositor.set_screen_effect(ScreenEffect::None);' "$shader_patch"
+grep -Fq '+    fn step_shader(&mut self, _right: bool) {' "$shader_patch"
+grep -Fq '+    pub fn screen_shader(&self) -> Shader {' "$shader_patch"
+grep -Fq '+        Shader::Off' "$shader_patch"
+grep -Fq '+            QuickRow::Shader, QuickRow::GbaShader,' "$shader_patch"
+grep -Fq '+            shader_gba: Shader::Off,' "$shader_patch"
+grep -Fq '+            shader_gb: Shader::Off,' "$shader_patch"
+grep -Fq '+            shader_gbc: Shader::Off,' "$shader_patch"
+# No shader render implementation, game shader backend or panel path is modified.
+! grep -Eq '^diff --git a/crates/slot-gfx/' "$shader_patch"
+! grep -Eq '^\+.*(draw_shimmerless|shimmer_axis|dot_axis_factor)' "$shader_patch"
+echo "Verified shader-free Miyoo frontend, menus, shortcuts and default state"
 (
   cd "$PORT"
   task unpatch
@@ -100,7 +98,7 @@ cmp -s "$STAGE/System/launch_frontend.sh" "$PORT/card/System/launch_frontend.sh"
     exit 1
 }
 # Only the PWM implementation and its test may differ in slot-power.
-grep -Fq "diff --git a/crates/slot-gfx/src/soft/mod.rs" "$PORT/patches/0028-custom-gambatte-defaults.patch"
+! grep -Fq "diff --git a/crates/slot-gfx/" "$PORT/patches/0028-custom-gambatte-defaults.patch"
 grep -Fq 'diff --git a/crates/slot-power/src/device.rs' "$PORT/patches/0028-custom-gambatte-defaults.patch"
 ! grep -E '^diff --git a/crates/slot-power/src/(power|lib)\.rs' "$PORT/patches/0028-custom-gambatte-defaults.patch"
 # Full level range must be wired through settings, menu, and hardware.
@@ -113,15 +111,15 @@ grep -Fq 'let percent: u32' "$PORT/patches/0028-custom-gambatte-defaults.patch"
 cp "$ROOT/miyoo/onion-autoboot.sh" "$STAGE/System/autoboot/onion-startup.sh"
 cp "$ROOT/miyoo/INSTALL.md" "$STAGE/System/select-slot-install.md"
 cat > "$STAGE/System/select-slot-version.txt" <<EOF
-select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - CPU Shimmerless Fit scaling
+select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - shaders disabled
 Base: https://github.com/deanmarano/slot-miyoo
 Pinned original: $PORT_COMMIT
 GB/GBC: Miyoo-native mGBA default; Gambatte optional; GBA: gpSP default (mGBA alternative)
 Per-game scaling: Original, Integer, Aspect Fit, Fill/Crop, Full Stretch
 Resume On Power / Insert: independent
 Brightness: original 1-9 PWM values, boost levels 10-12 (20%,30%,50% of PWM period)
-Framebuffer: original Miyoo Off path, optional source-coverage Shimmerless CPU scaler; orientation and launcher unchanged
-Shader choices: Off / Shimmerless only (GB, GBC, GBA)
+Framebuffer: original unfiltered Miyoo CPU renderer; no effects, orientation and launcher unchanged
+Shaders: disabled globally for GB/GBC/GBA; menu controls hidden and shortcuts inert; pre-existing shader settings ignored
 Onion PWM: period-aware scaling of boost steps; Onion keymon owns POWER and BMO; Slot uses Onion PWM instead of legacy backlight/dispdbg
 OnionOS BMO: native theme and power path
 Experimental preview; no H700 OTA publication
