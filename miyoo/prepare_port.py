@@ -79,5 +79,22 @@ body = body.replace(old_visuals, """    export SLOT_ONION_VISUALS=1
         export SLOT_ONION_POWER_OWNER=1
     fi
 fi""", 1)
+# The Mini and Mini Plus should start with Onion's actual user brightness
+# instead of Slot's independent level-5 default. Onion's keymon restores that
+# brightness on wake, so starting at the same level avoids visible jumps.
+old_keymon = '''    if pgrep -x keymon >/dev/null 2>&1; then
+        export SLOT_ONION_POWER_OWNER=1
+    fi'''
+if body.count(old_keymon) != 1:
+    raise RuntimeError("Miyoo launcher: cannot find Onion keymon block")
+body = body.replace(old_keymon, '''    if [ -x /customer/app/jsonval ]; then
+        onion_brightness=$(/customer/app/jsonval brightness 2>/dev/null)
+        case "$onion_brightness" in
+            0|1|2|3|4|5|6|7|8|9|10) export SLOT_ONION_BRIGHTNESS="$onion_brightness" ;;
+        esac
+    fi
+    if pgrep -x keymon >/dev/null 2>&1; then
+        export SLOT_ONION_POWER_OWNER=1
+    fi''', 1)
 launch.write_text(body)
-print("Gambatte, device-specific framebuffer orientation and Onion power ownership registered")
+print("Gambatte, per-device orientation, Onion power ownership and brightness sync registered")
