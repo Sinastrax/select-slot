@@ -72,7 +72,7 @@ replace_once(
 # shader's highest available default float precision instead (highp when
 # GL_FRAGMENT_PRECISION_HIGH exists; mediump only on older GPUs without it).
 lcd_start = source.index("    } else if (u_mode > 6.5) {")
-lcd_end = source.index("    } else if (!inside) {", lcd_start)
+lcd_end = source.index("    } else if (u_mode > 4.5) {", lcd_start)
 block = source[lcd_start:lcd_end]
 assert block.count("mediump ") >= 10, "LCD-grid block precision annotations changed"
 new_block = block.replace("mediump ", "")
