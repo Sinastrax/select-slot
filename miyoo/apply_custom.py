@@ -597,6 +597,128 @@ fn extended_brightness_respects_live_onion_pwm_period() {
 fn a_shorter_period_clamps_rather_than_failing() {'''),
 ])
 
+
+# Restore requested physical PWM only when another owner has changed it.
+# No new log collection or framebuffer/filter adjustments. The last target
+# is cached at each genuine Slot write, then read back at a low frequency by
+# the app; when Onion reasserts its own brightness, the mismatch is corrected.
+edit("crates/slot-power/src/lib.rs", [
+    ('''    fn set_backlight(&mut self, step: u8);
+    fn battery(&self) -> Option<Battery>;''',
+     '''    fn set_backlight(&mut self, step: u8);
+    /// Optional readback: None on hardware without a readable backlight.
+    fn backlight_is_current(&self) -> Option<bool> {
+        None
+    }
+    fn battery(&self) -> Option<Battery>;'''),
+])
+edit("crates/slot-power/src/power.rs", [
+    ('''    pub fn battery(&self) -> Option<Battery> {''',
+     '''    pub fn restore_if_overridden(&mut self) {
+        // Respect SLOT's doze: never illuminate a screen it has put to sleep.
+        if !self.closed && self.platform.backlight_is_current() == Some(false) {
+            self.platform.set_backlight(self.level);
+        }
+    }
+
+    pub fn battery(&self) -> Option<Battery> {'''),
+])
+edit("crates/slot-power/src/device.rs", [
+    ('''    backlight: Option<Backlight>,
+    max_brightness: u32,''',
+     '''    backlight: Option<Backlight>,
+    last_pwm_target: Option<u32>,
+    max_brightness: u32,'''),
+    ('''            backlight,
+            max_brightness,''',
+     '''            backlight,
+            last_pwm_target: None,
+            max_brightness,'''),
+    ('''                write(dir.join("duty_cycle"), duty.to_string());''',
+     '''                self.last_pwm_target = Some(duty);
+                write(dir.join("duty_cycle"), duty.to_string());'''),
+    ('''    fn battery(&self) -> Option<Battery> {''',
+     '''    fn backlight_is_current(&self) -> Option<bool> {
+        let Some(Backlight::Pwm(dir)) = &self.backlight else {
+            return None;
+        };
+        let target = self.last_pwm_target?;
+        let actual = read_number(&dir.join("duty_cycle"))?;
+        Some(actual == target)
+    }
+
+    fn battery(&self) -> Option<Battery> {'''),
+])
+edit("crates/slot/src/app.rs", [
+    ('''        // Called only after a sizeable process gap (standby/resume). Onion
+        // keymon restores its own setting *before* resuming this process;
+        // reapply the user's Slot level once after that handoff.
+        if self.root.as_ref().is_some_and(|r| r.join(".tmp_update/bin/keymon").is_file()) {
+            if let Some(power) = &mut self.power {
+                power.set_backlight(self.state.brightness);
+            }
+        }''',
+     '''        // OnionOS may reassert its own PWM between SLOT frames, including
+        // following resume. Read back the channel and write only on mismatch.
+        // Power::restore_if_overridden respects SLOT's own screen-off state.
+        if self.root.as_ref().is_some_and(|r| r.join(".tmp_update/bin/keymon").is_file()) {
+            if let Some(power) = &mut self.power {
+                power.restore_if_overridden();
+            }
+        }'''),
+])
+edit("crates/slot/src/frontend.rs", [
+    ('''    last: Instant,
+    draws: Vec<Draw>,''',
+     '''    last: Instant,
+    last_pwm_check: Instant,
+    draws: Vec<Draw>,'''),
+    ('''            last: now,
+            draws: Vec::new(),''',
+     '''            last: now,
+            last_pwm_check: now,
+            draws: Vec::new(),'''),
+    ('''        let elapsed = self.last.elapsed();
+        if elapsed >= Duration::from_secs(1) {
+            // Keymon may have replaced Slot's PWM while we were stopped.
+            // Reapply once, not continuously and not on every game frame.
+            self.session.app_mut().restore_onion_backlight();
+        }
+        let dt = elapsed.as_secs_f32().min(MAX_DT);
+        self.last = Instant::now();
+        self.session.update(dt);''',
+     '''        let elapsed = self.last.elapsed();
+        let dt = elapsed.as_secs_f32().min(MAX_DT);
+        self.last = Instant::now();
+        self.session.update(dt);
+        // Check a sysfs number at most once per 400ms, not once per frame.
+        // Only correct actual hardware drift caused by a competing owner.
+        // After Onion suspend/wake the next live frame also checks the PWM.
+        if self.last_pwm_check.elapsed() >= Duration::from_millis(400) {
+            self.session.app_mut().restore_onion_backlight();
+            self.last_pwm_check = Instant::now();
+        }'''),
+])
+edit("crates/slot-power/tests/device.rs", [
+    ('''#[test]
+fn extended_brightness_respects_live_onion_pwm_period() {''',
+     '''#[test]
+fn pwm_readback_detects_competing_onion_writer() {
+    let d = pwm_sysfs("800");
+    let mut p = platform(&d);
+    p.set_backlight(12);
+    assert_eq!(p.backlight_is_current(), Some(true));
+    let path = d.path().join("class/pwm/pwmchip0/pwm0/duty_cycle");
+    fs::write(&path, "35\\n").unwrap();
+    assert_eq!(p.backlight_is_current(), Some(false));
+    p.set_backlight(12);
+    assert_eq!(p.backlight_is_current(), Some(true));
+}
+
+#[test]
+fn extended_brightness_respects_live_onion_pwm_period() {'''),
+])
+
 # Invariants: only allow the two explicit PWM backlight edits above in
 # slot-power; framebuffer and compositor source stay original. Launcher,
 # keymon, theme, screen-off / power lifecycle paths are never patched.
@@ -612,6 +734,8 @@ allowed = {
     "crates/slot-power/src/device.rs",
     "crates/slot-power/tests/device.rs",
     "crates/slot/src/frontend.rs",
+    "crates/slot-power/src/lib.rs",
+    "crates/slot-power/src/power.rs",
 }
 if set(changes) != allowed:
     raise RuntimeError(f"rebuild source changed unexpected paths: {sorted(set(changes) ^ allowed)}")
