@@ -467,14 +467,29 @@ edit("crates/slot/src/app.rs", [
         // Let keymon own LCD blanking, active-theme artwork and suspend/wake.
         // In particular do not execute Slot's doze() -> PWM duty 0 before
         // Onion's bootScreen has a chance to render.
-        if self.root.as_ref().is_some_and(|r| r.join(".tmp_update/runtime.sh").is_file()) {
+        // Only OnionOS gets POWER from its own keymon. Stock autoboot
+        // also installs runtime.sh but has no Onion runtime/keymon.
+        if self.root.as_ref().is_some_and(|r| {
+            r.join(".tmp_update/runtime.sh").is_file()
+                && r.join(".tmp_update/onionVersion/version.txt").is_file()
+        }) {
             match action {
                 Action::PowerPress => {
                     self.state_writer.flush();
                     self.flush_resume();
                     return;
                 }
-                Action::PowerTap | Action::PowerHold => return,
+                Action::PowerTap => return, // OnionOS short-press suspend
+                Action::PowerHold => {
+                    // Initiate shutdown before OnionOS keymon's 0.5s
+                    // deepsleep path can suspend us and delay power-off
+                    // by its thirty-second fallback. We also exit the
+                    // interactive Slot menu immediately.
+                    self.menu_shutdown_onion = true;
+                    self.begin_power_off();
+                    self.act_at = self.now();
+                    return;
+                }
                 _ => {}
             }
         }
@@ -952,8 +967,7 @@ edit("crates/slot/src/app.rs", [
             // runtime additionally ships bin/ and script/ directories.
             self.menu_shutdown_onion = self.root.as_ref().is_some_and(|root| {
                 root.join(".tmp_update/runtime.sh").is_file()
-                    && root.join(".tmp_update/bin").is_dir()
-                    && root.join(".tmp_update/script").is_dir()
+                    && root.join(".tmp_update/onionVersion/version.txt").is_file()
             });
             self.begin_power_off();
             return;
@@ -1118,6 +1132,16 @@ edit("crates/slot/src/app.rs", [
             | QuickRow::DefaultScaling => return,'''),
 ])
 
+
+# OnionOS keymon starts its own shutdown/deepsleep at about 0.5s of POWER
+# hold, before Slot's upstream 1000ms PowerHold event. Shorten the Miyoo
+# gesture specifically, so a deliberate hold can flush, mark shutdown and
+# exit before keymon suspends the app. Quick taps still belong to OnionOS.
+edit("crates/slot-input/src/gesture.rs", [
+    ('''pub const POWER_HOLD_MS: Millis = 1000;''',
+     '''pub const POWER_HOLD_MS: Millis = 350;'''),
+])
+
 # Ver. 24: shutting down is a terminal state, not an active menu. Ignore all
 # controller actions once shutdown begins (including repeated power/menu
 # actions). Slot's own shutdown overlay remains available for stock firmware.
@@ -1162,6 +1186,7 @@ allowed = {
     "crates/slot-power/src/power.rs",
     "crates/slot-power/tests/device.rs",
     "crates/slot/src/frontend.rs",
+    "crates/slot-input/src/gesture.rs",
 }
 if set(changes) != allowed:
     raise RuntimeError(f"rebuild source changed unexpected paths: {sorted(set(changes) ^ allowed)}")
