@@ -9,7 +9,7 @@ PORT="$WORK/slot-miyoo"
 STAGE="$PORT/release/stage"
 PORT_COMMIT="d096bdb87f25f3aba62de6b40ef859b61d841e43"
 SLOT_VERSION="1.8.1"
-CUSTOM_VERSION="15"
+CUSTOM_VERSION="16"
 ZIP="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo.zip"
 
 for command in git task docker zip unzip python3 file; do
@@ -97,10 +97,10 @@ grep -Fq 'let percent: u32' "$PORT/patches/0028-custom-gambatte-defaults.patch"
 cp "$ROOT/miyoo/onion-autoboot.sh" "$STAGE/System/autoboot/onion-startup.sh"
 cp "$ROOT/miyoo/INSTALL.md" "$STAGE/System/select-slot-install.md"
 cat > "$STAGE/System/select-slot-version.txt" <<EOF
-select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - Onion PWM priority
+select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - native mGBA defaults, retained Onion BMO standby
 Base: https://github.com/deanmarano/slot-miyoo
 Pinned original: $PORT_COMMIT
-GB/GBC: Gambatte; GBA: gpSP; mGBA available for legacy selections
+GB/GBC: Miyoo-native mGBA default; Gambatte optional; GBA: gpSP default (mGBA alternative)
 Per-game scaling: Original, Integer, Aspect Fit, Fill/Crop, Full Stretch
 Resume On Power / Insert: independent
 Brightness: original 1-9 PWM values, boost levels 10-12 (20%,30%,50% of PWM period)
