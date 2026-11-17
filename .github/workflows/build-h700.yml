@@ -295,7 +295,13 @@ jobs:
           assert archive.is_file(), d["zip"]
           assert archive.stat().st_size == d["size"]
           assert hashlib.sha256(archive.read_bytes()).hexdigest() == d["sha256"]
-          print("Validated", archive.name, d["sha256"])
+          source = d["source"]
+          assert source["file"] == "mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz"
+          source_file = root / source["file"]
+          assert source_file.is_file()
+          assert source_file.stat().st_size == source["size"]
+          assert hashlib.sha256(source_file.read_bytes()).hexdigest() == source["sha256"]
+          print("Validated", archive.name, d["sha256"], source_file.name, source["sha256"])
           PY
 
       - uses: actions/checkout@v4
@@ -308,14 +314,16 @@ jobs:
         run: |
           set -euo pipefail
           zip="release/slot-${RELEASE_TAG}-h700.zip"
+          source="release/mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz"
           test -s "$zip"
+          test -s "$source"
           TAG="$RELEASE_TAG"
           if [[ "$TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)-(rgsp|custom|select)\.([0-9]+)$ ]]; then
             DISPLAY_VERSION="${BASH_REMATCH[1]} Ver. ${BASH_REMATCH[3]}"
           else
             DISPLAY_VERSION="${TAG#v}"
           fi
-          gh release create "$RELEASE_TAG" "$zip" release/versions.json \
+          gh release create "$RELEASE_TAG" "$zip" "$source" release/versions.json \
             --repo "$GITHUB_REPOSITORY" \
             --title "select. slot. $DISPLAY_VERSION" \
             --notes-file RELEASE_NOTES.md
