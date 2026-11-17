@@ -28,6 +28,21 @@ This is an **experimental ARMv7 app build** for the **original Miyoo Mini**, Miy
 
 This is an **experimental preview**. GitHub Actions successfully cross-compiled and packaged the core, scaling, and system changes, but no Custom slot Miyoo hardware or frame-time test has been performed. Do not describe the Authentic shader work as completed.
 
+## Boot directly into Custom slot on OnionOS 4.3
+
+**Optional, not enabled by the ZIP.** This uses Onion's documented startup-script hook and preserves OnionOS and its existing `.tmp_update/runtime.sh`. It has been inspected against Onion 4.3's startup code but **has not been device-tested with Custom slot**.
+
+1. Install and manually launch Custom slot once to check that it works, especially audio.
+2. In Onion, go to **Apps → Tweaks → System → Startup → Auto-resume last game → Off**, avoiding competition with Onion's existing last-game resume.
+3. On the SD card, copy `System/autoboot/onion-startup.sh` to `.tmp_update/startup/custom-slot.sh`. Create the `.tmp_update/startup` folder if it is absent. Keep the original file as the reusable template.
+4. Restart. Onion initializes its screen/audio/system, launches Custom slot via its standard wrapper and waits for it to exit. When Slot exits, Onion's normal MainUI startup continues.
+
+**Do not copy the stock-firmware** `System/autoboot/runtime.sh` **over Onion's** `.tmp_update/runtime.sh`. That would replace Onion's boot manager and can prevent the OS from loading normally.
+
+**Disable autoboot:** power off, put the card in a PC, delete or rename only `.tmp_update/startup/custom-slot.sh`. Alternatively, create an empty `.tmp_update/config/.skip-custom-slot-autoboot` file; remove it to restore autoboot. Neither action deletes saves or changes the firmware.
+
+**Stock Miyoo firmware** instead supports the original port's separate `System/autoboot/runtime.sh` approach; that file is **not for OnionOS or Allium**.
+
 ## Building
 
 Requires Git, Docker, go-task, Python 3 and standard ZIP tools:
