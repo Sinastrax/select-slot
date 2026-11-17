@@ -1,10 +1,11 @@
-name: Build Custom slot H700
+name: Build Custom slot H700 (upstream 1.16 port)
 
 on:
   workflow_dispatch:
   push:
     branches:
       - main
+      - integration/slot-1.16.0
     tags:
       - "v*-custom.*"
       - "v*-rgsp.*"
@@ -32,7 +33,7 @@ jobs:
         run: |
           set -euo pipefail
           curl -fsSL --retry 5 --retry-all-errors \
-            "https://github.com/pvaibhav/slot/archive/refs/tags/v1.15.3-pvaibhav.1.tar.gz" \
+            "https://github.com/pvaibhav/slot/archive/refs/tags/v1.16.0-pvaibhav.1.tar.gz" \
             -o /tmp/upstream-slot.tar.gz
           mkdir upstream
           tar -xzf /tmp/upstream-slot.tar.gz --strip-components=1 -C upstream
