@@ -117,6 +117,8 @@ jobs:
           # Validate the exact merged shader against OpenGL ES 2.0, not only Rust syntax.
           # glslang-tools is installed in the next step after apt metadata setup.
           python3 ../.github/scripts/verify-authentic-colour.py
+          python3 ../.github/scripts/reduce-fit-vertical-stripes.py
+          python3 ../.github/scripts/verify-fit-vertical-stripes.py
 
       - name: Capture merged source for integration review
         uses: actions/upload-artifact@v4
