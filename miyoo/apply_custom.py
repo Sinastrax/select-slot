@@ -75,7 +75,10 @@ edit("crates/slot/src/core.rs", [
         if let Some((key, value)) = colour_option(which, platform, colour) {
             core.set_option(key, value);
         }
-        core.set_option("gambatte_gbc_color_correction_mode", "fast");
+        // Gambatte's "fast" correction deliberately darkens and desaturates.
+        // Preserve the upstream accurate correction when enabled; Off stays Off.
+        core.set_option("gambatte_gbc_color_correction_mode", "accurate");
+        core.set_option("gambatte_dark_filter_level", "0");
     }
     if which == Core::Gpsp {
         core.set_option("gpsp_serial", serial);'''),
