@@ -108,6 +108,88 @@ edit("crates/slot/src/session.rs", [
                     _ => emu.set_option("mgba_gb_colors", p.core_name()),
                 }'''),
 ])
+# Per-game scaling stored in Config/video_mode.txt.
+edit("crates/slot/src/video_mode.rs", [
+    ("    Actual,\n    Stretch,\n}", "    Actual,\n    Stretch,\n    Integer,\n    Aspect,\n    Fill,\n    FullStretch,\n}"),
+    ('            VideoMode::Stretch => "stretch",',
+     '            VideoMode::Stretch => "stretch",\n            VideoMode::Integer => "integer",\n            VideoMode::Aspect => "aspect",\n            VideoMode::Fill => "fill",\n            VideoMode::FullStretch => "full-stretch",'),
+    ('            "stretch" => Some(VideoMode::Stretch),',
+     '            "stretch" => Some(VideoMode::Stretch),\n            "integer" => Some(VideoMode::Integer),\n            "aspect" => Some(VideoMode::Aspect),\n            "fill" => Some(VideoMode::Fill),\n            "full-stretch" => Some(VideoMode::FullStretch),'),
+    ('''    }
+}
+
+pub fn video_mode_for''',
+     '''    }
+
+    pub fn next(self) -> VideoMode {
+        match self {
+            VideoMode::Actual | VideoMode::FullStretch => VideoMode::Integer,
+            VideoMode::Integer => VideoMode::Aspect,
+            VideoMode::Aspect | VideoMode::Stretch => VideoMode::Fill,
+            VideoMode::Fill => VideoMode::FullStretch,
+        }
+    }
+
+    pub fn previous(self) -> VideoMode {
+        match self {
+            VideoMode::Actual | VideoMode::Integer => VideoMode::FullStretch,
+            VideoMode::Aspect => VideoMode::Integer,
+            VideoMode::Fill | VideoMode::Stretch => VideoMode::Aspect,
+            VideoMode::FullStretch => VideoMode::Fill,
+        }
+    }
+}
+
+pub fn video_mode_for'''),
+    ('''    if (w, h) == (SRC_W, SRC_H) {
+        return fit_width(PICTURE);
+    }
+    match mode {
+        // The frame, not just the game inside it: the console body is drawn
+        // around this and its opening has to land on the picture, so both
+        // scale together. See backdrop::frame_in.
+        VideoMode::Actual => fit_width(PICTURE),
+        // Stretch overflows the panel on purpose -- what hangs over the side
+        // is paper, and clipping it is how the picture fills the height -- so
+        // it is not fitted.
+        VideoMode::Stretch => {
+            let k = out_h() as f32 / h as f32;
+            [SRC_W as f32 * k, SRC_H as f32 * k]
+        }
+    }''',
+     '''    // Source texture is 240x160 even for 160x144 GB; scale both together.
+    let native_w = w as f32;
+    let native_h = h as f32;
+    let panel_w = out_w() as f32;
+    let panel_h = out_h() as f32;
+    match mode {
+        VideoMode::Actual => fit_width(PICTURE),
+        VideoMode::Integer => {
+            let k = (panel_w / native_w).min(panel_h / native_h).floor().max(1.0);
+            [SRC_W as f32 * k, SRC_H as f32 * k]
+        }
+        VideoMode::Aspect | VideoMode::Stretch => {
+            if (w, h) == (SRC_W, SRC_H) && mode == VideoMode::Stretch {
+                return fit_width(PICTURE);
+            }
+            let k = (panel_w / native_w).min(panel_h / native_h);
+            [SRC_W as f32 * k, SRC_H as f32 * k]
+        }
+        VideoMode::Fill => {
+            let k = (panel_w / native_w).max(panel_h / native_h);
+            [SRC_W as f32 * k, SRC_H as f32 * k]
+        }
+        VideoMode::FullStretch => [
+            SRC_W as f32 * panel_w / native_w,
+            SRC_H as f32 * panel_h / native_h,
+        ],
+    }'''),
+])
+edit("crates/slot/src/app.rs", [
+    ("self.set_picture(VideoMode::Stretch)", "self.set_picture(self.video_mode.next())"),
+    ("self.set_picture(VideoMode::Actual)", "self.set_picture(self.video_mode.previous())"),
+])
+
 # A software renderer cannot use the H700 GLSL effects; Authentic is deferred
 # pending a measured LUT/lookup-table implementation. Do not fake it.
 
