@@ -112,10 +112,10 @@ diff --git a/crates/slot/src/input/evdev.rs b/crates/slot/src/input/evdev.rs
  pub const ABS_X: u16 = 0x00;
  pub const ABS_Y: u16 = 0x01;
  
-+// Slot's BaseOS left-stick axes are 0x02/0x03. The other stick uses
-+// 0x00/0x01 on the RG34XXSP input node.
-+const RIGHT_PRESS: i32 = 12000;
-+const RIGHT_RELEASE: i32 = 8000;
++// Slot's BaseOS left-stick axes are ABS_Z/ABS_RX (0x02/0x03).
++// The right stick uses ABS_RY/ABS_RZ (0x04/0x05).
++const RIGHT_PRESS: i32 = 2048;
++const RIGHT_RELEASE: i32 = 1365;
 +
  pub const STICK_DEADZONE: i32 = 2048;
  pub const DSOS_STICK_DEADZONE: i32 = 900;
@@ -126,7 +126,7 @@ diff --git a/crates/slot/src/input/evdev.rs b/crates/slot/src/input/evdev.rs
  
 +    pub fn right_stick_axes(self) -> [u16; 2] {
 +        match self {
-+            Keymap::BaseOs => [ABS_X, ABS_Y],
++            Keymap::BaseOs => [0x04, 0x05],
 +            Keymap::DsOs => [0x03, 0x04],
 +        }
 +    }
