@@ -1,15 +1,9 @@
-# Custom slot. 1.16.0 Ver. 1
+# Custom slot. 1.16.0 Ver. 2
 
-## Changes since Custom slot. 1.15.3 Ver. 3
+## Changes since Custom slot. 1.16.0 Ver. 1
 
-Updated the firmware foundation to **Slot v1.16.0** and **pvaibhav's v1.16.0 improvements**.
+- Reworked Authentic GBA, GBC and Pocket Color colour correction to keep neutral white and grey neutral, preserve source brightness, and avoid hue shifts from per-channel clipping.
+- Corrected the Reflection toggle: switching it off now disables the shader's simulated glass sheen for GBA, GB and GBC instead of leaving the reflection visible.
+- Kept Authentic's LCD dots, grid, shadows, grain and response effects independent from the colour-correction and reflection switches.
 
-- Missing cartridge artwork now uses handwritten game titles on the cartridge.
-- Kid Mode supports link-play invitations, with player nicknames and clearer link messages.
-- GPU frame blending is available across supported emulator cores.
-- Added selectable PNG screen overlays, including tiled overlays.
-- Added USB-C audio adapter support.
-- Removed the separate Turbo Buttons toggle; configure Turbo A and Turbo B under Controls.
-- Fixed the upstream screenshot gallery's delayed-thumbnail behavior.
-
-The implementation integrates Slot's new GPU blending with Custom slot's existing Authentic shader controls. No bundled game ROMs or proprietary BIOS files.
+No changes to bundled ROMs, BIOS files or the supported emulator cores.
