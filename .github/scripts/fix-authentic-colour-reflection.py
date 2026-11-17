@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Keep Authentic's colour controls independent from LCD rendering and glass.
+"""Keep Authentic On identical to pvaibhav's calibrated screen response.
 
 Run after merge-1.16-fixes.py. This applies to the generated upstream source,
 not the older v1.15.3 patch baseline. Every replacement is asserted so future
@@ -19,44 +19,13 @@ def replace_once(source: str, old: str, new: str, what: str) -> str:
 shader_path = Path("crates/slot-gfx/src/shaders.rs")
 shader = shader_path.read_text()
 
-# The previous implementation scaled the measured response by source luma
-# separately for every pixel and crossfaded using an arbitrary saturation
-# threshold. That can blow out saturated channels and yield discontinuous
-# colours close to grey. Instead, compare the calibrated colour response with
-# its own neutral axis, use ONLY that response's chroma, and retain the source
-# luminance. White, black, and every neutral grey remain neutral. The original
-# LCD cell, dot shadows, grid, grain, and glass code remains untouched.
-anchor = """vec3 lcd_ramp(vec3 x) {
-    vec3 u = fract(x + 0.5) - 0.5;
-    return u - 2.0 * u * abs(u);
-}
-void main() {"""
-corrector = """vec3 lcd_ramp(vec3 x) {
-    vec3 u = fract(x + 0.5) - 0.5;
-    return u - 2.0 * u * abs(u);
-}
-// Colour correction affects only chroma, not the calibrated LCD's pixels,
-// glass, brightness, or neutral axis. Work in linear light and preserve Y.
-// Compress out-of-gamut chroma toward the same grey instead of independently
-// clipping R/G/B (which can cause ugly hue shifts).
-vec3 authentic_corrected_linear(vec3 sourceRgb, vec3 measured, vec3 response) {
-    vec3 sourceLinear = pow(sourceRgb, vec3(2.2));
-    float sourceY = dot(sourceLinear, luma_coeff);
-    float measuredGrey = dot(measured, luma_coeff);
-    vec3 calibratedGrey = clamp(
-        u_response * pow(vec3(measuredGrey), u_gamma), u_least, vec3(1.0));
-    vec3 chroma = response - calibratedGrey;
-    chroma -= vec3(dot(chroma, luma_coeff));
-
-    vec3 room = mix(vec3(sourceY), vec3(1.0 - sourceY),
-                    step(vec3(0.0), chroma));
-    vec3 magnitude = max(abs(chroma), vec3(0.0001));
-    float gain = min(1.0, min(room.r / magnitude.r,
-                            min(room.g / magnitude.g, room.b / magnitude.b)));
-    return clamp(vec3(sourceY) + gain * chroma, 0.0, 1.0);
-}
-void main() {"""
-shader = replace_once(shader, anchor, corrector, "Authentic helper insertion")
+# Authentic ON: use the original measured GBA/GBC LCD colour response, including
+# its calibrated panel white and black values. The v2 neutral-axis conversion
+# preserved source luminance instead of the real screen's luminance, bleaching
+# yellows and shifting the intended result. Authentic OFF: source RGB is
+# unmodified, with the same LCD dot/grid treatment still applied.
+shader_path = Path("crates/slot-gfx/src/shaders.rs")
+shader = shader_path.read_text()
 
 pocket_old = """                    vec3 sourceLin = pow(raw, vec3(2.2));
                     float sourceLuma = dot(sourceLin, luma_coeff);
@@ -64,8 +33,10 @@ pocket_old = """                    vec3 sourceLin = pow(raw, vec3(2.2));
                     float chroma = max(max(raw.r, raw.g), raw.b) - min(min(raw.r, raw.g), raw.b);
                     vec3 balanced = clamp(response * (sourceLuma / max(convertedLuma, 0.0001)), 0.0, 1.0);
                     panelRgb = pow(mix(sourceLin, balanced, smoothstep(0.015, 0.075, chroma)), vec3(1.0 / 2.2));"""
-pocket_new = """                    panelRgb = pow(authentic_corrected_linear(raw, measured, response),
-                                   vec3(1.0 / 2.2));"""
+pocket_new = """                    // Match the measured GBC panel response used in upstream Authentic.
+                    vec3 gbcWhite = pow(vec3(134.0, 140.0, 122.0) / 255.0, vec3(2.2));
+                    vec3 gbcBlack = pow(vec3(14.0, 25.0, 28.0) / 255.0, vec3(2.2));
+                    panelRgb = pow(mix(gbcBlack, gbcWhite, response), vec3(1.0 / 2.2));"""
 shader = replace_once(shader, pocket_old, pocket_new, "Pocket Color response")
 
 colour_old = """                float rawY = dot(lin, luma_coeff);
@@ -74,10 +45,30 @@ colour_old = """                float rawY = dot(lin, luma_coeff);
                     - min(min(rawColour.r, rawColour.g), rawColour.b);
                 vec3 balanced = clamp(response * (rawY / max(correctedY, 0.0001)), 0.0, 1.0);
                 lin = mix(lin, balanced, smoothstep(0.015, 0.075, chroma));"""
-colour_new = """                lin = authentic_corrected_linear(rawColour, light, response);"""
+colour_new = """                // Exactly the colour response and panel tint from upstream Authentic.
+                lin = mix(u_dark, u_light, response);"""
 shader = replace_once(shader, colour_old, colour_new, "GBC/GBA response")
-if shader.count("authentic_corrected_linear(") != 3:
-    raise AssertionError("Expected helper and two Authentic colour-conversion call sites")
+# ON must use upstream's measured panel floor (u_dark), while OFF keeps
+# neutral RGB. Applying one neutral floor to both broke the Authentic look.
+shader = replace_once(
+    shader, "vec3 panelDark = vec3(0.0);",
+    "vec3 panelDark = u_authentic_correction > 0.5 ? u_dark : vec3(0.0);",
+    "Authentic panel black calibration",
+)
+# Pocket Color is our own hybrid; preserve original GBC panel tint when On,
+# keep the reflector neutral when Off. Pocket SGB stays independent.
+shader = replace_once(
+    shader, "vec3 reflector = vec3(1.0);",
+    """vec3 reflector = u_lcd.x > 2.5 ? vec3(0.90)
+                    : (u_authentic_correction > 0.5
+                        ? vec3(134.0, 140.0, 122.0) / 255.0 : vec3(1.0));""",
+    "Pocket Color correction-dependent reflector",
+)
+# Verify exactly the original calibration is active on the On branch.
+assert "lin = mix(u_dark, u_light, response);" in shader
+assert "vec3 panelDark = u_authentic_correction > 0.5 ? u_dark : vec3(0.0);" in shader
+assert "lin = pow(rawColour, vec3(2.2));" in shader
+assert "authentic_corrected_linear(" not in shader
 if "uniform float u_authentic_correction;" not in shader:
     raise AssertionError("Authentic colour-correction toggle uniform is missing")
 shader_path.write_text(shader)
