@@ -92,7 +92,8 @@ body = body.replace(old_keymon, '''    if [ -x /customer/app/jsonval ]; then
         export SLOT_ONION_POWER_OWNER=1
     fi''', 1)
 # Opt-in physical display logging for diagnosing actual PWM vs software LCD
-# rendering. Captures launch and 2s / 10s afterwards without changing pixels.
+# rendering. Samples 0, 2, 10, 30 and 60 seconds after launch, including
+# gameplay; the original 0/2/10-second window could end before a ROM began.
 # The user can enable it by creating Config/trace-display.txt on their card.
 # No diagnostics are run unless explicitly enabled.
 trace_needle = '# Diagnostics, off by default because each writes a line per frame or per event'
@@ -102,9 +103,11 @@ body = body.replace(trace_needle, """# Opt-in display diagnostic (no brightness 
 if [ -f "$SD/Config/trace-display.txt" ]; then
     (
         duty=/sys/class/pwm/pwmchip0/pwm0/duty_cycle
-        for delay in 0 2 8; do
+        elapsed=0
+        for delay in 0 2 8 20 30; do
             [ "$delay" -eq 0 ] || sleep "$delay"
-            echo "-- display check sample stage $delay --"
+            elapsed=$((elapsed + delay))
+            echo "-- display check elapsed ${elapsed}s --"
             echo "onion_brightness=${SLOT_ONION_BRIGHTNESS:-unset}"
             echo "onion_power_owner=${SLOT_ONION_POWER_OWNER:-unset}"
             echo "rotation=${SLOT_FB_ROTATE:-unset}"
