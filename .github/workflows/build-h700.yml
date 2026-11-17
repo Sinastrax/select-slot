@@ -121,6 +121,10 @@ jobs:
           python3 ../.github/scripts/verify-fit-vertical-stripes.py
           python3 ../.github/scripts/fix-rg35xxh-dot-grid-sgb.py
           python3 ../.github/scripts/verify-rg35xxh-dot-grid-sgb.py
+          # Build the LCD grid in source-pixel space, and bypass expensive
+          # Pocket ink rendering on the dedicated mGBA/Gambatte SGB path.
+          python3 ../.github/scripts/fix-fit-reference-sgb-fastpath.py
+          python3 ../.github/scripts/verify-fit-reference-sgb-fastpath.py
 
       - name: Capture merged source for integration review
         uses: actions/upload-artifact@v4
