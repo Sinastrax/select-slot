@@ -56,7 +56,7 @@ jobs:
           unzip -Z1 "$archive" | grep -qx "System/licenses/build-info.txt"
           sha256sum -c "$archive.sha256"
 
-      - name: Upload experimental ZIP and checksum (do not publish a release)
+      - name: Upload experimental ZIP and checksum
         uses: actions/upload-artifact@v4
         with:
           name: select-slot-miyoo-ver17-fit-dot
@@ -65,3 +65,94 @@ jobs:
             .build/miyoo/select-slot-*-miyoo.zip.sha256
           if-no-files-found: error
           retention-days: 30
+
+  publish-miyoo-preview:
+    name: Publish Miyoo prerelease (never H700 stable)
+    # Only trusted pushes/manual builds on the two Miyoo development branches.
+    # Pull-request builds remain read-only and cannot publish releases.
+    if: >-
+      github.event_name != 'pull_request' &&
+      (github.ref == 'refs/heads/feature/select-slot-miyoo-pwm-priority' ||
+       github.ref == 'refs/heads/main')
+    needs: build-miyoo
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download verified Miyoo package from this run
+        uses: actions/download-artifact@v4
+        with:
+          name: select-slot-miyoo-ver17-fit-dot
+          path: .build/miyoo
+
+      - name: Verify standalone package and derive distinct Miyoo tag
+        id: preview
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          archives=(.build/miyoo/select-slot-*-miyoo.zip)
+          test "${#archives[@]}" -eq 1
+          archive="${archives[0]}"
+          test -s "$archive"
+          test -s "$archive.sha256"
+          sha256sum -c "$archive.sha256"
+          unzip -t "$archive" | grep -q 'No errors detected'
+          unzip -Z1 "$archive" | grep -qx 'System/slot'
+          unzip -Z1 "$archive" | grep -qx 'System/select-slot-version.txt'
+          unzip -Z1 "$archive" | grep -qx 'App/Slot/config.json'
+          unzip -Z1 "$archive" | grep -qx 'Apps/slot.pak/config.json'
+          # Prevent an H700 package or accidental version mismatch being published.
+          [[ "$(basename "$archive")" =~ ^select-slot-([0-9]+\.[0-9]+\.[0-9]+)-ver([0-9]+)-miyoo\.zip$ ]]
+          version="${BASH_REMATCH[1]}"
+          revision="${BASH_REMATCH[2]}"
+          info="$(unzip -p "$archive" System/select-slot-version.txt)"
+          grep -Fqx "select. slot. $version Ver. $revision - Fit-aware Dot software shader" <<<"$(head -n1 <<<"$info")"
+          grep -Fq 'GB/GBC: Miyoo-native mGBA default' <<<"$info"
+          tag="miyoo-v${version}-ver${revision}-preview.${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}"
+          {
+            echo "tag=$tag"
+            echo "version=$version"
+            echo "revision=$revision"
+            echo "archive=$archive"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Publish immutable prerelease, excluded from H700 latest and OTA
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.preview.outputs.tag }}
+          RELEASE_ZIP: ${{ steps.preview.outputs.archive }}
+          DISPLAY_VERSION: ${{ steps.preview.outputs.version }}
+          DISPLAY_REVISION: ${{ steps.preview.outputs.revision }}
+        run: |
+          set -euo pipefail
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Prerelease $RELEASE_TAG already exists; not overwriting."
+            exit 0
+          fi
+          cat > miyoo-preview-notes.md <<EOF
+          ## select. slot. Miyoo $DISPLAY_VERSION Ver. $DISPLAY_REVISION (experimental)
+          
+          Miyoo Mini / Mini Plus / Mini Flip ARMv7 build. Not for H700 devices.
+          Default GB/GBC core: original Miyoo mGBA; GBA: gpSP.
+          This preview adds Fit-aware Dot rendering to the Miyoo software backend.
+          
+          The build and ZIP checks passed, but device performance and display
+          quality have **not** been verified on physical hardware.
+          The user-confirmed brightness reference remains Miyoo Ver. 16.
+          
+          Install: extract the ZIP contents to the SD-card root after backing
+          up saves, save states and Config. OnionOS/BMO files are not replaced.
+          
+          Commit: ${GITHUB_SHA}
+          This prerelease is separate from the stable H700 release/OTA channel.
+          EOF
+          gh release create "$RELEASE_TAG" "$RELEASE_ZIP" "$RELEASE_ZIP.sha256" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "select. slot. Miyoo $DISPLAY_VERSION Ver. $DISPLAY_REVISION (Preview ${GITHUB_RUN_NUMBER})" \
+            --notes-file miyoo-preview-notes.md \
+            --prerelease --latest=false
+          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+            --json isPrerelease,isLatest,tagName --jq '{tag:.tagName,prerelease:.isPrerelease,latest:.isLatest}'
