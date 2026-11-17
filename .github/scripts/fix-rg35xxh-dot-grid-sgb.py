@@ -90,4 +90,39 @@ assert "uniform float u_authentic_correction;" in shader
 assert "float stripeStrength = lcd_stripe" in shader
 assert shader.count("mediump ") >= 10
 path.write_text(shader)
-print("Applied fractional Dot/Grid filtering and palette-preserving Pocket SGB geometry")
+
+# Gambatte's SGB presets are intended for TV output. Its GBC LCD correction
+# in "always" mode changes these SGB palettes incorrectly (libretro docs).
+# This applies even when a user explicitly selects an SGB palette outside
+# Authentic. Existing GBC game correction is unaffected.
+core_path = Path("crates/slot/src/core.rs")
+core = core_path.read_text()
+old_core = """    if which == Core::Gambatte {
+        core.set_option("gambatte_gb_hwmode", "Auto");
+        for (key, value) in palette_options(which, palette.unwrap_or(GbColors::Auto)) {
+            core.set_option(key, value);
+        }
+        if let Some((key, value)) = colour_option(which, platform, colour) {
+            core.set_option(key, value);
+        }
+    }"""
+new_core = """    if which == Core::Gambatte {
+        core.set_option("gambatte_gb_hwmode", "Auto");
+        for (key, value) in palette_options(which, palette.unwrap_or(GbColors::Auto)) {
+            core.set_option(key, value);
+        }
+        // SGB colors target a TV, not the GBC LCD. In particular, Gambatte's
+        // 'always' correction distorts SGB palettes. Includes SGB presets.
+        let sgb_palette = platform == Platform::Gb && palette.is_some_and(|p| match p {
+            GbColors::SgbAuto => true,
+            GbColors::Palette(choice) => choice.core_name().starts_with("SGB "),
+            GbColors::Auto => false,
+        });
+        if let Some((key, value)) = colour_option(which, platform, colour) {
+            core.set_option(key, if sgb_palette { "disabled" } else { value });
+        }
+    }"""
+assert core.count(old_core) == 1, "Expected Gambatte core options block changed"
+core_path.write_text(core.replace(old_core, new_core, 1))
+
+print("Applied fractional Dot/Grid filtering and palette-preserving SGB shader/core colors")
