@@ -1,0 +1,239 @@
+diff --git a/crates/slot/src/app.rs b/crates/slot/src/app.rs
+--- a/crates/slot/src/app.rs
++++ b/crates/slot/src/app.rs
+@@ -47,5 +47,6 @@
+ use slot_store::{
+     read_carousel, read_controls, read_shortcuts, write_carousel, write_controls, write_shortcuts,
+-    Binding, CarouselKeys, Controls, Device, GameButton, Modifier, ShortcutKeys, LID_OFF_MIN,
++    Binding, CarouselKeys, Controls, Device, GameButton, Modifier, ShortcutKeys, LID_OFF_MIN,
++    MENU_IDLE_MINUTES,
+ };
+ 
+@@ -722,7 +723,8 @@
+     panel: (u32, u32),
+     game_ready: bool,
+-    clock: f64,
+-    power: Option<Power>,
+-    dozed_at: Millis,
++    clock: f64,
++    power: Option<Power>,
++    menu_idle: crate::menu_idle::MenuIdle,
++    dozed_at: Millis,
+     woke_on_press: bool,
+     autosave_at: Millis,
+@@ -1223,7 +1225,8 @@
+             panel: (0, 0),
+             game_ready: false,
+-            clock: 0.0,
+-            power: None,
+-            dozed_at: 0,
++            clock: 0.0,
++            power: None,
++            menu_idle: crate::menu_idle::MenuIdle::default(),
++            dozed_at: 0,
+             woke_on_press: false,
+             autosave_at: AUTOSAVE_MS,
+@@ -2861,7 +2864,23 @@
+                 WallpaperTint::High => QuickValue::High,
+             }),
+-            QuickRow::LidOff => QuickValue::LID_OFF
+-                .into_iter()
+-                .find(|v| v.minutes() == Some(self.lid_off_min())),
++            QuickRow::LidOff => QuickValue::LID_OFF
++                .into_iter()
++                .find(|v| v.minutes() == Some(self.lid_off_min())),
++            QuickRow::MenuScreenOff | QuickRow::MenuPowerOff => {
++                let minutes = if row == QuickRow::MenuScreenOff {
++                    self.state.menu_screen_off_min
++                } else {
++                    self.state.menu_power_off_min
++                };
++                Some(match minutes {
++                    1 => QuickValue::Min1,
++                    3 => QuickValue::Min3,
++                    5 => QuickValue::Min5,
++                    10 => QuickValue::Min10,
++                    15 => QuickValue::Min15,
++                    30 => QuickValue::Min30,
++                    _ => QuickValue::Off,
++                })
++            }
+             QuickRow::Theme => Some(if self.light() {
+                 QuickValue::Light
+@@ -5244,9 +5263,38 @@
+     }
+ 
+-    pub fn apply(&mut self, action: Action) {
+-        self.track_held_dir(action);
+-        if self.shutting_down() {
+-            return;
+-        }
++    /// Return true if this input only wakes the inactive menu's blank display.
++    fn menu_idle_input(&mut self, action: Action) -> bool {
++        // Release signals are not intentional wake actions.
++        if matches!(action, Action::GbaUp(_) | Action::MenuChordUp(_) | Action::PowerOff) {
++            return false;
++        }
++        let woke = self.menu_idle.input(self.now());
++        if !woke {
++            return false;
++        }
++        // Lid-close is about to power off the panel. Do not flash the screen first.
++        if !matches!(action, Action::LidClose) {
++            if let Some(power) = &mut self.power {
++                power.set_idle_blank(false);
++            }
++        }
++        // Consume the subsequent short power-button release rather than re-entering sleep.
++        if matches!(action, Action::PowerPress) {
++            self.woke_on_press = true;
++        }
++        !matches!(
++            action,
++            Action::LidClose | Action::LidOpen | Action::PowerHold | Action::Restart | Action::RepairCard
++        )
++    }
++
++    pub fn apply(&mut self, action: Action) {
++        self.track_held_dir(action);
++        if self.shutting_down() {
++            return;
++        }
++        if self.menu_idle_input(action) {
++            return;
++        }
+         match action {
+             Action::LidClose => return self.doze(),
+@@ -5956,9 +6004,11 @@
+             | QuickRow::ScReset
+             | QuickRow::ScGuide
+-            | QuickRow::LidOff => {}
+-        }
+-    }
+-
+-    fn change_setting(&mut self, row: QuickRow, right: bool) {
++            | QuickRow::LidOff
++            | QuickRow::MenuScreenOff
++            | QuickRow::MenuPowerOff => {}
++        }
++    }
++
++    fn change_setting(&mut self, row: QuickRow, right: bool) {
+         match row {
+             QuickRow::RommProtocol => {
+@@ -6120,7 +6170,25 @@
+             return;
+         }
+-        let gba_shaders = self.gba_shaders();
+-        let s = &mut self.state;
+-        match row {
++        if matches!(row, QuickRow::MenuScreenOff | QuickRow::MenuPowerOff) {
++            let current = if row == QuickRow::MenuScreenOff {
++                self.state.menu_screen_off_min
++            } else {
++                self.state.menu_power_off_min
++            };
++            let at = MENU_IDLE_MINUTES.iter().position(|m| *m == current).unwrap_or(0);
++            let len = MENU_IDLE_MINUTES.len();
++            let next = MENU_IDLE_MINUTES[if right { (at + 1) % len } else { (at + len - 1) % len }];
++            if row == QuickRow::MenuScreenOff {
++                self.state.menu_screen_off_min = next;
++            } else {
++                self.state.menu_power_off_min = next;
++            }
++            self.menu_idle.input(self.now());
++            self.persist();
++            return;
++        }
++        let gba_shaders = self.gba_shaders();
++        let s = &mut self.state;
++        match row {
+             QuickRow::FastForward => {
+                 let to = ff_next(s.ff_speed, right);
+@@ -6291,6 +6359,8 @@
+             | QuickRow::ControlsCollections
+             | QuickRow::ControlsInGame
+-            | QuickRow::LidOff
+-            | QuickRow::FetchArt
++            | QuickRow::LidOff
++            | QuickRow::MenuScreenOff
++            | QuickRow::MenuPowerOff
++            | QuickRow::FetchArt
+             | QuickRow::Network
+             | QuickRow::Wifi
+@@ -6969,6 +7039,42 @@
+     }
+ 
+-    fn timers(&mut self) {
+-        self.step_server();
++    fn tick_menu_idle(&mut self) {
++        if self.shutting_down() {
++            return;
++        }
++        // Only the shelf and its menus, never gameplay. Do not interrupt background tasks.
++        let allowed = matches!(self.phase, Phase::Shelf | Phase::QuickMenu { .. } | Phase::About)
++            && self.seated().is_none()
++            && self.update.is_none()
++            && self.keyboard.is_none()
++            && self.fetch_art.is_none()
++            && !self.wifi_scanning
++            && self.server.is_none()
++            && !self.link_active()
++            && self.capture.is_none()
++            && self.edit.is_none();
++        match self.menu_idle.tick(
++            self.now(),
++            self.state.menu_screen_off_min,
++            self.state.menu_power_off_min,
++            allowed,
++        ) {
++            crate::menu_idle::Event::None => {}
++            crate::menu_idle::Event::ScreenOff => {
++                if let Some(power) = &mut self.power {
++                    power.set_idle_blank(true);
++                }
++            }
++            crate::menu_idle::Event::ScreenOn => {
++                if let Some(power) = &mut self.power {
++                    power.set_idle_blank(false);
++                }
++            }
++            crate::menu_idle::Event::Shutdown => self.begin_power_off(),
++        }
++    }
++
++    fn timers(&mut self) {
++        self.step_server();
+         self.take_art_events();
+         self.take_romm_events();
+@@ -6976,6 +7082,7 @@
+         self.take_update_events();
+         self.play_hold();
+-        self.repeat_held_dir();
+-        self.take_shot_list();
++        self.repeat_held_dir();
++        self.tick_menu_idle();
++        self.take_shot_list();
+         if self.shot_writer.take_failures() > 0 {
+             self.hud.toast(Toast::ShotFailed, self.now());
+@@ -10230,6 +10337,7 @@
+     }
+ 
+-    fn wake(&mut self) {
+-        let Phase::Doze { cart } = &mut self.phase else {
++    fn wake(&mut self) {
++        self.menu_idle.input(self.now());
++        let Phase::Doze { cart } = &mut self.phase else {
+             return;
+         };
+diff --git a/crates/slot/src/lib.rs b/crates/slot/src/lib.rs
+--- a/crates/slot/src/lib.rs
++++ b/crates/slot/src/lib.rs
+@@ -43,5 +43,6 @@
+ pub mod latency;
+ pub mod link_art_builder;
+-pub mod link_kind;
++pub mod link_kind;
++mod menu_idle;
+ pub mod link_net;
+ pub mod link_radio;
