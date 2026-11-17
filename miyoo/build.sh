@@ -32,6 +32,7 @@ test "$(git -C "$PORT" rev-parse HEAD)" = "$PORT_COMMIT"
 # Keeping these separate avoids applying H700/GLES-only patches to the Miyoo.
 cp "$ROOT"/miyoo/patches/*.patch "$PORT/patches/"
 cp "$ROOT/miyoo/port_features.py" "$PORT/tools/custom-slot-feature-layer.py"
+cp "$ROOT/miyoo/port_ui.py" "$PORT/tools/custom-slot-ui-layer.py"
 # Execute our source adaptation after Dean's 26 ARMv7 hardware patches and
 # Custom slot's resume fix. The task performs this on a fresh clean tree.
 python3 - "$PORT/taskfile.yml" <<'PY'
@@ -41,7 +42,7 @@ p = Path(sys.argv[1])
 s = p.read_text()
 needle = "\n  unpatch:\n"
 assert s.count(needle) == 1, "port taskfile patch lifecycle changed"
-s = s.replace(needle, "\n      - python3 tools/custom-slot-feature-layer.py upstream/slot\n" + needle, 1)
+s = s.replace(needle, "\n      - python3 tools/custom-slot-feature-layer.py upstream/slot\n      - python3 tools/custom-slot-ui-layer.py upstream/slot\n" + needle, 1)
 p.write_text(s)
 PY
 git -C "$PORT/upstream/slot" apply --check "$ROOT/miyoo/patches/0027-custom-auto-load-off.patch"
