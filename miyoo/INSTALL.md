@@ -1,11 +1,11 @@
-# Custom slot. 1.8.1 Ver. 7 — Miyoo
+# Custom slot. 1.8.1 Ver. 8 — Miyoo
 
 This is an **experimental ARMv7 app build** for the **original Miyoo Mini**, Miyoo Mini Plus, and Miyoo Mini Flip. It is **not H700 firmware** and does not replace the device OS.
 
 ## Installation
 
 1. Back up the Miyoo SD card, especially any existing Slot saves, states and settings.
-2. Download the `custom-slot-1.8.1-ver7-miyoo.zip` artifact from the **Build Custom slot Miyoo preview** GitHub Actions workflow, once it has passed.
+2. Download the `custom-slot-1.8.1-ver8-miyoo.zip` artifact from the **Build Custom slot Miyoo preview** GitHub Actions workflow, once it has passed.
 3. Extract the **contents** of the ZIP at the SD-card root. The card should contain `System/slot`, `App/Slot/` and `Apps/slot.pak/` directly. Do not put them inside another folder.
 4. Reinsert the card and reboot. Launch **Custom slot** from the Apps/App section of your existing launcher. Stock, Onion and Allium layouts are included in the base port.
 5. Add extracted, uncompressed ROMs under `Games/GB/`, `Games/GBC/` and `Games/GBA/`. Supply your legally obtained GBA BIOS as `BIOS/gba_bios.bin`; neither ROMs nor BIOS images are distributed.
@@ -15,7 +15,7 @@ This is an **experimental ARMv7 app build** for the **original Miyoo Mini**, Miy
 ## Version and verified scope
 
 - **Base:** [deanmarano/slot-miyoo](https://github.com/deanmarano/slot-miyoo), pinned to commit `d096bdb87f25f3aba62de6b40ef859b61d841e43`.
-- **Slot upstream:** `v1.8.1`, pinned by the Miyoo port; our format is **Custom slot. 1.8.1 Ver. 7**.
+- **Slot upstream:** `v1.8.1`, pinned by the Miyoo port; our format is **Custom slot. 1.8.1 Ver. 8**.
 - **Device architecture:** ARMv7 with software framebuffer rendering, not the H700/aarch64 GPU backend.
 - **Upstream testing:** The original Miyoo Mini on OnionOS 4.3.1, plus Mini Plus and Flip, were reported working by the port author. **This Custom slot variant is not hardware-tested.**
 - **GB and GBC default core:** Gambatte, custom-built for the same ARMv7 hard-float toolchain. Existing explicit per-game mGBA selections may still load; mGBA is not the recommended core here.
@@ -27,6 +27,18 @@ This is an **experimental ARMv7 app build** for the **original Miyoo Mini**, Miy
 - **Original Miyoo Mini has no Wi-Fi:** The H700 online updater therefore cannot simply be reused on it. Updating this preview requires copying the ZIP to the SD card.
 
 This is an **experimental preview**. GitHub Actions successfully cross-compiled and packaged the core, scaling, and system changes, but no Custom slot Miyoo hardware or frame-time test has been performed. Do not describe the Authentic shader work as completed.
+
+## Ver. 8 — targeted rollback to known-good Miyoo behavior
+
+The user's original Dean Miyoo Slot was bright; the darkness began after the Custom slot additions. This version **reverts the fork's brightness import** and calls the original Miyoo backlight routine with Slot's own saved brightness. The original PWM table is not modified. The additional menu-only screen-off/power-off timers are bypassed **when Onion keymon is managing the display**, so that fork-specific timer cannot dim the entire screen and fight Onion's sleep routine. The controls remain implemented for non-Onion use.
+
+When Onion keymon is running, POWER is handled by Onion. The fork no longer runs an extra **blocking state flush** on POWER-down, which could race Onion's process suspension. Slot's normal periodic save behavior remains. **OnionOS Power single press must be configured as Standby rather than Shutdown** in Apps → Tweaks → Button shortcuts.
+
+For **BMO by forevertuesday**, OnionOS itself continues using the selected theme's `skin/extra/bootScreen.png` on boot and `Screen_Off.png` / `Screen_Off_Save.png` during shutdown. The theme does **not** provide separate sleep/wake animation assets; Onion keymon's standby is primarily backlight and process suspension. We do not replace theme artwork or modify Onion's daemon.
+
+If still dark, enable the existing optional `Config/trace-display.txt` flag and send `Logs/slot-display-debug.log`. Also report whether the **entire Slot interface** is dark or only the GB/GBC/GBA picture: an unchanged PWM with a dark game image points to filtering rather than backlight.
+
+Build validation does not establish a successful hardware fix.
 
 ## Ver. 7 — brightness and sleep investigation
 
