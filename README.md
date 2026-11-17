@@ -94,3 +94,17 @@ ongoing operations. Setting either option to Off disables just that action.
 The feature is implemented in `patches/menu-idle-settings.patch`,
 `patches/menu-idle-behavior.patch` and `patches/menu-idle-timer.patch`, extending the
 existing Slot power controller without changing the custom mGBA core, shaders or hotkeys.
+
+## Resume on Power On (custom behavior)
+
+The original Slot setting disabled automatic **save-state restoration**, but still
+launched the last cartridge when switching on. Our `rgsp.3` fix changes this
+to match the menu label:
+
+- **On:** power on directly into the last played game, loading its resume state.
+- **Off:** power on to the game shelf. The last game is selected but **not launched**.
+- **Resume on Insert:** independent; continues to control whether a game manually launched
+  from the shelf loads its existing resume state.
+
+This fix is in `patches/resume-power-on-do-not-autolaunch.patch`, with boot tests for
+both setting states and manual inserts. It does not alter the save files themselves.
