@@ -49,7 +49,7 @@ These are the **custom changes in this project**, on top of both upstream Slot a
 - **Independent settings for Gambatte and mGBA.** GB/GBC screen appearance and color-correction behavior can differ by emulator core without interfering with the other.
 - **Separate color-correction switches.** Keep the Authentic pixel grid, reflections and visual treatment while disabling the calibrated RGB color transfer. Monochrome LCD tint remains part of the model simulation.
 - **Fast-forward adjustments.** Authentic LCD ghosting is suppressed during fast-forward and restored for normal play.
-- **Fit-scaled LCD pixels on 640×480 devices.** Authentic GBA/GBC uses coverage-weighted LCD gaps, standard LCD retains its subpixel stripes, Dot retains most of its original contrast, and Grid calculates the actual area covered by intersecting grid bands. Pocket SGB has visible coverage-weighted dot gaps and shadows. The integer-scaled Dot/Grid masks are unchanged.
+- **Fit-scaled LCD pixels on 640×480 devices.** Authentic's pixel-gap width is taken from the nearest integer-sized native-pixel reference grid (for example, 3×), then integrated over each actual Fit output pixel; LCD brightness compensation uses the same reference grid. Standard LCD uses its original area-integrated subpixel stripes without Fit-only attenuation, while Grid calculates coverage of intersecting bands. Pocket SGB has coverage-weighted dot gaps and a dedicated shader path that avoids the monochrome Pocket ink/shadow cost. Integer-sized Authentic pixels are preserved; fractional Fit necessarily softens some edges because fewer output pixels are available.
 
 ### Emulation and audio
 
@@ -87,7 +87,7 @@ Do not interchange save states made by different emulator cores; in-game battery
 
 ## Versions and release notes
 
-Release titles follow **select. slot. 1.16.0 Ver. 8**: the upstream Slot version appears immediately after the project name, followed by the custom revision number. For compatibility with existing OTA installations, Ver. 8 retains the technical version `1.16.0-rgsp.8` and tag `v1.16.0-rgsp.8`. Future functional versions increment the revision and include complete firmware updates; renaming alone does not generate a new release.
+Release titles follow **select. slot. 1.16.0 Ver. 9**: the upstream Slot version appears immediately after the project name, followed by the custom revision number. For compatibility with existing OTA installations, Ver. 9 retains the technical version `1.16.0-rgsp.9` and tag `v1.16.0-rgsp.9`. Future functional versions increment the revision and include complete firmware updates; renaming alone does not generate a new release.
 
 **[Latest release](https://github.com/Sinastrax/select-slot/releases/latest)** · **[Changes in the latest version](RELEASE_NOTES.md)**
 
