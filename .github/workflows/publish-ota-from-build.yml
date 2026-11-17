@@ -1,0 +1,70 @@
+name: Publish validated RGSP firmware after successful build
+
+on:
+  workflow_run:
+    workflows:
+      - Build custom Slot H700
+    types: [completed]
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Download verified full-build artifact
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ github.event.workflow_run.id }}
+          name: slot-rgsp-complete-h700
+          path: release
+          github-token: ${{ github.token }}
+
+      - name: Validate package, version and SHA-256
+        id: manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          current="$(gh api "repos/$GITHUB_REPOSITORY/contents/.github/ota-version.txt" --jq '.content' | base64 -d | tr -d '\r\n')"
+          echo "Current version on main: $current"
+          python3 - "$current" <<'PY'
+          import hashlib, json, os, pathlib, sys
+          expected = sys.argv[1]
+          release = pathlib.Path("release")
+          stable = json.loads((release / "versions.json").read_text())["stable"]
+          version = stable["version"]
+          assert version == expected, f"Stale build {version}, main is now {expected}"
+          assert "-rgsp." in version
+          assert stable["tag"] == "v" + version
+          assert stable["zip"] == "slot-v" + version + "-h700.zip"
+          archive = release / stable["zip"]
+          assert archive.is_file()
+          assert archive.stat().st_size == stable["size"]
+          assert hashlib.sha256(archive.read_bytes()).hexdigest() == stable["sha256"]
+          with open(os.environ["GITHUB_OUTPUT"], "a") as result:
+              print("tag=" + stable["tag"], file=result)
+              print("zip=" + stable["zip"], file=result)
+          PY
+
+      - name: Publish only new, complete custom firmware
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.manifest.outputs.tag }}
+          ZIP: ${{ steps.manifest.outputs.zip }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "$TAG was already released; leaving immutable release unchanged."
+            exit 0
+          fi
+          gh release create "$TAG" "release/$ZIP" release/versions.json \
+            --repo "$GITHUB_REPOSITORY" --target "$HEAD_SHA" --latest \
+            --title "Custom Slot $TAG (H700)" \
+            --notes "Complete noncommercial H700 Slot custom firmware. This version includes configurable menu-only screen-off and power-off inactivity timers, all previous Authentic/SGB shaders and L3/R3/right-stick hotkeys, online updates, and the verified older mGBA core. Credits and applicable licenses in System/licenses; source in the repository. No game ROMs or copyrighted BIOS files included."
