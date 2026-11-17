@@ -45,11 +45,11 @@ These are the **custom changes in this project**, on top of both upstream Slot a
 - **Authentic GB/GBC/GBA shaders.** Extended Authentic rendering with model-specific LCD pixel separation, shadowing, ghosting and reflector response.
 - **Game Boy Color appearance for original Game Boy games.** Additional Authentic color presentation beyond the original monochrome models.
 - **Pocket Color.** Pocket-style LCD dot spacing and shadows with Game Boy Color-style color output.
-- **Pocket SGB (Super Game Boy).** Runs compatible GB titles with mGBA's Super Game Boy hardware behavior and supports the games' dynamic SGB palettes. SGB borders are disabled for the handheld display.
+- **Pocket SGB (Super Game Boy).** mGBA runs SGB hardware and supports games' dynamic palette commands; Gambatte supplies game-specific SGB preset palettes. The shared Pocket-style dot shader preserves each core's TV/SNES RGB colors rather than applying GBC LCD correction or interpreting saturated colors as monochrome ink. SGB borders are disabled for the handheld display.
 - **Independent settings for Gambatte and mGBA.** GB/GBC screen appearance and color-correction behavior can differ by emulator core without interfering with the other.
 - **Separate color-correction switches.** Keep the Authentic pixel grid, reflections and visual treatment while disabling the calibrated RGB color transfer. Monochrome LCD tint remains part of the model simulation.
 - **Fast-forward adjustments.** Authentic LCD ghosting is suppressed during fast-forward and restored for normal play.
-- **Fit-scaled LCD pixels on 640×480 devices.** Authentic GBA/GBC and the standard LCD shader reduce uneven vertical stripe contrast at fractional scaling ratios (e.g. 240 → 640 pixels), while retaining the original patterns at exact integer scales.
+- **Fit-scaled LCD pixels on 640×480 devices.** Authentic GBA/GBC, standard LCD, Dot and Grid reduce uneven screen-mask contrast at fractional GB/GBA scaling ratios; Pocket SGB uses coverage-weighted pixel separation. Dot/Grid and the previous LCD masks retain their original appearance at exact integer scales.
 
 ### Emulation and audio
 
@@ -87,7 +87,7 @@ Do not interchange save states made by different emulator cores; in-game battery
 
 ## Versions and release notes
 
-Release titles follow **select. slot. 1.16.0 Ver. 6**: the upstream Slot version appears immediately after the project name, followed by the custom revision number. For compatibility with existing OTA installations, Ver. 6 retains the technical version `1.16.0-rgsp.6` and tag `v1.16.0-rgsp.6`. Future functional versions increment the revision and include complete firmware updates; renaming alone does not generate a new release.
+Release titles follow **select. slot. 1.16.0 Ver. 7**: the upstream Slot version appears immediately after the project name, followed by the custom revision number. For compatibility with existing OTA installations, Ver. 7 retains the technical version `1.16.0-rgsp.7` and tag `v1.16.0-rgsp.7`. Future functional versions increment the revision and include complete firmware updates; renaming alone does not generate a new release.
 
 **[Latest release](https://github.com/Sinastrax/select-slot/releases/latest)** · **[Changes in the latest version](RELEASE_NOTES.md)**
 
