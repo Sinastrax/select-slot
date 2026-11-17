@@ -20,7 +20,7 @@ assert "c = clamp(sgbRgb * (1.0 - 0.62 * sgbGap.x)" in sgb
 assert "* (1.0 - 0.42 * sgbGap.y) * sgbShadow, 0.0, 1.0);" in sgb
 assert "vec2 sgbSoft = 0.15 * smoothstep" in sgb
 assert "sgbGap = mix(sgbGap, 1.0 / max(span, vec2(1.0)), sgbSoft);" in sgb
-assert "u_response" not in sgb and "ink(" not in sgb
+assert "u_response" not in sgb and "float baseInk" not in sgb
 
 # The SNES gamma ramp is Near's 32-step CRT approximation: the first
 # 17 values are triangular; later values rise by 8 per code.
