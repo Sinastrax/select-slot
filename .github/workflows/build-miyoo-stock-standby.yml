@@ -1,0 +1,58 @@
+name: Build stock Miyoo v0.3.0 with Onion standby fix
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/slot-miyoo-stock-onion-power-owner
+    paths:
+      - "miyoo-stock/**"
+      - ".github/workflows/build-miyoo-stock-standby.yml"
+
+concurrency:
+  group: stock-miyoo-standby-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  stock-miyoo:
+    name: Original slot-miyoo v0.3.0 + one POWER fix
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Task
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL https://taskfile.dev/install.sh | sh -s -- -b "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Build from official Dean v0.3.0
+        shell: bash
+        run: bash miyoo-stock/build.sh
+
+      - name: Verify card-root archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive=$(find .build/miyoo-stock -maxdepth 1 -name '*-onion-standby-fix.zip' -print -quit)
+          test -n "$archive"
+          unzip -t "$archive" | tail -1
+          unzip -Z1 "$archive" | grep -qx "System/slot"
+          unzip -Z1 "$archive" | grep -qx "System/slot-onion-standby-fix.txt"
+          unzip -Z1 "$archive" | grep -qx "App/Slot/config.json"
+          sha256sum -c "$archive.sha256"
+
+      - name: Upload isolated experimental ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: slot-miyoo-stock-onion-standby-fix
+          path: |
+            .build/miyoo-stock/*-onion-standby-fix.zip
+            .build/miyoo-stock/*-onion-standby-fix.zip.sha256
+          if-no-files-found: error
+          retention-days: 30
