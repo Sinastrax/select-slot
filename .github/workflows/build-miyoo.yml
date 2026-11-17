@@ -41,7 +41,7 @@ jobs:
 
       - name: Validate Python feature port script
         shell: bash
-        run: python3 -m py_compile miyoo/port_features.py
+        run: python3 -m py_compile miyoo/port_features.py miyoo/port_ui.py
 
       - name: Build port with Miyoo-specific custom patch
         shell: bash
