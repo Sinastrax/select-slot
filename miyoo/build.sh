@@ -64,7 +64,7 @@ echo "Verified shader-free Miyoo frontend, menus, shortcuts and default state"
 # The setting, displayed row, physical blanking and OnionOS handoff must
 # all be present. A successful compile alone does not prove wiring.
 grep -Fq '+    pub const GENERAL: [QuickRow; 9]' "$shader_patch"
-grep -Fq '+    pub const ALL: [QuickRow; 84]' "$shader_patch"
+grep -Fq '+    pub const ALL: [QuickRow; 85]' "$shader_patch"
 grep -Fq '+    pub menu_screen_off_min: u8,' "$shader_patch"
 grep -Fq '+    pub menu_power_off_min: u8,' "$shader_patch"
 grep -Fq '+            menu_screen_off_min: 3,' "$shader_patch"
