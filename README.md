@@ -86,7 +86,7 @@ Do not interchange save states made by different emulator cores; in-game battery
 
 ## Versions and release notes
 
-Release titles follow **Custom slot. 1.16.0 Ver. 1**: the upstream Slot version is immediately after the project name, followed by our revision number. The technical GitHub tag (for example, `v1.16.0-custom.1`) and ZIP filename include the full identifier for reliable online updates. Older release tags remain unchanged.
+Release titles follow **Custom slot. 1.16.0 Ver. 1**: the upstream Slot version is immediately after the project name, followed by our revision number. The technical GitHub tag (for example, `v1.16.0-rgsp.1`) and ZIP filename include the full identifier for reliable online updates. Older release tags remain unchanged.
 
 **[Latest release](https://github.com/Sinastrax/slot-rgsp-mod/releases/latest)** · **[Changes in the latest version](RELEASE_NOTES.md)**
 
