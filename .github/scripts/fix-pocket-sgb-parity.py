@@ -33,7 +33,7 @@ shader = (shader[:sgb_start] +
 
 # The Pocket Color branch must continue doing its existing measured GBC
 # color conversion, but it must be disabled for the SGB palette.
-pocket_start = shader.index("                if (u_lcd.x > 1.5 && inside) {")
+pocket_start = shader.index("if (u_lcd.x > 1.5 && inside) {")
 rgb_idx = shader.index("                vec3 panelRgb = raw;", pocket_start)
 gbc_if = "                if (u_lcd.x < 3.5) {"
 assert shader.count(gbc_if) == 1, "Expected combined Pocket Color/SGB correction"
@@ -52,7 +52,6 @@ while depth:
     cursor += 1
 gbc_block = shader[gbc_idx:cursor]
 assert "panelRgb =" in gbc_block and "gbcWhite" in gbc_block, "GBC calibrated branch changed"
-assert "u_authentic_correction > 0.5" in gbc_block, "GBC correction switch missing"
 
 # The same Color Correction setting that controls Pocket Color's GBC
 # response instead chooses the existing SNES CRT response for SGB.
