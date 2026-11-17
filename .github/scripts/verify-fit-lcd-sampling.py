@@ -4,8 +4,8 @@ from pathlib import Path
 
 shader = Path("crates/slot-gfx/src/shaders.rs").read_text()
 assert "vec2 phase = f * span;" in shader
-assert "clamp(vec2(1.5) - phase, vec2(0.0), vec2(1.0))" in shader
-assert "clamp(phase - (span - vec2(0.5)), vec2(0.0), vec2(1.0))" in shader
+assert "max(vec2(0.0), vec2(1.0) - abs(phase - vec2(0.5)))" in shader
+assert "max(vec2(0.0), vec2(1.0) - abs(phase - span - vec2(0.5)))" in shader
 assert "authentic_gap_coverage(" not in shader, "Crashing Ver. 5 GLSL helper retained"
 assert "if (u_lcd.x > 0.5) {" in shader, "Monochrome GB ink must stay untouched"
 assert "lin = mix(u_dark, u_light, response);" in shader
@@ -19,8 +19,8 @@ lcd = shader[start:end]
 assert lcd.count("mediump ") >= 10, "The previously altered LCD-grid precision must be restored"
 
 def mask(phase, span):
-    return min(1., max(0., min(1., 1.5 - phase)) +
-               max(0., min(1., phase - (span - .5))))
+    return min(1., max(0., 1 - abs(phase - .5)) +
+               max(0., 1 - abs(phase - span - .5)))
 
 # At each exact integer scale, the mask stays 1 on the first display pixel,
 # zero on all other output pixels, identical to Ver. 4's hard step().
