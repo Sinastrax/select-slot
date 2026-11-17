@@ -737,8 +737,7 @@ struct ColKey {'''),
     lcd: bool,
     dot: bool,
     img_w: u32,'''),
-    ('''        // The gain, folded into the mask that was going to be applied anyway.
-        if grade != [256; 3] {''',
+    ('''        if grade != [256; 3] {''',
      '''        // Dot is a neutral-colour luminance mask in native-pixel space.
         // Integrate each output column over its native-pixel footprint, so
         // fractional Fit scaling cannot randomly lose or thicken pixel gaps.
