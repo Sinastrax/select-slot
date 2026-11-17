@@ -2,6 +2,12 @@
 
 **Experimental ARMv7 Miyoo Mini / Mini Plus / Flip application, not H700 firmware.** This version is based on the pinned [deanmarano/slot-miyoo](https://github.com/deanmarano/slot-miyoo) commit `d096bdb87f25f3aba62de6b40ef859b61d841e43` and Slot upstream 1.8.1.
 
+## Automatic experimental downloads
+
+Successful Miyoo builds on the development branch now publish a **GitHub prerelease** with a distinct `miyoo-v…-preview.RUN.ATTEMPT` tag. Each prerelease includes the complete card-root Miyoo ZIP and its SHA-256 checksum. Unlike temporary workflow artifacts, published release assets do not have the 30-day Actions artifact retention limit. Find them at [GitHub Releases](https://github.com/Sinastrax/select-slot/releases?q=miyoo).
+
+The publishing job only runs after the build and package checks succeed and only for trusted branch pushes/manual builds; pull requests do not publish releases. Miyoo prereleases use `--prerelease --latest=false`, so the H700 stable release and OTA channel remain separate. Release publication does **not** establish hardware compatibility, frame-rate or shader accuracy.
+
 ## Ver. 17: experimental Fit-aware software Dot\n\nDot now uses area-weighted coverage of each emulated source pixel across its actual destination pixel footprint in both axes. Horizontal and vertical masks are precomputed per output column/row using the original Miyoo CPU renderer, so fractional Fit scaling does not produce a naive repeating output-pixel mask. Dot is neutral RGB (no color tint), with a modest dot-gap luminance reduction and no artificial brightening beyond the original white signal. Off and LCD3x paths remain intact; no changes to mGBA/gpSP, PWM, Onion standby or BMO. Performance and visual fidelity require physical device verification.\n\n## Ver. 16: restore the original Miyoo emulator defaults\n\nThe GB/GBC default is restored from Gambatte to the original Miyoo mGBA, retaining gpSP for GBA. Gambatte remains optional for compatibility, rather than being mandatory. The original renderer, launcher, PWM implementation, Onion keymon coordination and working BMO handoff are kept. Existing per-game core choices may continue to override the default, so test using a title without an explicit Gambatte selection. This is an experimental core-path correction, not a proven cure for the physical darkness.\n\n## Ver. 15: actual hardware backlight priority on the original Mini
 
 This release preserves the **working Ver. 14 OnionOS standby / BMO handoff**. The remaining problem was a dark game/display even when the new SLOT brightness scale reached level 12.
@@ -55,7 +61,7 @@ This upper boost is **not validated for the original Mini's display durability**
 ## Installation
 
 1. Back up the card, especially `Config/slot.state`, `Saves/`, and any existing `System/slot`.
-2. Download the `select-slot-miyoo-pwm-priority` artifact from the successful GitHub Actions build; inside is `select-slot-1.8.1-ver15-miyoo.zip` plus SHA-256 checksum.
+2. For Ver. 17 and later, download the Miyoo ZIP and checksum from the matching experimental GitHub prerelease. Older experimental versions may only have temporary GitHub Actions artifacts.
 3. Extract **the contents of the inner ZIP** to the SD-card root. `System/slot`, `App/Slot/`, and `Apps/slot.pak/` must be at the card root, not inside a new folder.
 4. Start **select. slot.**. In the SLOT **Brightness** menu or using mapped brightness shortcuts, choose 10 first and then 11 or 12 only if needed.
 5. If brightness falls back after standby, the new automatic resume reapply should restore the selected SLOT level. If a change in OnionOS settings is pending, its keymon remains responsible for its own global value.
