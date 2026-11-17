@@ -6,7 +6,7 @@
 set -u
 ROOT=${SLOT_ROOT:-/mnt/SDCARD}
 ONION="$ROOT/.tmp_update"
-[ -f "$ONION/onionVersion/version.txt" ] || exit 0
+[ -f "$ONION/runtime.sh" ] || exit 0
 [ -f "$ONION/config/.skip-custom-slot-splashes" ] && exit 0
 case "${1:-}" in
     sleep|shutdown) screen=End_Save ;;
