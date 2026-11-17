@@ -1,11 +1,11 @@
-# Custom slot. 1.8.1 Ver. 3 — Miyoo
+# Custom slot. 1.8.1 Ver. 4 — Miyoo
 
 This is an **experimental ARMv7 app build** for the **original Miyoo Mini**, Miyoo Mini Plus, and Miyoo Mini Flip. It is **not H700 firmware** and does not replace the device OS.
 
 ## Installation
 
 1. Back up the Miyoo SD card, especially any existing Slot saves, states and settings.
-2. Download the `custom-slot-1.8.1-ver3-miyoo.zip` artifact from the **Build Custom slot Miyoo preview** GitHub Actions workflow, once it has passed.
+2. Download the `custom-slot-1.8.1-ver4-miyoo.zip` artifact from the **Build Custom slot Miyoo preview** GitHub Actions workflow, once it has passed.
 3. Extract the **contents** of the ZIP at the SD-card root. The card should contain `System/slot`, `App/Slot/` and `Apps/slot.pak/` directly. Do not put them inside another folder.
 4. Reinsert the card and reboot. Launch **Custom slot** from the Apps/App section of your existing launcher. Stock, Onion and Allium layouts are included in the base port.
 5. Add extracted, uncompressed ROMs under `Games/GB/`, `Games/GBC/` and `Games/GBA/`. Supply your legally obtained GBA BIOS as `BIOS/gba_bios.bin`; neither ROMs nor BIOS images are distributed.
@@ -15,7 +15,7 @@ This is an **experimental ARMv7 app build** for the **original Miyoo Mini**, Miy
 ## Version and verified scope
 
 - **Base:** [deanmarano/slot-miyoo](https://github.com/deanmarano/slot-miyoo), pinned to commit `d096bdb87f25f3aba62de6b40ef859b61d841e43`.
-- **Slot upstream:** `v1.8.1`, pinned by the Miyoo port; our format is **Custom slot. 1.8.1 Ver. 3**.
+- **Slot upstream:** `v1.8.1`, pinned by the Miyoo port; our format is **Custom slot. 1.8.1 Ver. 4**.
 - **Device architecture:** ARMv7 with software framebuffer rendering, not the H700/aarch64 GPU backend.
 - **Upstream testing:** The original Miyoo Mini on OnionOS 4.3.1, plus Mini Plus and Flip, were reported working by the port author. **This Custom slot variant is not hardware-tested.**
 - **GB and GBC default core:** Gambatte, custom-built for the same ARMv7 hard-float toolchain. Existing explicit per-game mGBA selections may still load; mGBA is not the recommended core here.
@@ -28,22 +28,23 @@ This is an **experimental ARMv7 app build** for the **original Miyoo Mini**, Miy
 
 This is an **experimental preview**. GitHub Actions successfully cross-compiled and packaged the core, scaling, and system changes, but no Custom slot Miyoo hardware or frame-time test has been performed. Do not describe the Authentic shader work as completed.
 
-## Keep OnionOS splash screens with Custom slot
+## OnionOS BMO theme, sleep and screen behavior (Ver. 4)
 
-OnionOS's existing `.tmp_update/runtime.sh` renders its active theme's **Boot** splash **before** launching optional startup scripts. That means turning on Custom slot autoboot does **not** remove or replace Onion's normal boot splash.
+The verified Onion theme repository includes **BMO by forevertuesday**, **BMO Noire by forevertuesday**, and **BMO by OjninJo**. Each theme provides `skin/extra/bootScreen.png`, `Screen_Off.png`, and `Screen_Off_Save.png`; none provides an independent Sleep/Wake asset. All themes remain untouched on the SD card.
 
-In this build, the standard `System/launch_frontend.sh` also automatically detects OnionOS, then enables the optional `System/onion-splash.sh` bridge for startup-mode **and** manual app launches. The bridge invokes Onion's **own** `bootScreen` renderer, with the **current theme's assets**:
-
-| Transition | Onion artwork |
+| Event | Behavior when Onion keymon is running |
 |---|---|
-| Power on | **Boot** — drawn natively by OnionOS itself, left untouched |
-| Slot-triggered shutdown | **End_Save** — theme's `Screen_Off_Save.png`, after Slot has settled its saves |
-| Slot-triggered sleep/doze | **End_Save** — displayed after resume-state flush, before turning off the backlight |
-| Slot-triggered wake | **Boot** — briefly displayed after restoring backlight, before Slot redraws |
+| Boot | Onion itself renders your current BMO `bootScreen.png`, before the optional Custom slot startup hook |
+| POWER tap to sleep | **Onion keymon exclusively** suspends Slot, controls the display/backlight and restores the session; Slot flushes save state on POWER-down and deliberately does **not** draw a second image or enter a conflicting doze |
+| POWER tap to wake | **Onion keymon exclusively** restores display and resumes Slot; no additional Slot redraw of a boot image |
+| Shutdown started by Slot | Slot finishes saves, then calls Onion's existing `bootScreen End_Save` renderer to display the current theme's `Screen_Off_Save.png` |
+| Onion-managed forced/long-press shutdown | Onion handles it; Slot does not duplicate the transition |
 
-**Important differences:** Onion's actual splash renderer provides **Boot, End, End_Save**, not dedicated Sleep/Wake assets. The sleep/wake transitions intentionally **reuse** themed images. Existing theme files are not changed. Neither `.tmp_update/runtime.sh` nor Onion's `keymon` is replaced. Onion's own independent POWER-key suspend handling can race Slot's button handling, so **sleep/wake transition visibility and power behavior require on-device testing**. This is a visual integration, not a rewrite of Onion's suspend system.
+**There are no built-in themed sleep/wake splash animations in Onion's `keymon`.** Previous Ver. 3 attempted to draw them from Slot simultaneously with Onion's suspend logic; that was unsafe and could leave the screen or input in a bad state. Ver. 4 prioritizes a working POWER sleep/wake over an unverified BMO animation. To get BMO artwork **on** sleep/wake when Onion owns the button, a separately tested Onion keymon integration is necessary; the theme files themselves cannot implement it.
 
-To disable **only the extra Slot transition images**, create an empty file at `.tmp_update/config/.skip-custom-slot-splashes` on the SD card. Delete it to restore them. Onion's **native boot splash remains visible** either way.
+**Display orientation correction:** Dean's launcher hard-coded `SLOT_FB_ROTATE=180` for the upside-down **752×560 Mini Flip** panel. Ver. 4 detects the `752,*` framebuffer mode and applies rotation **only there**; the original Mini / Mini Plus 640×480 displays use normal orientation. This corrects a real cross-device display bug but does not imply the independent Authentic LCD effects or noninteger scaling have been verified on your Mini.
+
+`.tmp_update/runtime.sh`, Onion's theme, and its `keymon` executable are **not modified**. The optional `.tmp_update/config/.skip-custom-slot-splashes` flag disables only Slot-triggered shutdown artwork, not Onion's normal native boot display.
 
 ## Boot directly into Custom slot on OnionOS 4.3
 
@@ -65,8 +66,8 @@ To disable **only the extra Slot transition images**, create an empty file at `.
 Requires Git, Docker, go-task, Python 3 and standard ZIP tools:
 
 ```bash
-git clone https://github.com/Sinastrax/slot-rgsp-mod.git
-cd slot-rgsp-mod
+git clone https://github.com/Sinastrax/select-slot.git
+cd select-slot
 git checkout feature/custom-slot-miyoo-mini
 bash miyoo/build.sh
 ```
