@@ -147,7 +147,7 @@ pub fn video_mode_for'''),
     match mode {
         // The frame, not just the game inside it: the console body is drawn
         // around this and its opening has to land on the picture, so both
-        // scale together. See backdrop::frame_in.
+        // scale together. See `backdrop::frame_in`.
         VideoMode::Actual => fit_width(PICTURE),
         // Stretch overflows the panel on purpose -- what hangs over the side
         // is paper, and clipping it is how the picture fills the height -- so
