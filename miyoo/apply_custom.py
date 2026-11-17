@@ -872,8 +872,10 @@ edit("crates/slot/src/app.rs", [
         }
         if row == QuickRow::LidOff {
             let n = LID_OFF_MIN.len();'''),
-    ('''            | QuickRow::LidOff => return,''',
+    ('''            | QuickRow::LidOff
+            | QuickRow::Scaling => return,''',
      '''            | QuickRow::LidOff
+            | QuickRow::Scaling
             | QuickRow::MenuScreenOff
             | QuickRow::MenuPowerOff => return,'''),
     ('''    pub fn apply(&mut self, action: Action) {
