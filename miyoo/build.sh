@@ -9,7 +9,7 @@ PORT="$WORK/slot-miyoo"
 STAGE="$PORT/release/stage"
 PORT_COMMIT="d096bdb87f25f3aba62de6b40ef859b61d841e43"
 SLOT_VERSION="1.8.1"
-CUSTOM_VERSION="9"
+CUSTOM_VERSION="10"
 ZIP="$WORK/custom-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo.zip"
 
 for command in git task docker zip unzip python3 file; do
