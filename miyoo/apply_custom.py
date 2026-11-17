@@ -698,307 +698,85 @@ fn extended_brightness_respects_live_onion_pwm_period() {'''),
 
 
 
-# Only Off and Shimmerless should be offered to GB/GBC/GBA. Retain the
-# older enum variants for backwards-readable configuration, never as choices.
+# Miyoo-specific shader removal. Both menus hide the selector, shortcut
+# cycling is inert and the frontend always selects the original unfiltered
+# CPU path. Old shader names remain readable in the saved configuration,
+# but are ignored for rendering; no user data or saves are deleted.
+edit("crates/slot/src/app.rs", [
+    ('''    pub fn in_game_hidden(&self) -> Vec<QuickRow> {
+        let no_bezel = self.playing_platform() == Platform::Gba && !self.framed_panel();
+        let mut hidden = Vec::new();''',
+     '''    pub fn in_game_hidden(&self) -> Vec<QuickRow> {
+        let no_bezel = self.playing_platform() == Platform::Gba && !self.framed_panel();
+        // The shaders are intentionally disabled for this Miyoo build.
+        let mut hidden = vec![
+            QuickRow::Shader, QuickRow::GbaShader,
+            QuickRow::GbShader, QuickRow::GbcShader,
+        ];'''),
+    ('''        let mut hidden = Vec::new();
+        if !own {
+            hidden.push(QuickRow::WallpaperTint);''',
+     '''        // Remove the shader row from every system's quick settings.
+        let mut hidden = vec![
+            QuickRow::Shader, QuickRow::GbaShader,
+            QuickRow::GbShader, QuickRow::GbcShader,
+        ];
+        if !own {
+            hidden.push(QuickRow::WallpaperTint);'''),
+    ('''    pub fn screen_shader(&self) -> Shader {
+        match self.playing_platform() {
+            Platform::Gba => self.state.shader_gba,
+            Platform::Gb => self.state.shader_gb,
+            Platform::Gbc => self.state.shader_gbc,
+        }
+    }''',
+     '''    pub fn screen_shader(&self) -> Shader {
+        // Force the unfiltered picture even for pre-existing saved choices.
+        Shader::Off
+    }'''),
+    ('''    fn step_shader(&mut self, right: bool) {
+        if !matches!(self.phase, Phase::Inserting { .. } | Phase::Playing { .. }) {
+            return;
+        }
+        let (shader, choices) = match self.playing_platform() {
+            Platform::Gba => (&mut self.state.shader_gba, &Shader::GBA[..]),
+            Platform::Gb => (&mut self.state.shader_gb, &Shader::GB[..]),
+            Platform::Gbc => (&mut self.state.shader_gbc, &Shader::GB[..]),
+        };
+        *shader = shader.step(choices, right);
+        let said = match *shader {
+            Shader::Off => Toast::ShaderOff,
+            Shader::Lcd3x => Toast::ShaderLcd3x,
+            Shader::Grid => Toast::ShaderGrid,
+            Shader::Dot => Toast::ShaderDot,
+            Shader::Simpletex => Toast::ShaderSimpletex,
+        };
+        self.persist();
+        self.hud.toast(said, self.now());
+    }''',
+     '''    fn step_shader(&mut self, _right: bool) {
+        // Ignore existing next/previous shader shortcuts as well.
+    }'''),
+])
+edit("crates/slot/src/frontend.rs", [
+    ('''        compositor.set_screen_effect(match self.session.app().screen_shader() {
+            slot_store::Shader::Off => ScreenEffect::None,
+            slot_store::Shader::Lcd3x => ScreenEffect::Lcd3x,
+            slot_store::Shader::Grid => ScreenEffect::Grid,
+            slot_store::Shader::Dot => ScreenEffect::Dot,
+            slot_store::Shader::Simpletex => ScreenEffect::Simpletex,
+        });''',
+     '''        // No shader or software effect can be selected on Miyoo.
+        // Keep the original unfiltered renderer for every platform.
+        compositor.set_screen_effect(ScreenEffect::None);'''),
+])
 edit("crates/slot-store/src/slot_state.rs", [
-    ('''    Grid,
-    Dot,
-    Simpletex,
-}
-
-impl Shader {''',
-     '''    Grid,
-    Dot,
-    Simpletex,
-    Shimmerless,
-}
-
-impl Shader {'''),
-    ('''    pub const GBA: [Shader; 4] = [Shader::Off, Shader::Lcd3x, Shader::Grid, Shader::Dot];
-    pub const GB: [Shader; 4] = [Shader::Off, Shader::Lcd3x, Shader::Grid, Shader::Simpletex];''',
-     '''    pub const GBA: [Shader; 2] = [Shader::Off, Shader::Shimmerless];
-    pub const GB: [Shader; 2] = [Shader::Off, Shader::Shimmerless];'''),
-    ('''            Shader::Simpletex => "simpletex",''',
-     '''            Shader::Simpletex => "simpletex",
-            Shader::Shimmerless => "shimmerless",'''),
-    ('''            Shader::Dot,
-            Shader::Simpletex,
-        ]''',
-     '''            Shader::Dot,
-            Shader::Simpletex,
-            Shader::Shimmerless,
-        ]'''),
     ('''            shader_gba: Shader::Grid,
             shader_gb: Shader::Simpletex,
             shader_gbc: Shader::Simpletex,''',
      '''            shader_gba: Shader::Off,
             shader_gb: Shader::Off,
             shader_gbc: Shader::Off,'''),
-])
-edit("crates/slot-ui/src/quick_menu.rs", [
-    ('''    Dot,
-    Simpletex,
-    Dark,''',
-     '''    Dot,
-    Simpletex,
-    Shimmerless,
-    Dark,'''),
-    ('''    pub const ALL: [QuickValue; 41]''',
-     '''    pub const ALL: [QuickValue; 42]'''),
-    ('''        QuickValue::Dot,
-        QuickValue::Simpletex,
-        QuickValue::Dark,''',
-     '''        QuickValue::Dot,
-        QuickValue::Simpletex,
-        QuickValue::Shimmerless,
-        QuickValue::Dark,'''),
-    ('''            QuickValue::Simpletex => "Simpletex",''',
-     '''            QuickValue::Simpletex => "Simpletex",
-            QuickValue::Shimmerless => "Shimmerless",'''),
-])
-edit("crates/slot-ui/src/toast.rs", [
-    ('''    ShaderDot,
-    ShaderSimpletex,
-    CardUnwritable,''',
-     '''    ShaderDot,
-    ShaderSimpletex,
-    ShaderShimmerless,
-    CardUnwritable,'''),
-    ('''    const FIXED: [Toast; 19]''', '''    const FIXED: [Toast; 20]'''),
-    ('''        Toast::ShaderDot,
-        Toast::ShaderSimpletex,
-        Toast::CardUnwritable,''',
-     '''        Toast::ShaderDot,
-        Toast::ShaderSimpletex,
-        Toast::ShaderShimmerless,
-        Toast::CardUnwritable,'''),
-    ('''            Toast::ShaderSimpletex => "Shader: Simpletex",''',
-     '''            Toast::ShaderSimpletex => "Shader: Simpletex",
-            Toast::ShaderShimmerless => "Shader: Shimmerless",'''),
-])
-edit("crates/slot/src/app.rs", [
-    ('''            Shader::Simpletex => Toast::ShaderSimpletex,''',
-     '''            Shader::Simpletex => Toast::ShaderSimpletex,
-            Shader::Shimmerless => Toast::ShaderShimmerless,'''),
-    ('''        Shader::Simpletex => QuickValue::Simpletex,''',
-     '''        Shader::Simpletex => QuickValue::Simpletex,
-        Shader::Shimmerless => QuickValue::Shimmerless,'''),
-])
-edit("crates/slot-gfx/src/lcd3x.rs", [
-    ('''    Dot,
-    Simpletex,
-}
-
-impl ScreenEffect''',
-     '''    Dot,
-    Simpletex,
-    Shimmerless,
-}
-
-impl ScreenEffect'''),
-])
-edit("crates/slot/src/frontend.rs", [
-    ('''            slot_store::Shader::Simpletex => ScreenEffect::Simpletex,''',
-     '''            slot_store::Shader::Simpletex => ScreenEffect::Simpletex,
-            slot_store::Shader::Shimmerless => ScreenEffect::Shimmerless,'''),
-])
-
-
-# Software implementation of upstream Shimmerless for Fit scaling.
-# Samples the exact area overlap of adjacent native source pixels. Cache
-# horizontally expanded source rows and reuse them across output scanlines.
-# The original unfiltered NEON path remains untouched.
-edit("crates/slot-gfx/src/soft/mod.rs", [
-    ('''struct Game {''',
-     '''#[derive(Copy, Clone)]
-struct ShimmerCol {
-    a: usize,
-    b: usize,
-    t: u16,
-}
-
-/// Source-coordinate coverage: exact area fraction of the right neighbour
-/// across one output pixel. The two samples are bounded by the picture rect.
-fn shimmer_axis(p: f32, half: f32, lo: i32, hi: i32) -> (usize, usize, u16) {
-    let half = half.max(0.00001);
-    let edge = (p + half).floor();
-    let t = ((p + half - edge) / (2.0 * half)).clamp(0.0, 1.0);
-    let a = (edge as i32 - 1).clamp(lo, hi) as usize;
-    let b = (edge as i32).clamp(lo, hi) as usize;
-    (a, b, (t * 256.0).round() as u16)
-}
-
-/// Horizontal expansion runs per native source scanline, not per output
-/// pixel, so only the final one-dimensional vertical interpolation is hot.
-fn shimmer_expand(src: &[u8], cols: &[ShimmerCol], dst: &mut [u8]) {
-    for (c, p) in cols.iter().zip(dst.chunks_exact_mut(4)) {
-        let t = c.t as u32;
-        let inv = 256 - t;
-        for ch in 0..3 {
-            let a = src[c.a + ch] as u32;
-            let b = src[c.b + ch] as u32;
-            p[ch] = ((a * inv + b * t + 128) >> 8) as u8;
-        }
-        p[3] = 255;
-    }
-}
-
-/// Fractional pixel-coverage scaler, activated *only* by Shimmerless.
-/// Preserves the original Off image, colour correction, PWM and launch path.
-#[allow(clippy::too_many_arguments)]
-fn draw_shimmerless(
-    dest: &mut Dest<'_>,
-    img: &Image,
-    src: [f32; 4],
-    pic: [f32; 4],
-    rect: (f32, f32, f32, f32),
-    bounds: (i32, i32, i32, i32),
-    mirror: bool,
-    bright: f32,
-    cols: &mut Vec<ShimmerCol>,
-    line0: &mut Vec<u8>,
-    line1: &mut Vec<u8>,
-) -> u8 {
-    let (rx, ry, rw, rh) = rect;
-    let (x0, y0, x1, y1) = bounds;
-    let width = (x1 - x0) as usize;
-    let (sw, sh) = (img.w as f32, img.h as f32);
-    let xhalf = (src[2] * sw / rw).abs() * 0.5;
-    let yhalf = (src[3] * sh / rh).abs() * 0.5;
-    let xmax = img.w as i32 - 1;
-    let ymax = img.h as i32 - 1;
-    let xmin_pic = ((pic[0] * sw).floor() as i32).clamp(0, xmax);
-    let xmax_pic = ((pic[2] * sw).ceil() as i32 - 1).clamp(xmin_pic, xmax);
-    let ymin_pic = ((pic[1] * sh).floor() as i32).clamp(0, ymax);
-    let ymax_pic = ((pic[3] * sh).ceil() as i32 - 1).clamp(ymin_pic, ymax);
-
-    cols.clear();
-    cols.reserve(width);
-    for i in 0..width {
-        let px = x0 + if mirror { (width - 1 - i) as i32 } else { i as i32 };
-        let u = src[0] + (px as f32 + 0.5 - rx) / rw * src[2];
-        let p = u * sw;
-        // Do not smear the emulated picture over the bezel or margins.
-        let (a, b, t) = if u >= pic[0] && u < pic[2] {
-            shimmer_axis(p, xhalf, xmin_pic, xmax_pic)
-        } else {
-            let at = (p as i32).clamp(0, xmax) as usize;
-            (at, at, 0)
-        };
-        cols.push(ShimmerCol { a: a * 4, b: b * 4, t });
-    }
-
-    line0.resize(width * 4, 0);
-    line1.resize(width * 4, 0);
-    let row_bytes = img.w as usize * 4;
-    let (mut cached0, mut cached1): (Option<usize>, Option<usize>) = (None, None);
-    // Screen startup/shutdown fades must still work. At normal play
-    // gain=256, so this operation changes neither colour nor brightness.
-    let gain = (bright.clamp(0.0, 1.0) * 256.0).round() as u32;
-
-    for py in y0..y1 {
-        let v = src[1] + (py as f32 + 0.5 - ry) / rh * src[3];
-        let p = v * sh;
-        let (sy0, sy1, ty) = if v >= pic[1] && v < pic[3] {
-            shimmer_axis(p, yhalf, ymin_pic, ymax_pic)
-        } else {
-            let at = (p as i32).clamp(0, ymax) as usize;
-            (at, at, 0)
-        };
-        // Cache both native rows. Each horizontal expansion covers the
-        // entire destination row width and is reused across output rows.
-        if cached1 == Some(sy0) && cached0 != Some(sy0) {
-            std::mem::swap(line0, line1);
-            std::mem::swap(&mut cached0, &mut cached1);
-        }
-        if cached0 != Some(sy0) {
-            shimmer_expand(
-                &img.px[sy0 * row_bytes..(sy0 + 1) * row_bytes],
-                cols, line0,
-            );
-            cached0 = Some(sy0);
-        }
-        if sy1 != sy0 && cached1 != Some(sy1) {
-            shimmer_expand(
-                &img.px[sy1 * row_bytes..(sy1 + 1) * row_bytes],
-                cols, line1,
-            );
-            cached1 = Some(sy1);
-        }
-
-        // SAFETY: only one destination scanline is held at any time.
-        let Some(dst) = (unsafe { dest.row(py as usize, x0 as usize, width) }) else {
-            continue;
-        };
-        if sy0 == sy1 || ty == 0 {
-            if gain == 256 {
-                dst.copy_from_slice(line0);
-            } else {
-                for (d, s) in dst.iter_mut().zip(line0.iter()) {
-                    *d = ((*s as u32 * gain + 128) >> 8) as u8;
-                }
-            }
-            continue;
-        }
-        if ty == 256 {
-            if gain == 256 {
-                dst.copy_from_slice(line1);
-            } else {
-                for (d, s) in dst.iter_mut().zip(line1.iter()) {
-                    *d = ((*s as u32 * gain + 128) >> 8) as u8;
-                }
-            }
-            continue;
-        }
-        let w1 = ty as u32;
-        let w0 = 256 - w1;
-        for ((d, a), b) in dst.iter_mut().zip(line0.iter()).zip(line1.iter()) {
-            let value = (*a as u32 * w0 + *b as u32 * w1 + 128) >> 8;
-            *d = ((value * gain + 128) >> 8) as u8;
-        }
-    }
-    2
-}
-
-/// The game plane: a 240x160 frame. The source samples are XRGB8888.
-struct Game {'''),
-    ('''    col: Vec<Col>,
-    col_key: Option<ColKey>,
-    line: Vec<u16>,''',
-     '''    col: Vec<Col>,
-    col_key: Option<ColKey>,
-    line: Vec<u16>,
-    shimmer_cols: Vec<ShimmerCol>,
-    shimmer_line0: Vec<u8>,
-    shimmer_line1: Vec<u8>,'''),
-    ('''            col: Vec::new(),
-            col_key: None,
-            line: Vec::new(),''',
-     '''            col: Vec::new(),
-            col_key: None,
-            line: Vec::new(),
-            shimmer_cols: Vec::new(),
-            shimmer_line0: Vec::new(),
-            shimmer_line1: Vec::new(),'''),
-    ('''        if x0 >= x1 || y0 >= y1 {
-            return 0;
-        }
-
-        // The whole inner loop is integer.''',
-     '''        if x0 >= x1 || y0 >= y1 {
-            return 0;
-        }
-
-        if self.effect == ScreenEffect::Shimmerless {
-            return draw_shimmerless(
-                &mut dest, img, src, self.pic, (rx, ry, rw, rh),
-                (x0, y0, x1, y1), mirror, screen_brightness(self.power),
-                &mut self.shimmer_cols, &mut self.shimmer_line0,
-                &mut self.shimmer_line1,
-            );
-        }
-
-        // The whole inner loop is integer.'''),
 ])
 
 # Invariants: only allow the two explicit PWM backlight edits above in
@@ -1016,9 +794,6 @@ allowed = {
     "crates/slot-power/src/device.rs",
     "crates/slot-power/tests/device.rs",
     "crates/slot/src/frontend.rs",
-    "crates/slot-gfx/src/soft/mod.rs",
-    "crates/slot-gfx/src/lcd3x.rs",
-    "crates/slot-ui/src/toast.rs",
 }
 if set(changes) != allowed:
     raise RuntimeError(f"rebuild source changed unexpected paths: {sorted(set(changes) ^ allowed)}")
@@ -1038,4 +813,4 @@ parts = []
 for path, diff in changes.items():
     parts.append(f"diff --git a/{path} b/{path}\n{diff}")
 dest.write_text("".join(parts))
-print(f"Miyoo Shimmerless-only preview: {len(changes)} sources, original mGBA and PWM preserved")
+print(f"Miyoo no-shader preview: {len(changes)} sources, original mGBA, CPU rendering and PWM preserved")
