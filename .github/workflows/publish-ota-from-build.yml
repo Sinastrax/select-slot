@@ -78,7 +78,31 @@ jobs:
           fi
           # The original Ver. 5 tag points to the crashing build. Update the
           # tag to the exact, verified replacement commit before publishing.
-          tag_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq '.object.sha // empty' 2>/dev/null || true)"
+          tag_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq '.object.sha' 2>/dev/null | grep -E '^[0-9a-f]{40})"
+          if [ -z "$tag_sha" ]; then
+            # Release creation may reject a raw commit as an implicit tag target.
+            # Create the verified annotated reference explicitly first.
+            gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" \
+              -f ref="refs/tags/$TAG" -f sha="$HEAD_SHA" >/dev/null
+          elif [ "$tag_sha" != "$HEAD_SHA" ]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/$TAG" \
+              -f sha="$HEAD_SHA" -F force=true >/dev/null
+          fi
+          # Release notes are version-specific; never repeat the cumulative feature list.
+          gh api "repos/$GITHUB_REPOSITORY/contents/RELEASE_NOTES.md?ref=$HEAD_SHA" --jq '.content' | base64 -d > release-notes.md
+          test -s release-notes.md
+          if [[ "$TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)-(rgsp|custom|select)\.([0-9]+)$ ]]; then
+            DISPLAY_VERSION="${BASH_REMATCH[1]} Ver. ${BASH_REMATCH[3]}"
+          else
+            DISPLAY_VERSION="${TAG#v}"
+          fi
+          gh release create "$TAG" "release/$ZIP" release/versions.json \
+            --repo "$GITHUB_REPOSITORY" --target "$HEAD_SHA" --latest \
+            --title "select. slot. $DISPLAY_VERSION" \
+            --notes-file release-notes.md
+          # Ensure the replacement rather than the withdrawn build is latest.
+          gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq '.tag_name' | grep -Fx "$TAG"
+ || true)"
           if [ -z "$tag_sha" ]; then
             # Release creation may reject a raw commit as an implicit tag target.
             # Create the verified annotated reference explicitly first.
