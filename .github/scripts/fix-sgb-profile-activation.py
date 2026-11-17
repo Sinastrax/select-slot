@@ -1,26 +1,20 @@
-#!/usr/bin/env python3
-"""Fix the SGB grayscale fallback and invisible mGBA Authentic default.
+"""Activate mGBA Pocket SGB's authentic LCD and source palette.
 
-Apply after fix-pocket-sgb-parity.py. Keep separate saved GB settings for
-Gambatte/mGBA, preserve all Pocket Color optics, mGBA hardware model options,
-and previous correction/fit/reflection behavior.
+Apply after fix-pocket-sgb-parity.py. On select. slot. 1.16.0 Ver. 11
+the mGBA profile was constructed as PocketSgb + Simpletex: the optical
+shader was not active, and mGBA SGB hardware was not selected because
+core_gb_colors() only returns SgbAuto while Authentic is enabled.
 
-The SGB model is valid for BOTH cores: Gambatte supplies predefined SGB
-palettes and mGBA emulates SGB hardware with game palette commands.
-The earlier mGBA-only guard made Gambatte Pocket SGB grayscale.
-
-Previous versions defaulted mGBA's SGB model to PocketSgb while leaving
-its *independent shader* at Simpletex. Upgrade that inconsistent legacy
-combination once, then respect subsequent explicit shader selections.
+Migrate precisely that old invalid default once; users can still explicitly
+choose any shader afterwards. Keep Gambatte's separate profiles unchanged.
 """
 from pathlib import Path
 
 app_path=Path("crates/slot/src/app.rs")
 app=app_path.read_text()
-old="""Shader::Authentic if self.core == Core::Mgba && self.gb_model() == GbModel::PocketSgb => GbColors::SgbAuto,"""
-new="""Shader::Authentic if self.gb_model() == GbModel::PocketSgb => GbColors::SgbAuto,"""
-assert app.count(old)==1, "Expected broken mGBA-only SGB palette guard"
-app=app.replace(old,new,1)
+# mGBA SGB requires the effective core's Authentic mode. This guard is
+# correct as written; the persisted Simpletex default is the real issue.
+assert "Shader::Authentic if self.core == Core::Mgba && self.gb_model() == GbModel::PocketSgb => GbColors::SgbAuto," in app
 # A live model change should apply the *effective* palette, not the saved
 # generic palette. The mGBA hardware mode still requires a game restart.
 old_menu="""let model = self.step_gb_model(action == Action::PaletteNext);
@@ -35,7 +29,6 @@ new_quick="""self.step_gb_model(right);
                 self.palette_pending = Some(self.core_gb_colors());"""
 assert app.count(old_quick)==1, "Expected quick-menu model palette sync"
 app=app.replace(old_quick,new_quick,1)
-assert "Core::Gambatte, GbColors::SgbAuto" in Path("crates/slot/src/core.rs").read_text()
 assert 'core.set_option("mgba_gb_model", "Super Game Boy");' in Path("crates/slot/src/core.rs").read_text()
 app_path.write_text(app)
 
@@ -113,4 +106,4 @@ test="""    #[test]
 assert state.count(test_anchor)==1
 state=state.replace(test_anchor,test+test_anchor,1)
 state_path.write_text(state)
-print("Fixed Gambatte SGB colors, live palette updates, and one-time mGBA Authentic migration")
+print("Fixed mGBA SGB missing Authentic by one-time state migration; Gambatte unchanged")
