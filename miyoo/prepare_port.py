@@ -104,10 +104,10 @@ if [ -f "$SD/Config/trace-display.txt" ]; then
         duty=/sys/class/pwm/pwmchip0/pwm0/duty_cycle
         for delay in 0 2 8; do
             [ "$delay" -eq 0 ] || sleep "$delay"
-            echo "-- display check after cumulative $delay second(s) --"
-            echo "onion_brightness=\${SLOT_ONION_BRIGHTNESS:-unset}"
-            echo "onion_power_owner=\${SLOT_ONION_POWER_OWNER:-unset}"
-            echo "rotation=\${SLOT_FB_ROTATE:-unset}"
+            echo "-- display check sample stage $delay --"
+            echo "onion_brightness=${SLOT_ONION_BRIGHTNESS:-unset}"
+            echo "onion_power_owner=${SLOT_ONION_POWER_OWNER:-unset}"
+            echo "rotation=${SLOT_FB_ROTATE:-unset}"
             echo -n "pwm_duty="; cat "$duty" 2>/dev/null || echo unavailable
             echo -n "pwm_enable="; cat /sys/class/pwm/pwmchip0/pwm0/enable 2>/dev/null || echo unavailable
             echo -n "slot_saved_brightness="; sed -n 's/^brightness=//p' "$SD/Config/slot.state" 2>/dev/null | head -1
