@@ -2,6 +2,13 @@ name: Build Custom slot H700
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "patches/**"
+      - ".github/workflows/build-h700.yml"
+      - ".github/scripts/**"
   push:
     branches:
       - main
@@ -104,6 +111,7 @@ jobs:
           git diff --stat HEAD~1 HEAD | tail -25
           echo "Merged latest upstream with our previous complete custom modifications"
           python3 ../.github/scripts/merge-1.16-fixes.py
+          python3 ../.github/scripts/fix-authentic-colour-reflection.py
 
       - name: Capture merged source for integration review
         uses: actions/upload-artifact@v4
