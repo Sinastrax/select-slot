@@ -453,8 +453,8 @@ edit("crates/slot/src/core.rs", [
 
 
 # OnionOS owns physical POWER and its theme transitions when running its
-# native runtime. SLOT must not blank the PWM on PowerTap before Onion's
-# bootScreen renderer can draw BMO's Screen_Off/Screen_Off_Save.
+# native runtime. SLOT must not blank the PWM on PowerTap before OnionOS can
+# show whatever splash/shutdown image is provided by the selected theme.
 # Keep SLOT's immediate save-state flush at press, without entering doze or
 # doing a competing poweroff on release/hold. Native non-Onion use unchanged.
 edit("crates/slot/src/app.rs", [
@@ -464,7 +464,7 @@ edit("crates/slot/src/app.rs", [
      '''    pub fn apply(&mut self, action: Action) {
         self.track_held_dir(action);
         // Under Onion, its keymon receives the same physical POWER event.
-        // Let keymon own LCD blanking, BMO theme artwork and suspend/wake.
+        // Let keymon own LCD blanking, active-theme artwork and suspend/wake.
         // In particular do not execute Slot's doze() -> PWM duty 0 before
         // Onion's bootScreen has a chance to render.
         if self.root.as_ref().is_some_and(|r| r.join(".tmp_update/runtime.sh").is_file()) {
@@ -481,78 +481,17 @@ edit("crates/slot/src/app.rs", [
         match action {'''),
 ])
 
-# Miyoo-only physical brightness extension, requested after the clean Ver. 11
-# display rebuild remained too dim at SLOT level 9. This does NOT alter the
-# framebuffer, LCD3x effects, OnionOS files, or the original 1..9 PWM rungs.
-# OnionOS can change the PWM period in Tweaks; new rungs are fractions of the
-# live period and never reduce brightness below the original level-9 rung.
+# Return to Dean's original 0..9 brightness scale and hardware duty table.
+# Existing Ver. 12–20 installations may contain brightness=10, 11 or 12.
+# The inherited state parser rejects out-of-range brightness and discards the
+# *entire* saved configuration; clamp only this one number to 9 instead.
 edit("crates/slot-store/src/slot_state.rs", [
-    ("pub const BRIGHTNESS_MAX: u8 = 9;", "pub const BRIGHTNESS_MAX: u8 = 12;"),
+    ('''            "brightness" => brightness = Some(level(value, BRIGHTNESS_MAX)?),''',
+     '''            // Accept former Miyoo boost levels without losing the rest of
+            // slot.state (including resume/core/settings) on downgrade.
+            "brightness" => brightness = Some(value.parse::<u8>().ok()?.min(BRIGHTNESS_MAX)),'''),
 ])
-edit("crates/slot-ui/src/quick_menu.rs", [
-    ('''    Level9,
-    ScaleActual,''',
-     '''    Level9,
-    Level10,
-    Level11,
-    Level12,
-    ScaleActual,'''),
-    ('''    pub const ALL: [QuickValue; 38]''',
-     '''    pub const ALL: [QuickValue; 41]'''),
-    ('''        QuickValue::Level9,
-        QuickValue::ScaleActual,''',
-     '''        QuickValue::Level9,
-        QuickValue::Level10,
-        QuickValue::Level11,
-        QuickValue::Level12,
-        QuickValue::ScaleActual,'''),
-    ('''    pub const LEVELS: [QuickValue; 10]''',
-     '''    pub const LEVELS: [QuickValue; 13]'''),
-    ('''        QuickValue::Level9,
-    ];
 
-    pub const LID_OFF:''',
-     '''        QuickValue::Level9,
-        QuickValue::Level10,
-        QuickValue::Level11,
-        QuickValue::Level12,
-    ];
-
-    pub const LID_OFF:'''),
-    ('''            QuickValue::Level9 => "9",''',
-     '''            QuickValue::Level9 => "9",
-            QuickValue::Level10 => "10",
-            QuickValue::Level11 => "11",
-            QuickValue::Level12 => "12",'''),
-])
-edit("crates/slot-power/src/device.rs", [
-    ('''            Some(Backlight::Pwm(_)) => PWM_STEPS[TOP_STEP as usize],''',
-     '''            Some(Backlight::Pwm(dir)) => {
-                // Max UI brightness is now 50% of this panel's PWM period.
-                // Include the old level-9 duty if Onion uses a shorter period.
-                let period = read_number(&dir.join("period")).unwrap_or(800);
-                (period / 2).max(PWM_STEPS[TOP_STEP as usize].min(period))
-            },'''),
-    ('''                let duty = PWM_STEPS[step as usize].min(cap);''',
-     '''                let duty = if step <= TOP_STEP as u8 {
-                    // Preserve all of Dean's original levels 0..9 exactly.
-                    PWM_STEPS[step as usize].min(cap)
-                } else {
-                    // OnionOS allows 100..1000 as the PWM period (800
-                    // by default), and restores its own brightness on wake.
-                    // The old absolute-value table only covered 0..9.
-                    // 10/11/12 target 20%/30%/50% duty of the *live*
-                    // period, without exceeding the sysfs maximum.
-                    let period = if cap == u32::MAX { 800 } else { cap };
-                    let percent: u32 = match step {
-                        10 => 20,
-                        11 => 30,
-                        _ => 50,
-                    };
-                    let scaled = ((period as u64 * percent as u64 + 50) / 100) as u32;
-                    scaled.max(PWM_STEPS[TOP_STEP as usize].min(cap)).min(cap)
-                };'''),
-])
 # Onion keymon is an independent backlight owner: it restores its own
 # 0..10 level after standby, and while it believes MainUI is active it can
 # rewrite brightness on key events. Notify its supported state-change hook when
@@ -597,39 +536,10 @@ edit("crates/slot/src/frontend.rs", [
         self.session.update(dt);'''),
 ])
 
-# Unit tests for 800 (Onion default), 400 (custom frequency), 100 (short).
-edit("crates/slot-power/tests/device.rs", [
-    ('''#[test]
-fn a_shorter_period_clamps_rather_than_failing() {''',
-     '''#[test]
-fn extended_brightness_respects_live_onion_pwm_period() {
-    let d = pwm_sysfs("800");
-    let mut p = platform(&d);
-    for (step, expected) in [(9, 112), (10, 160), (11, 240), (12, 400)] {
-        p.set_backlight(step);
-        assert_eq!(duty(&d), expected, "800 period step {step}");
-    }
-    let period = d.path().join("class/pwm/pwmchip0/pwm0/period");
-    fs::write(&period, "400\\n").unwrap();
-    for (step, expected) in [(9, 112), (10, 112), (11, 120), (12, 200)] {
-        p.set_backlight(step);
-        assert_eq!(duty(&d), expected, "400 period step {step}");
-    }
-    fs::write(&period, "100\\n").unwrap();
-    for step in [9, 10, 11, 12] {
-        p.set_backlight(step);
-        assert_eq!(duty(&d), 100, "100 period saturated at step {step}");
-    }
-}
-
-#[test]
-fn a_shorter_period_clamps_rather_than_failing() {'''),
-])
-
 # Original Miyoo Mini / Mini Plus: OnionOS controls PWM directly, but Dean's
 # power detector was designed around the Mini Flip and only picks PWM AFTER
 # finding no class backlight and no dispdbg. If either older interface exists,
-# the PWM levels 10..12 update SLOT's UI but never reach the LCD backlight.
+# the saved brightness selection may not reach the LCD backlight.
 # On OnionOS ONLY, prefer its actual PWM channel when already exported.
 # Preserve Dean's original priority and fallbacks for stock/Allium firmware.
 edit("crates/slot-power/src/device.rs", [
@@ -663,7 +573,7 @@ edit("crates/slot-power/src/device.rs", [
 ])
 edit("crates/slot-power/tests/device.rs", [
     ('''#[test]
-fn extended_brightness_respects_live_onion_pwm_period() {''',
+fn a_shorter_period_clamps_rather_than_failing() {''',
      '''#[test]
 fn onion_prefers_real_pwm_over_other_reported_display_backlights() {
     let d = sysfs("255", "87");
@@ -686,8 +596,6 @@ fn onion_prefers_real_pwm_over_other_reported_display_backlights() {
     let mut slot = DevicePlatform::probe(d.path(), d.path().to_path_buf());
     slot.set_backlight(9);
     assert_eq!(duty(&d), 112);
-    slot.set_backlight(12);
-    assert_eq!(duty(&d), 400);
     // Class isn't touched by the Onion-specific correction.
     assert_eq!(brightness(&d), 255);
 }
