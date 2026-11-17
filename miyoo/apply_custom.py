@@ -785,6 +785,24 @@ struct ColKey {'''),
             };'''),
 ])
 
+# The original Slot limits Dot to GBA and offers only Simpletex for GB/GBC.
+# This is the missing selector integration: make the new software Dot effect
+# available to ALL platforms, and stop advertising unsupported CPU effects.
+# Keep the enum variants for reading old configuration files, but only offer
+# the three modes the Miyoo software renderer actually implements.
+edit("crates/slot-store/src/slot_state.rs", [
+    ('''    pub const GBA: [Shader; 4] = [Shader::Off, Shader::Lcd3x, Shader::Grid, Shader::Dot];
+    pub const GB: [Shader; 4] = [Shader::Off, Shader::Lcd3x, Shader::Grid, Shader::Simpletex];''',
+     '''    pub const GBA: [Shader; 3] = [Shader::Off, Shader::Lcd3x, Shader::Dot];
+    pub const GB: [Shader; 3] = [Shader::Off, Shader::Lcd3x, Shader::Dot];'''),
+    ('''            shader_gba: Shader::Grid,
+            shader_gb: Shader::Simpletex,
+            shader_gbc: Shader::Simpletex,''',
+     '''            shader_gba: Shader::Off,
+            shader_gb: Shader::Off,
+            shader_gbc: Shader::Off,'''),
+])
+
 # Invariants: only allow the two explicit PWM backlight edits above in
 # slot-power; framebuffer and compositor source stay original. Launcher,
 # keymon, theme, screen-off / power lifecycle paths are never patched.
