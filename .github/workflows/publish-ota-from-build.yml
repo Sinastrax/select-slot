@@ -79,7 +79,12 @@ jobs:
           # The original Ver. 5 tag points to the crashing build. Update the
           # tag to the exact, verified replacement commit before publishing.
           tag_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq '.object.sha' 2>/dev/null || true)"
-          if [ -n "$tag_sha" ] && [ "$tag_sha" != "$HEAD_SHA" ]; then
+          if [ -z "$tag_sha" ]; then
+            # Release creation may reject a raw commit as an implicit tag target.
+            # Create the verified annotated reference explicitly first.
+            gh api -X POST "repos/$GITHUB_REPOSITORY/git/refs" \
+              -f ref="refs/tags/$TAG" -f sha="$HEAD_SHA" >/dev/null
+          elif [ "$tag_sha" != "$HEAD_SHA" ]; then
             gh api -X PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/$TAG" \
               -f sha="$HEAD_SHA" -F force=true >/dev/null
           fi
