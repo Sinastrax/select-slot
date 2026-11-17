@@ -55,5 +55,29 @@ if [ -f "$SD/.tmp_update/onionVersion/version.txt" ] \\
     export SLOT_ONION_VISUALS=1
 fi
 """, 1)
+# The Flip's 752x560 LCD is mounted upside-down; this is not true of the
+# original Mini or Mini Plus (640x480). Dean's default forced rotation on all.
+old_rotation = 'export SLOT_FB_ROTATE=180'
+if body.count(old_rotation) != 1:
+    raise RuntimeError("Miyoo launcher: expected Mini Flip rotation once")
+body = body.replace(old_rotation, """# Only the 752x560 Flip needs 180-degree framebuffer rotation.
+# Mini and Mini Plus should not inherit the Flip's panel orientation.
+case "$(cat /sys/class/graphics/fb0/virtual_size 2>/dev/null)" in
+    752,*) export SLOT_FB_ROTATE=180 ;;
+    *)     export SLOT_FB_ROTATE=0 ;;
+esac""", 1)
+
+# Onion starts keymon BEFORE running custom startup hooks. Competing POWER
+# handlers can freeze Slot mid-save or prevent the screen turning off.
+# Let keymon manage POWER only while it actually runs; otherwise Slot retains
+# its standard doze, wake and shutdown handling.
+old_visuals = '    export SLOT_ONION_VISUALS=1\nfi'
+if body.count(old_visuals) != 1:
+    raise RuntimeError("Miyoo launcher: expected OnionOS visual block once")
+body = body.replace(old_visuals, """    export SLOT_ONION_VISUALS=1
+    if pgrep -x keymon >/dev/null 2>&1; then
+        export SLOT_ONION_POWER_OWNER=1
+    fi
+fi""", 1)
 launch.write_text(body)
-print("Gambatte core and optional OnionOS visuals integration registered")
+print("Gambatte, device-specific framebuffer orientation and Onion power ownership registered")
