@@ -1,0 +1,87 @@
+name: Publish verified custom OTA build
+
+on:
+  # Publish the first verified OTA build when this workflow is added.
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/publish-ota-from-run.yml"
+  # Publish later builds from a successful Actions run without recompiling.
+  workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: "Successful Build custom Slot H700 Actions run ID"
+        required: true
+        type: string
+        default: "44073042296"
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Verify source build succeeded
+        id: build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD_RUN_ID: ${{ inputs.build_run_id || '44073042296' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          state="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN_ID" --jq '.conclusion')"
+          test "$state" = success
+          sha="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$BUILD_RUN_ID" --jq '.head_sha')"
+          echo "source_sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "run_id=$BUILD_RUN_ID" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ steps.build.outputs.run_id }}
+          name: slot-rgsp-complete-h700
+          path: release
+          github-token: ${{ github.token }}
+
+      - name: Validate release assets match the verified build
+        id: manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, pathlib, os
+          root = pathlib.Path("release")
+          item = json.loads((root / "versions.json").read_text())["stable"]
+          v = item["version"]
+          assert v.startswith("1.15.3-rgsp.") or "-rgsp." in v
+          assert item["tag"] == "v" + v
+          assert item["zip"] == f"slot-v{v}-h700.zip"
+          path = root / item["zip"]
+          assert path.is_file()
+          assert path.stat().st_size == item["size"]
+          assert hashlib.sha256(path.read_bytes()).hexdigest() == item["sha256"]
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              print("tag=" + item["tag"], file=output)
+              print("zip=" + item["zip"], file=output)
+          print("Full OTA release validated", item["tag"], item["sha256"])
+          PY
+
+      - name: Publish latest stable release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.manifest.outputs.tag }}
+          ZIP: ${{ steps.manifest.outputs.zip }}
+          SHA: ${{ steps.build.outputs.source_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "Release $TAG exists; do not silently overwrite OTA artifacts"
+            exit 0
+          fi
+          gh release create "$TAG" "release/$ZIP" release/versions.json \
+            --repo "$GITHUB_REPOSITORY" --target "$SHA" --latest \
+            --title "Custom Slot $TAG (H700)" \
+            --notes "Full custom RGSP firmware with online updates, working older mGBA, Authentic GB/GBC/GBA shaders, SGB and corrected hotkeys. Includes third-party licenses and corresponding older mGBA source. Noncommercial custom project. Source and GPL-3.0 license: https://github.com/$GITHUB_REPOSITORY. ROMs and proprietary BIOS files are not included."
