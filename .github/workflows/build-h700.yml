@@ -103,6 +103,7 @@ jobs:
           git show upstream-1.16:CHANGELOG.md | grep -q '1.16.0'
           git diff --stat HEAD~1 HEAD | tail -25
           echo "Merged latest upstream with our previous complete custom modifications"
+          python3 ../.github/scripts/merge-1.16-fixes.py
 
       - name: Capture merged source for integration review
         uses: actions/upload-artifact@v4
