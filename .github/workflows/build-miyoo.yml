@@ -59,7 +59,7 @@ jobs:
       - name: Upload experimental ZIP and checksum
         uses: actions/upload-artifact@v4
         with:
-          name: select-slot-miyoo-ver17-fit-dot
+          name: select-slot-miyoo-preview
           path: |
             .build/miyoo/select-slot-*-miyoo.zip
             .build/miyoo/select-slot-*-miyoo.zip.sha256
@@ -82,7 +82,7 @@ jobs:
       - name: Download verified Miyoo package from this run
         uses: actions/download-artifact@v4
         with:
-          name: select-slot-miyoo-ver17-fit-dot
+          name: select-slot-miyoo-preview
           path: .build/miyoo
 
       - name: Verify standalone package and derive distinct Miyoo tag
@@ -107,7 +107,7 @@ jobs:
           version="${BASH_REMATCH[1]}"
           revision="${BASH_REMATCH[2]}"
           info="$(unzip -p "$archive" System/select-slot-version.txt)"
-          grep -Fqx "select. slot. $version Ver. $revision - Fit-aware Dot software shader" <<<"$(head -n1 <<<"$info")"
+          grep -Fq "select. slot. $version Ver. $revision - " <<<"$(head -n1 <<<"$info")"
           grep -Fq 'GB/GBC: Miyoo-native mGBA default' <<<"$info"
           tag="miyoo-v${version}-ver${revision}-preview.${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}"
           {
@@ -136,7 +136,7 @@ jobs:
           
           Miyoo Mini / Mini Plus / Mini Flip ARMv7 build. Not for H700 devices.
           Default GB/GBC core: original Miyoo mGBA; GBA: gpSP.
-          This preview adds Fit-aware Dot rendering to the Miyoo software backend.
+          Refer to System/select-slot-install.md inside the ZIP for build-specific\n          changes and installation instructions.
           
           The build and ZIP checks passed, but device performance and display
           quality have **not** been verified on physical hardware.
