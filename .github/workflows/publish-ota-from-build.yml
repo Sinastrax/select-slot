@@ -1,9 +1,9 @@
-name: Publish validated RGSP firmware after successful build
+name: Publish Custom slot release
 
 on:
   workflow_run:
     workflows:
-      - Build custom Slot H700
+      - Build Custom slot H700
     types: [completed]
 
 permissions:
@@ -19,7 +19,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           run-id: ${{ github.event.workflow_run.id }}
-          name: slot-rgsp-complete-h700
+          name: custom-slot-complete-h700
           path: release
           github-token: ${{ github.token }}
 
@@ -39,7 +39,7 @@ jobs:
           stable = json.loads((release / "versions.json").read_text())["stable"]
           version = stable["version"]
           assert version == expected, f"Stale build {version}, main is now {expected}"
-          assert "-rgsp." in version
+          assert "-custom." in version
           assert stable["tag"] == "v" + version
           assert stable["zip"] == "slot-v" + version + "-h700.zip"
           archive = release / stable["zip"]
@@ -64,7 +64,10 @@ jobs:
             echo "$TAG was already released; leaving immutable release unchanged."
             exit 0
           fi
+          # Release notes are version-specific; never repeat the cumulative feature list.
+          gh api "repos/$GITHUB_REPOSITORY/contents/RELEASE_NOTES.md?ref=$HEAD_SHA" --jq '.content' | base64 -d > release-notes.md
+          test -s release-notes.md
           gh release create "$TAG" "release/$ZIP" release/versions.json \
             --repo "$GITHUB_REPOSITORY" --target "$HEAD_SHA" --latest \
-            --title "Custom Slot $TAG (H700)" \
-            --notes "Complete noncommercial H700 Slot custom firmware. This version includes configurable menu-only screen-off and power-off inactivity timers, all previous Authentic/SGB shaders and L3/R3/right-stick hotkeys, online updates, and the verified older mGBA core. Credits and applicable licenses in System/licenses; source in the repository. No game ROMs or copyrighted BIOS files included."
+            --title "Custom slot. Ver. ${TAG#v}" \
+            --notes-file release-notes.md
