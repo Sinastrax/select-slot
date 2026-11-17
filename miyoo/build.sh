@@ -76,6 +76,9 @@ for rel in ("App/Slot/config.json", "Apps/slot.pak/config.json"):
     path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8")
 PY
 
+# Supply both optional startup methods as examples, without enabling either.
+# Installing into Onion's .tmp_update/startup/ remains an explicit user action.
+cp "$ROOT/miyoo/onion-autoboot.sh" "$STAGE/System/autoboot/onion-startup.sh"
 cp "$ROOT/miyoo/INSTALL.md" "$STAGE/System/custom-slot-install.md"
 cat > "$STAGE/System/custom-slot-version.txt" <<EOF
 Custom slot. $SLOT_VERSION Ver. $CUSTOM_VERSION
