@@ -140,14 +140,17 @@ jobs:
           
           Miyoo Mini / Mini Plus / Mini Flip ARMv7 build. Not for H700 devices.
           Default GB/GBC core: original Miyoo mGBA; GBA: gpSP.
-          Refer to System/select-slot-install.md inside the ZIP for build-specific\n          changes and installation instructions.
+          Refer to System/select-slot-install.md inside the ZIP for build-specific
+          changes and installation instructions.
           
           The build and ZIP checks passed, but device performance and display
           quality have **not** been verified on physical hardware.
-          The user-confirmed brightness reference remains Miyoo Ver. 16.
+          Brightness is limited to the original 1–9 settings (former 10–12 values load as 9).
+          No in-app updater or Wi-Fi connection is needed.
           
           Install: extract the ZIP contents to the SD-card root after backing
-          up saves, save states and Config. OnionOS/BMO files are not replaced.
+          up saves, save states and Config. OnionOS and the currently selected
+          theme's files are not replaced.
           
           Commit: ${GITHUB_SHA}
           This prerelease is separate from the stable H700 release/OTA channel.
