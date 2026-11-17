@@ -13,8 +13,8 @@ body = s.split(anchor, 1)[1].split("\n          PY", 1)[0]
 code = "\n".join(line[10:] if line.startswith("          ") else line for line in body.splitlines())
 compile(code, "release_manifest_validator", "exec")
 assert 'assert any("-" + n + "." in version' in code
-assert 'gh release upload "$TAG"' in s and "--clobber" in s
-assert 'gh release edit "$TAG"' in s and "--draft=false --target" in s
-assert 'gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --latest' in s
+assert 'gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/$existing_id"' in s
+assert 'git/refs/tags/$TAG' in s and '-F force=true' in s
+assert 'gh release create "$TAG"' in s and '--latest' in s
 assert 'gh release create "$TAG"' in s
 print("PASS: OTA publisher parses Python manifest and replaces withdrawn drafts")
