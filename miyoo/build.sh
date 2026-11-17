@@ -9,7 +9,7 @@ PORT="$WORK/slot-miyoo"
 STAGE="$PORT/release/stage"
 PORT_COMMIT="d096bdb87f25f3aba62de6b40ef859b61d841e43"
 SLOT_VERSION="1.8.1"
-CUSTOM_VERSION="18"
+CUSTOM_VERSION="19"
 ZIP="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo.zip"
 
 for command in git task docker zip unzip python3 file; do
@@ -45,17 +45,22 @@ python3 "$ROOT/miyoo/prepare_port.py" "$PORT"
   task patch
 )
 python3 "$ROOT/miyoo/apply_custom.py" "$PORT/upstream/slot" "$PORT/patches/0028-custom-gambatte-defaults.patch"
-# Check the generated custom patch, not the still-original source tree.
-# task release applies this patch after task unpatch; verifying upstream now
-# would incorrectly claim that the feature does not exist.
+# The patched source is temporarily the original upstream tree; validate
+# generated changes BEFORE task release applies the generated patch.
 shader_patch="$PORT/patches/0028-custom-gambatte-defaults.patch"
-shader_frontend="$PORT/upstream/slot/crates/slot/src/frontend.rs"
-grep -Fq '+    pub const GB: [Shader; 3] = [Shader::Off, Shader::Lcd3x, Shader::Dot];' "$shader_patch"
-grep -Fq '+    pub const GBA: [Shader; 3] = [Shader::Off, Shader::Lcd3x, Shader::Dot];' "$shader_patch"
-grep -Fq 'slot_store::Shader::Dot => ScreenEffect::Dot' "$shader_frontend"
-grep -Fq '+        let dot = self.effect == ScreenEffect::Dot;' "$shader_patch"
-grep -Fq '+                dot_axis_factor(v * sh,' "$shader_patch"
-echo "Verified generated Dot selector patch for GB/GBC/GBA and frontend-to-renderer mapping"
+grep -Fq '+    pub const GB: [Shader; 2] = [Shader::Off, Shader::Shimmerless];' "$shader_patch"
+grep -Fq '+    pub const GBA: [Shader; 2] = [Shader::Off, Shader::Shimmerless];' "$shader_patch"
+grep -Fq '+            slot_store::Shader::Shimmerless => ScreenEffect::Shimmerless,' "$shader_patch"
+grep -Fq '+        Shader::Shimmerless => QuickValue::Shimmerless,' "$shader_patch"
+grep -Fq '+            Shader::Shimmerless => Toast::ShaderShimmerless,' "$shader_patch"
+grep -Fq '+            QuickValue::Shimmerless => "Shimmerless",' "$shader_patch"
+grep -Fq '+        if self.effect == ScreenEffect::Shimmerless {' "$shader_patch"
+grep -Fq '+fn draw_shimmerless(' "$shader_patch"
+grep -Fq '+fn shimmer_axis(' "$shader_patch"
+grep -Fq '+    pub const ALL: [QuickValue; 42]' "$shader_patch"
+# No LCD, Dot, Grid or Simpletex in the platform-visible shader choices.
+! grep -E '^\+    pub const (GBA|GB): .*Shader::(Dot|Lcd3x|Grid|Simpletex)' "$shader_patch"
+echo "Verified Off/Shimmerless-only menu, persisted value, toast, frontend and scaler"
 (
   cd "$PORT"
   task unpatch
@@ -108,15 +113,15 @@ grep -Fq 'let percent: u32' "$PORT/patches/0028-custom-gambatte-defaults.patch"
 cp "$ROOT/miyoo/onion-autoboot.sh" "$STAGE/System/autoboot/onion-startup.sh"
 cp "$ROOT/miyoo/INSTALL.md" "$STAGE/System/select-slot-install.md"
 cat > "$STAGE/System/select-slot-version.txt" <<EOF
-select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - selectable Fit-aware Dot for GB/GBC/GBA
+select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - CPU Shimmerless Fit scaling
 Base: https://github.com/deanmarano/slot-miyoo
 Pinned original: $PORT_COMMIT
 GB/GBC: Miyoo-native mGBA default; Gambatte optional; GBA: gpSP default (mGBA alternative)
 Per-game scaling: Original, Integer, Aspect Fit, Fill/Crop, Full Stretch
 Resume On Power / Insert: independent
 Brightness: original 1-9 PWM values, boost levels 10-12 (20%,30%,50% of PWM period)
-Framebuffer: Miyoo CPU renderer with source-pixel Fit-aware Dot for GB/GBC/GBA; orientation and launcher unchanged
-Shader choices: Off / LCD3x / Dot (unsupported Grid and Simpletex hidden)
+Framebuffer: original Miyoo Off path, optional source-coverage Shimmerless CPU scaler; orientation and launcher unchanged
+Shader choices: Off / Shimmerless only (GB, GBC, GBA)
 Onion PWM: period-aware scaling of boost steps; Onion keymon owns POWER and BMO; Slot uses Onion PWM instead of legacy backlight/dispdbg
 OnionOS BMO: native theme and power path
 Experimental preview; no H700 OTA publication
