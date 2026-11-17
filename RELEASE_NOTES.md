@@ -1,10 +1,10 @@
-# Custom slot. 1.16.0 Ver. 4
+# Custom slot. 1.16.0 Ver. 5
 
-## Changes since Custom slot. 1.16.0 Ver. 3
+## Changes since Custom slot. 1.16.0 Ver. 4
 
-- Fixed **GBA Authentic with Color Correction Off** looking too bright and too similar to an unfiltered LCD image: pixel centres now retain the source RGB without the inverse pixel-grid brightness boost, so the dark LCD gaps naturally reduce the overall brightness.
-- **Authentic with Color Correction On** still uses the original measured GBA LCD response and calibrated panel levels from Ver. 3.
-- Other Authentic modes (GB, GBC, Pocket Color and Pocket SGB), Reflection, LCD response, emulator cores and scaling remain unchanged.
-- Added a regression check to keep this change limited to uncorrected GBA rendering.
+- Fixed **Authentic GBA/GBC LCD pixel-gap aliasing at fractional Fit scales**, particularly the RG35XX H's 640×480 panel (approximately 2.67 output pixels per GBA pixel). Fractional gaps now use destination-pixel coverage rather than uneven hard on/off samples.
+- Improved **standard LCD-grid shader precision** on non-3:2 panels to reduce uneven subpixel stripes and banding at Fit scaling. Keeps the existing LCD mask, without adding blur to game artwork.
+- Preserved integer-scale Authentic gap rendering (2× through 6×) and did not change game aspect ratios, shaders' calibrated color correction, reflection settings, or emulator cores.
+- Added a deterministic geometry regression test for Fit and integer scaling.
 
-The adjustment does not introduce additional color tint or alter the underlying game palette.
+Physical display differences and camera moiré may still be noticeable at 2.67× because this is not an integer pixel scale.
