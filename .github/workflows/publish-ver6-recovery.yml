@@ -28,7 +28,8 @@ jobs:
           HEAD_SHA: e34810c4603a506ba59b251f62768af49b206181
         shell: bash
         run: |
-          set -euo pipefail
+          set -euxo pipefail
+          trap 'echo "Ver. 6 publisher stopped at line $LINENO: $BASH_COMMAND" >&2' ERR
           repo="$GITHUB_REPOSITORY"
           tag=v1.16.0-rgsp.6
           version=1.16.0-rgsp.6
