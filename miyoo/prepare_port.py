@@ -50,7 +50,7 @@ if body.count(needle) != 1:
 body = body.replace(needle, needle + """
 # Only for OnionOS: its own theme renderer supplies transitions. Do not
 # replace Onion's runtime.sh or boot assets, and support user opt-out.
-if [ -f "$SD/.tmp_update/onionVersion/version.txt" ] \\
+if [ -f "$SD/.tmp_update/runtime.sh" ] \\
     && [ -f "$SYS/onion-splash.sh" ]; then
     export SLOT_ONION_VISUALS=1
 fi
