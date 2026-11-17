@@ -52,7 +52,22 @@ jobs:
             echo "Ver. 6 is already public; leaving it unchanged."
             exit 0
           fi
-          tag_sha="$(gh api "repos/$repo/git/ref/tags/$tag" --jq '.object.sha // empty' 2>/dev/null || true)"
+          tag_sha="$(gh api "repos/$repo/git/ref/tags/$tag" --jq '.object.sha' 2>/dev/null | grep -E '^[0-9a-f]{40})"
+          if [ -z "$tag_sha" ]; then
+            gh api -X POST "repos/$repo/git/refs" \
+              -f ref="refs/tags/$tag" -f sha="$HEAD_SHA" >/dev/null
+          else
+            test "$tag_sha" = "$HEAD_SHA"
+          fi
+          gh api "repos/$repo/contents/RELEASE_NOTES.md?ref=$HEAD_SHA" --jq '.content' | base64 -d > notes.md
+          test -s notes.md
+          gh release create "$tag" \
+            release/slot-v1.16.0-rgsp.6-h700.zip release/versions.json \
+            --repo "$repo" --target "$HEAD_SHA" --latest \
+            --title "select. slot. 1.16.0 Ver. 6" --notes-file notes.md
+          gh api "repos/$repo/releases/latest" --jq '.tag_name' | grep -Fx "$tag"
+          echo "Published verified Ver. 6 to OTA."
+ || true)"
           if [ -z "$tag_sha" ]; then
             gh api -X POST "repos/$repo/git/refs" \
               -f ref="refs/tags/$tag" -f sha="$HEAD_SHA" >/dev/null
