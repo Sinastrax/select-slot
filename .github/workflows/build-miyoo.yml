@@ -1,4 +1,4 @@
-name: Build select. slot. Miyoo PWM priority
+name: Build select. slot. Miyoo native core defaults
 
 on:
   workflow_dispatch:
@@ -38,7 +38,7 @@ jobs:
           curl -fsSL https://taskfile.dev/install.sh | sh -s -- -b "$HOME/.local/bin"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-      - name: Rebuild Miyoo from Dean's port with PWM boost
+      - name: Rebuild Miyoo from Dean's port with native mGBA default
         shell: bash
         run: bash miyoo/build.sh
 
@@ -59,7 +59,7 @@ jobs:
       - name: Upload experimental ZIP and checksum (do not publish a release)
         uses: actions/upload-artifact@v4
         with:
-          name: select-slot-miyoo-pwm-priority
+          name: select-slot-miyoo-ver16-native-mgba
           path: |
             .build/miyoo/select-slot-*-miyoo.zip
             .build/miyoo/select-slot-*-miyoo.zip.sha256
