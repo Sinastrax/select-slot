@@ -156,6 +156,11 @@ jobs:
           # This executes AFTER all historical shader transformations.
           python3 ../.github/scripts/repair-pocket-rgb-source-and-correction.py
           python3 ../.github/scripts/verify-pocket-rgb-source-and-correction.py
+          # Hardware feedback: SGB colors and LCD pixels are right, but the
+          # SNES correction left whites nearly pure white. Keep *all* Ver. 16
+          # RGB source and LCD code; apply exact Pocket Color GPU Look last.
+          python3 ../.github/scripts/restore-sgb-pocket-whitepoint.py
+          python3 ../.github/scripts/verify-sgb-pocket-whitepoint.py
 
       - name: Capture merged source for integration review
         uses: actions/upload-artifact@v4
