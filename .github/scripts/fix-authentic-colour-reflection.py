@@ -16,9 +16,6 @@ def replace_once(source: str, old: str, new: str, what: str) -> str:
     return source.replace(old, new, 1)
 
 
-shader_path = Path("crates/slot-gfx/src/shaders.rs")
-shader = shader_path.read_text()
-
 # Authentic ON: use the original measured GBA/GBC LCD colour response, including
 # its calibrated panel white and black values. The v2 neutral-axis conversion
 # preserved source luminance instead of the real screen's luminance, bleaching
@@ -64,6 +61,37 @@ shader = replace_once(
                         ? vec3(134.0, 140.0, 122.0) / 255.0 : vec3(1.0));""",
     "Pocket Color correction-dependent reflector",
 )
+# Remove superseded explanatory comments from Ver. 2 that incorrectly claimed
+# neutral luminance was part of Authentic's measured colour simulation.
+comments = [
+    (
+        """// Treat colour correction as a source-colour conversion only.
+                    // Preserve the source's luminance and neutral greys, including
+                    // white, rather than changing the simulated LCD white/black point.""",
+        """// On uses the calibrated GBC colour response and panel white/black;
+                    // Off passes the game's original colours to the Pocket LCD grid.""",
+    ),
+    (
+        """// Reflector and pixel gaps must be identical for both correction
+                // settings; do not switch panel tint when correction is toggled.""",
+        """// Pocket Color's measured reflector is part of the calibrated On mode.
+                // Off keeps neutral gaps; Pocket SGB retains its own reflector.""",
+    ),
+    (
+        """// One neutral floor for either setting; the switch acts on source
+            // colour only, not panel brightness, contrast, or gap tint.""",
+        """// The original Authentic LCD has a measured black and white point.
+            // Only Off uses a neutral black floor to preserve uncorrected RGB.""",
+    ),
+    (
+        """// Keep luminance and neutral values identical to the uncorrected
+                // source; only the chromatic response is corrected.""",
+        """// The measured upstream response also includes brightness and panel tint.""",
+    ),
+]
+for old, new in comments:
+    shader = replace_once(shader, old, new, "Outdated colour-correction description")
+
 # Verify exactly the original calibration is active on the On branch.
 assert "lin = mix(u_dark, u_light, response);" in shader
 assert "vec3 panelDark = u_authentic_correction > 0.5 ? u_dark : vec3(0.0);" in shader
@@ -102,4 +130,4 @@ glass_new = """        compositor.set_authentic_screen(authentic_screen(self.ses
 frontend = replace_once(frontend, glass_old, glass_new, "Reflection setting wiring")
 frontend_path.write_text(frontend)
 
-print("Applied Authentic neutral-axis colour correction and per-platform Reflection control")
+print("Restored pvaibhav Authentic colour calibration for On; Off remains uncorrected, reflection remains independent")
