@@ -1,7 +1,7 @@
 diff --git a/crates/slot/src/app.rs b/crates/slot/src/app.rs
 --- a/crates/slot/src/app.rs
 +++ b/crates/slot/src/app.rs
-@@ -682,10 +682,15 @@
+@@ -682,9 +682,14 @@
                  self.shelf_at = at;
                  self.shelf_mut().select(i);
 -                self.insert(!self.state.auto_load);
