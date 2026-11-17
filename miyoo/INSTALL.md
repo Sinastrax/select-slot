@@ -1,6 +1,24 @@
-# select. slot. 1.8.1 Ver. 22 — Miyoo Mini family
+# select. slot. 1.8.1 Ver. 23 — Miyoo Mini family
 
 **Experimental, offline-capable Miyoo Mini / Mini Plus / Mini Flip application.** This is not the Anbernic H700 firmware. Built from the pinned [deanmarano/slot-miyoo](https://github.com/deanmarano/slot-miyoo) ARMv7 port and Slot 1.8.1. Its releases are separate from the H700 update channel.
+
+## Ver. 23 — Plug-and-play autoboot, one ZIP per firmware
+
+**No more finding and moving an autoboot script.** Each variant is a complete SD-card-root installation ZIP. Choose according to your *software*, not merely your model.
+
+| Download | What happens after extracting at the SD root |
+| --- | --- |
+| `select-slot-1.8.1-ver23-miyoo-onion-autoboot.zip` | **OnionOS 4.3+ (Mini / Mini Plus):** starts select. slot. automatically after OnionOS has initialized its screen, audio and key monitor. Installs only `.tmp_update/startup/select-slot.sh`. It does **not** replace OnionOS's own `.tmp_update/runtime.sh` or any theme files. |
+| `select-slot-1.8.1-ver23-miyoo-stock-autoboot.zip` | **Stock Miyoo firmware only:** starts select. slot. instead of stock MainUI. It installs `.tmp_update/runtime.sh`, the stock firmware's boot hook, based on the original slot-miyoo port. |
+| `select-slot-1.8.1-ver23-miyoo.zip` | **App-only:** does not enable autoboot. Slot remains available from the normal launcher in stock, OnionOS and supported Allium setups. |
+
+**Important: Never extract the Stock Autoboot ZIP on OnionOS or Allium.** They use `.tmp_update/runtime.sh` to boot their own software, and overwriting that file would damage the SD-card operating-system installation. Back up the card before using *any* variant. Do not overwrite an existing `.tmp_update/runtime.sh` even on a stock-labeled card unless you have confirmed it is genuinely stock with no other boot manager.
+
+The original slot-miyoo port has tested normal-app operation on Mini Flip stock firmware, Mini Plus stock and Allium, and Mini Onion; **our new automatic startup wrappers have not yet been device-tested across all three models.** Official OnionOS does not support the Mini Flip, so use the Stock ZIP or a compatible launcher for that device—not the OnionOS variant.
+
+The OnionOS startup hook can be disabled by removing `.tmp_update/startup/select-slot.sh` or creating the existing skip flag `.tmp_update/config/.skip-custom-slot-autoboot`. It falls back to OnionOS MainUI on exit. The stock boot hook preserves the original Miyoo port's bounded crash fallback; to disable stock autoboot, remove the installed `.tmp_update/runtime.sh` *only if it belongs to select. slot.*. These are recovery instructions, not installation steps.
+
+**OnionOS menu shutdown** still uses the selected theme's normal shutdown procedure. The app now identifies OnionOS by its complete runtime directories rather than a `runtime.sh` filename alone, because stock autoboot uses that same filename.
 
 ## Changes in Ver. 22 — menu inactivity
 
@@ -61,14 +79,11 @@ Both menu inactivity controls are now implemented in Ver. 22, and are separate f
 
 **No in-app updater or Wi-Fi-dependent feature is included or planned for the Miyoo build.** Original Miyoo Mini units have no built-in Wi-Fi. Releases are downloaded on a separate device and installed from an SD card. Each successful experimental build is published to [the Miyoo GitHub prereleases](https://github.com/Sinastrax/select-slot/releases?q=miyoo) as a complete ZIP plus SHA-256 checksum. This does not affect the H700 OTA channel.
 
-## Installation
+## Installation — three steps
 
-1. Back up `Config/slot.state`, `Saves/`, any existing `System/slot` and other important SD-card content.
-2. Download the full Miyoo ZIP from the matching experimental GitHub prerelease on a computer.
-3. Extract the ZIP's **contents** into the SD-card root. There should be `System/slot`, `App/Slot/` and `Apps/slot.pak/` directly under the card root, not within another folder.
-4. Start select. slot. from OnionOS. Set brightness between **1 and 9**.
-
-**Optional autoboot:** `System/autoboot/onion-startup.sh` is packaged for manual use. It delegates to the port's original launcher; do not replace OnionOS's `.tmp_update/runtime.sh` or modify the current theme. See the comments in the script for the manual installation and removal paths.
+1. Back up your SD card (including `Config/slot.state`, `Saves/`, `States/`, and any existing OS files).
+2. Choose the **OnionOS Autoboot**, **Stock Autoboot**, or **App Only** ZIP above. **Extract its contents to the SD card root**; do not create an extra folder and do not overwrite a pre-existing runtime script. On Windows, ensure your extraction tool includes hidden dot-directories such as `.tmp_update`.
+3. Eject the SD card safely and power on. With an autoboot ZIP, select. slot. launches automatically. With App Only, open it through the usual launcher.
 
 The ZIP contains no ROMs or proprietary BIOS files. This release is built and packaged in CI, but physical idle/suspend and shutdown timing must still be verified on each supported Miyoo model.
 
