@@ -1,7 +1,7 @@
 diff --git a/crates/slot/src/update.rs b/crates/slot/src/update.rs
 --- a/crates/slot/src/update.rs
 +++ b/crates/slot/src/update.rs
-@@ -146,18 +146,21 @@
+@@ -146,18 +146,24 @@
      v.split('.').map(|p| p.parse().ok()).collect()
  }
  
@@ -17,15 +17,18 @@ diff --git a/crates/slot/src/update.rs b/crates/slot/src/update.rs
 -    };
 -    Some((parts(base).filter(|p| p.len() == 3)?, fork))
 -}
-+/// Custom RGSP releases sort after the pvaibhav build they were based on.
-+/// Accept older pvaibhav versions so users can migrate to our update channel.
++/// Custom slot releases outrank earlier RGSP and pvaibhav builds of the same upstream version.
++/// Keep parsing previous release suffixes so OTA works when migrating existing installations.
 +fn fork_version(v: &str) -> Option<(Vec<u64>, u64)> {
 +    let (base, fork) = match v.split_once('-') {
 +        None => (v, 0),
 +        Some((base, suffix)) => {
-+            let n = match suffix.strip_prefix(FORK).and_then(|s| s.strip_prefix('.')) {
-+                Some(n) => n.parse::<u64>().ok()?.checked_add(1_000_000)?,
-+                None => suffix.strip_prefix("pvaibhav.")?.parse().ok()?,
++            let n = if let Some(s) = suffix.strip_prefix(FORK).and_then(|s| s.strip_prefix('.')) {
++                s.parse::<u64>().ok()?.checked_add(2_000_000)?
++            } else if let Some(s) = suffix.strip_prefix("rgsp.") {
++                s.parse::<u64>().ok()?.checked_add(1_000_000)?
++            } else {
++                suffix.strip_prefix("pvaibhav.")?.parse::<u64>().ok()?
 +            };
 +            (base, n)
 +        }
@@ -35,7 +38,7 @@ diff --git a/crates/slot/src/update.rs b/crates/slot/src/update.rs
  
  pub fn newer(release: &str, running: &str) -> bool {
      match (fork_version(release), fork_version(running)) {
-@@ -318,9 +321,9 @@
+@@ -318,9 +324,9 @@
  pub const WIFI_CONF: &str = "Config/wifi.conf";
  // This fork's releases carry their own versions.json, so updates never cross over to
  // upstream's builds.
@@ -44,7 +47,7 @@ diff --git a/crates/slot/src/update.rs b/crates/slot/src/update.rs
 -const FORK: &str = "pvaibhav";
 +pub const LATEST: &str = "https://github.com/Sinastrax/slot-rgsp-mod/releases/latest/download/versions.json";
 +const RELEASES: &str = "https://github.com/Sinastrax/slot-rgsp-mod/releases/download";
-+const FORK: &str = "rgsp";
++const FORK: &str = "custom";
  const BASEOS_RELEASES: &str = "https://github.com/pvaibhav/BaseOS/releases/download";
  
  #[derive(Debug, Clone, Copy)]
@@ -60,19 +63,22 @@ diff --git a/crates/slot/tests/update.rs b/crates/slot/tests/update.rs
      );
      assert_eq!(r.size, 6919551);
      assert_eq!(&r.sha256[..2], &[0xe7, 0x8b]);
-@@ -203,7 +203,10 @@
+@@ -203,7 +203,13 @@
  
  #[test]
  fn newer_counts_fork_releases_of_the_same_upstream_version() {
 -    assert!(newer("1.14.0-pvaibhav.2", "1.14.0-pvaibhav.1"));
 +    assert!(newer("1.15.3-rgsp.1", "1.15.3-pvaibhav.1"));
-+    assert!(newer("1.15.3-rgsp.2", "1.15.3-rgsp.1"));
-+    assert!(!newer("1.15.3-rgsp.1", "1.15.3-rgsp.1"));
++    assert!(newer("1.15.3-rgsp.3", "1.15.3-rgsp.2"));
++    assert!(newer("1.15.3-custom.1", "1.15.3-rgsp.3"));
++    assert!(newer("1.15.3-custom.2", "1.15.3-custom.1"));
++    assert!(!newer("1.15.3-rgsp.4", "1.15.3-custom.1"));
++    assert!(!newer("1.15.3-custom.1", "1.15.3-custom.1"));
 +    assert!(newer("1.14.0-pvaibhav.2", "1.14.0-pvaibhav.1"));
      assert!(newer("1.14.0-pvaibhav.10", "1.14.0-pvaibhav.9"));
      assert!(newer("1.14.0-pvaibhav.1", "1.13.0-pvaibhav.3"));
      assert!(newer("1.14.0-pvaibhav.1", "1.14.0"));
-@@ -224,7 +227,7 @@
+@@ -224,7 +230,7 @@
      assert_eq!(release.version, "1.14.0-pvaibhav.1");
      assert_eq!(
          release.url,
@@ -81,7 +87,7 @@ diff --git a/crates/slot/tests/update.rs b/crates/slot/tests/update.rs
      );
  }
  
-@@ -744,7 +747,7 @@
+@@ -744,7 +750,7 @@
      assert_eq!(r.version, "1.11.0");
      assert_eq!(
          r.url,
