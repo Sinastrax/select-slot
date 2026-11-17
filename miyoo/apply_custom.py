@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
-"""Create a Miyoo-only patch after Dean's device patches, without touching H700.
-Runs against the already patched upstream checkout. Exact replacements fail closed.
+"""Miyoo rebuild: apply *only* emulator, palette, scaling and resume changes.
+
+Runs against dean-marano's pinned, freshly patched original slot-miyoo tree.
+No changes to the original Miyoo framebuffer, compositor, brightness, PWM,
+power management, sleep/wake, launcher, display settings or panel calibration.
+Every replacement must match exactly once or the build fails closed.
 """
 from pathlib import Path
 from difflib import unified_diff
@@ -29,6 +33,7 @@ def edit(path, operations):
     desired[path] = new
     changes[path] = diff
 
+# Isolated GB/GBC Gambatte + GBA gpSP defaults; untouched original framebuffer.
 edit("crates/slot-store/src/core.rs", [
     ("    Gpsp,\n}", "    Gpsp,\n    Gambatte,\n}"),
     ('            Core::Gpsp => "gpsp",', '            Core::Gpsp => "gpsp",\n            Core::Gambatte => "gambatte",'),
@@ -241,6 +246,7 @@ edit("crates/slot/src/app.rs", [
         if let QuickRow::Brightness | QuickRow::BlueLight = row {'''),
 ])
 
+
 # Separate Power On resume from manual insertion, matching the H700 setting.
 # Backward compatibility: existing auto_load value seeds resume_power_on once.
 edit("crates/slot-store/src/slot_state.rs", [
@@ -281,158 +287,6 @@ edit("crates/slot-ui/src/quick_menu.rs", [
      '            QuickRow::AutoLoad => "Resume on Insert",\n            QuickRow::ResumePowerOn => "Resume on Power On",'),
 ])
 
-# Menu-only screen blank and shutdown timers. Live gameplay is excluded.
-edit("crates/slot-store/src/slot_state.rs", [
-    ("pub const LID_OFF_MIN: [u8; 6] = [1, 3, 5, 10, 15, 30];",
-     "pub const LID_OFF_MIN: [u8; 6] = [1, 3, 5, 10, 15, 30];\npub const MENU_IDLE_MINUTES: [u8; 7] = [0, 1, 3, 5, 10, 15, 30];"),
-    ("    pub lid_off_min: Option<u8>,\n    pub bezel_gba: BezelPick,",
-     "    pub lid_off_min: Option<u8>,\n    pub menu_screen_off_min: u8,\n    pub menu_power_off_min: u8,\n    pub bezel_gba: BezelPick,"),
-    ("            lid_off_min: None,\n            bezel_gba: BezelPick::Ags102,",
-     "            lid_off_min: None,\n            menu_screen_off_min: 3,\n            menu_power_off_min: 15,\n            bezel_gba: BezelPick::Ags102,"),
-    ('    text.push_str(&format!("auto_load={}\\n", s.auto_load as u8));',
-     '    text.push_str(&format!("auto_load={}\\n", s.auto_load as u8));\n    text.push_str(&format!("menu_screen_off_min={}\\n", s.menu_screen_off_min));\n    text.push_str(&format!("menu_power_off_min={}\\n", s.menu_power_off_min));'),
-    ("    let mut lid_off_min = None;\n    let mut bezel_gba = None;",
-     "    let mut lid_off_min = None;\n    let mut menu_screen_off_min = None;\n    let mut menu_power_off_min = None;\n    let mut bezel_gba = None;"),
-    ('            "lid_off_min" => lid_off_min = value.parse().ok().filter(|m| LID_OFF_MIN.contains(m)),',
-     '            "lid_off_min" => lid_off_min = value.parse().ok().filter(|m| LID_OFF_MIN.contains(m)),\n            "menu_screen_off_min" => menu_screen_off_min = value.parse().ok().filter(|m| MENU_IDLE_MINUTES.contains(m)),\n            "menu_power_off_min" => menu_power_off_min = value.parse().ok().filter(|m| MENU_IDLE_MINUTES.contains(m)),'),
-    ("        lid_off_min,\n        bezel_gba: bezel_gba.unwrap_or(fallback.bezel_gba),",
-     "        lid_off_min,\n        menu_screen_off_min: menu_screen_off_min.unwrap_or(fallback.menu_screen_off_min),\n        menu_power_off_min: menu_power_off_min.unwrap_or(fallback.menu_power_off_min),\n        bezel_gba: bezel_gba.unwrap_or(fallback.bezel_gba),"),
-])
-edit("crates/slot-ui/src/quick_menu.rs", [
-    ("    ResumePowerOn,\n}\n\nimpl QuickRow",
-     "    ResumePowerOn,\n    MenuScreenOff,\n    MenuPowerOff,\n}\n\nimpl QuickRow"),
-    ("pub const ALL: [QuickRow; 82]", "pub const ALL: [QuickRow; 84]"),
-    ("        QuickRow::ResumePowerOn,\n    ];\n\n    pub const MAIN:",
-     "        QuickRow::ResumePowerOn,\n        QuickRow::MenuScreenOff,\n        QuickRow::MenuPowerOff,\n    ];\n\n    pub const MAIN:"),
-    ("pub const GENERAL: [QuickRow; 7]", "pub const GENERAL: [QuickRow; 9]"),
-    ("        QuickRow::LidOff,\n        QuickRow::DateTime,",
-     "        QuickRow::LidOff,\n        QuickRow::MenuScreenOff,\n        QuickRow::MenuPowerOff,\n        QuickRow::DateTime,"),
-    ("            | QuickRow::LidOff => &QuickRow::GENERAL,",
-     "            | QuickRow::LidOff\n            | QuickRow::MenuScreenOff\n            | QuickRow::MenuPowerOff => &QuickRow::GENERAL,"),
-    ('            QuickRow::LidOff => "Lid Power Off",',
-     '            QuickRow::LidOff => "Lid Power Off",\n            QuickRow::MenuScreenOff => "Menu Screen Off",\n            QuickRow::MenuPowerOff => "Menu Power Off",'),
-])
-edit("crates/slot/src/app.rs", [
-    ("    power: Option<Power>,\n    dozed_at: Millis,",
-     "    power: Option<Power>,\n    menu_last_input: Millis,\n    menu_screen_blanked: bool,\n    dozed_at: Millis,"),
-    ("            power: None,\n            dozed_at: 0,",
-     "            power: None,\n            menu_last_input: 0,\n            menu_screen_blanked: false,\n            dozed_at: 0,"),
-    ("    fn timers(&mut self) {\n        self.play_hold();",
-     "    fn timers(&mut self) {\n        self.tick_menu_idle();\n        self.play_hold();"),
-    ("    pub fn apply(&mut self, action: Action) {\n        self.track_held_dir(action);",
-     '''    pub fn apply(&mut self, action: Action) {
-        // Physical releases are not wake actions. The first press while
-        // blanked wakes the screen but does not activate menu selections.
-        if !matches!(action, Action::GbaUp(_) | Action::MenuChordUp(_) | Action::PowerOff | Action::LidClose) {
-            self.menu_last_input = self.now();
-            if self.menu_screen_blanked {
-                self.menu_screen_blanked = false;
-                if let Some(power) = &mut self.power {
-                    power.set_backlight(self.state.brightness);
-                }
-                return;
-            }
-        }
-        self.track_held_dir(action);'''),
-    ("    fn timers(&mut self) {",
-     '''    fn tick_menu_idle(&mut self) {
-        let now = self.now();
-        let allowed = matches!(self.phase, Phase::Shelf | Phase::QuickMenu { .. })
-            && self.game_menu.is_none()
-            && self.core_picker.is_none()
-            && !self.powering_off
-            && !self.card_writes.failing();
-        if !allowed {
-            self.menu_last_input = now;
-            if self.menu_screen_blanked {
-                self.menu_screen_blanked = false;
-                if let Some(power) = &mut self.power {
-                    power.set_backlight(self.state.brightness);
-                }
-            }
-            return;
-        }
-        let elapsed = now.saturating_sub(self.menu_last_input);
-        let off = self.state.menu_power_off_min as u64 * 60_000;
-        if off != 0 && elapsed >= off {
-            self.menu_last_input = now;
-            self.poweroff();
-            return;
-        }
-        let blank = self.state.menu_screen_off_min as u64 * 60_000;
-        if blank != 0 && elapsed >= blank && !self.menu_screen_blanked {
-            self.menu_screen_blanked = true;
-            if let Some(power) = &mut self.power {
-                power.set_backlight(0);
-            }
-        }
-    }
-
-    fn timers(&mut self) {'''),
-    ("            QuickRow::LidOff => QuickValue::LID_OFF",
-     '''            QuickRow::MenuScreenOff | QuickRow::MenuPowerOff => {
-                let n = if row == QuickRow::MenuScreenOff {
-                    self.state.menu_screen_off_min
-                } else {
-                    self.state.menu_power_off_min
-                };
-                Some(match n {
-                    1 => QuickValue::Min1,
-                    3 => QuickValue::Min3,
-                    5 => QuickValue::Min5,
-                    10 => QuickValue::Min10,
-                    15 => QuickValue::Min15,
-                    30 => QuickValue::Min30,
-                    _ => QuickValue::Off,
-                })
-            }
-            QuickRow::LidOff => QuickValue::LID_OFF'''),
-    ("        if row == QuickRow::LidOff {\n",
-     '''        if matches!(row, QuickRow::MenuScreenOff | QuickRow::MenuPowerOff) {
-            let values = [0u8, 1, 3, 5, 10, 15, 30];
-            let from = if row == QuickRow::MenuScreenOff {
-                self.state.menu_screen_off_min
-            } else {
-                self.state.menu_power_off_min
-            };
-            let at = values.iter().position(|m| *m == from).unwrap_or(0);
-            let next = values[if right { (at + 1) % values.len() } else { (at + values.len() - 1) % values.len() }];
-            if row == QuickRow::MenuScreenOff {
-                self.state.menu_screen_off_min = next;
-                if next == 0 && self.menu_screen_blanked {
-                    self.menu_screen_blanked = false;
-                    if let Some(power) = &mut self.power {
-                        power.set_backlight(self.state.brightness);
-                    }
-                }
-            } else {
-                self.state.menu_power_off_min = next;
-            }
-            self.menu_last_input = self.now();
-            self.persist();
-            return;
-        }
-        if row == QuickRow::LidOff {
-'''),
-])
-
-# Newly added QuickRow variants must be exhaustively handled in the legacy
-# source's two action dispatch matches. Their real behavior is above.
-edit("crates/slot/src/app.rs", [
-    ('''            | QuickRow::AutoLoad
-            | QuickRow::EjectSave''',
-     '''            | QuickRow::AutoLoad
-            | QuickRow::Scaling
-            | QuickRow::ResumePowerOn
-            | QuickRow::MenuScreenOff
-            | QuickRow::MenuPowerOff
-            | QuickRow::EjectSave'''),
-    ('''            | QuickRow::LidOff => return,''',
-     '''            | QuickRow::LidOff
-            | QuickRow::Scaling
-            | QuickRow::MenuScreenOff
-            | QuickRow::MenuPowerOff => return,'''),
-])
 
 # Gambatte "Auto" applies an automatic GBC palette even with filters Off.
 # Keep Auto available but add a genuinely neutral Off and default to Off.
@@ -556,170 +410,6 @@ edit("crates/slot-store/src/slot_state.rs", [
         gb_palette: gb_palette.unwrap_or(fallback.gb_palette),'''),
 ])
 
-# OnionOS theme transitions: only when launched under OnionOS (environment
-# exported by the packaged launcher). Boot is already drawn by Onion before
-# its startup scripts; shutdown/sleep/wake reuse Onion's existing renderer.
-# The script lives on SD, never overwrites .tmp_update/runtime.sh or keymon.
-edit("crates/slot/src/app.rs", [
-    ('''    pub fn poweroff(&mut self) {
-        self.settle_saves();
-        if let Some(power) = &mut self.power {
-            power.poweroff();
-        }
-    }''',
-     '''    fn onion_splash(&self, transition: &str) {
-        if std::env::var_os("SLOT_ONION_VISUALS").is_none() {
-            return;
-        }
-        let Some(root) = self.root() else { return; };
-        let script = root.join("System/onion-splash.sh");
-        if !script.is_file() { return; }
-        let _ = std::process::Command::new("sh")
-            .arg(script)
-            .arg(transition)
-            .status();
-        // The renderer returns immediately on the Mini. A brief hold keeps
-        // the theme visible before the display blanks or Slot redraws.
-        if transition != "shutdown" {
-            std::thread::sleep(std::time::Duration::from_millis(300));
-        }
-    }
-
-    pub fn poweroff(&mut self) {
-        self.settle_saves();
-        // Do not turn the screen back on merely for an idle sleep timeout.
-        // A direct power-off while awake should show Onion's End_Save art.
-        if !matches!(self.phase, Phase::Doze { .. }) {
-            if self.menu_screen_blanked {
-                if let Some(power) = &mut self.power {
-                    power.set_backlight(self.state.brightness);
-                }
-            }
-            self.onion_splash("shutdown");
-        }
-        if let Some(power) = &mut self.power {
-            power.poweroff();
-        }
-    }'''),
-    ('''        self.radio.ask(RadioJob::Cool);
-        if let Some(power) = &mut self.power {
-            power.on_close();
-        }
-    }
-
-    fn wake(&mut self)''',
-     '''        self.radio.ask(RadioJob::Cool);
-        // Slot has already flushed its resume snapshot. Show the themed
-        // "saving/off" screen before the LCD backlight is disabled.
-        self.onion_splash("sleep");
-        if let Some(power) = &mut self.power {
-            power.on_close();
-        }
-    }
-
-    fn wake(&mut self)'''),
-    ('''        if let Some(power) = &mut self.power {
-            power.on_open();
-        }
-    }
-
-    pub fn on_doze_timeout''',
-     '''        if let Some(power) = &mut self.power {
-            power.on_open();
-        }
-        // Reuse Onion's Boot artwork; the normal Slot frame resumes after.
-        self.onion_splash("wake");
-    }
-
-    pub fn on_doze_timeout'''),
-])
-
-# OnionOS starts keymon before running its startup hooks. When present,
-# keymon alone owns POWER/suspend/wake. Slot saves on the key-down edge
-# (before Onion suspends it on key release), but must never enter a competing
-# doze, redraw a splash or force shutdown in response to that same key.
-# Stock firmware / Allium continue to use Slot's original POWER path.
-edit("crates/slot/src/app.rs", [
-    ('''        // Physical releases are not wake actions. The first press while
-        // blanked wakes the screen but does not activate menu selections.''',
-     '''        // POWER goes to Onion's keymon as well as this input queue. Never
-        // race its display-off / suspend / wake actions when Onion is in charge.
-        if std::env::var_os("SLOT_ONION_POWER_OWNER").is_some() {
-            match action {
-                Action::PowerPress => {
-                    // The release may cause Onion to SIGSTOP Slot immediately.
-                    self.state_writer.flush();
-                    self.flush_resume();
-                    return;
-                }
-                Action::PowerTap | Action::PowerHold => return,
-                _ => {}
-            }
-        }
-        // Physical releases are not wake actions. The first press while
-        // blanked wakes the screen but does not activate menu selections.'''),
-])
-
-# OnionOS owns a device-wide brightness preference (0..10) through
-# /customer/app/jsonval. Slot v1.8.1 instead defaults to its own level 5.
-# Respect Onion's preference on entry: before Slot writes the PWM backlight
-# the first time, import the level. Existing Slot controls remain usable.
-# The UI brightness field is 1..9: convert Onion 10 -> Slot 9.
-edit("crates/slot/src/app.rs", [
-    ('''    pub fn set_power(&mut self, mut power: Power) {
-        power.set_backlight(self.state.brightness);''',
-     '''    pub fn set_power(&mut self, mut power: Power) {
-        if let Ok(level) = std::env::var("SLOT_ONION_BRIGHTNESS") {
-            if let Ok(level) = level.parse::<u8>() {
-                if level <= 10 {
-                    self.state.brightness = level.clamp(1, 9);
-                }
-            }
-        }
-        power.set_backlight(self.state.brightness);'''),
-])
-
-# Protect the known-good original Miyoo backlight behavior. Onion's keymon
-# owns LCD blanking during suspend and wake, so the fork's new menu-idle
-# timer must not set raw backlight PWM on Onion. Do not alter Dean's PWM
-# brightness table; the separate Onion brightness import is reverted below.
-edit("crates/slot/src/app.rs", [
-    ('''    fn tick_menu_idle(&mut self) {
-        let now = self.now();''',
-     '''    fn tick_menu_idle(&mut self) {
-        let now = self.now();
-        // Onion keymon is the display/backlight owner for this app.
-        // Never blank PWM from the fork's optional menu timer.
-        if std::env::var_os("SLOT_ONION_POWER_OWNER").is_some() {
-            self.menu_last_input = now;
-            return;
-        }'''),
-    ('''                Action::PowerPress => {
-                    // The release may cause Onion to SIGSTOP Slot immediately.
-                    self.state_writer.flush();
-                    self.flush_resume();
-                    return;
-                }''',
-     '''                // Onion's keymon handles POWER and may SIGSTOP this process
-                // on button release. A synchronous save/flush here can be
-                // interrupted mid-write. Rely on normal Slot autosaves,
-                // and do not block the keymon handoff.
-                Action::PowerPress => return,'''),
-    ('''    pub fn set_power(&mut self, mut power: Power) {
-        if let Ok(level) = std::env::var("SLOT_ONION_BRIGHTNESS") {
-            if let Ok(level) = level.parse::<u8>() {
-                if level <= 10 {
-                    self.state.brightness = level.clamp(1, 9);
-                }
-            }
-        }
-        power.set_backlight(self.state.brightness);''',
-     '''    pub fn set_power(&mut self, mut power: Power) {
-        // Restore Dean's previously working original Miyoo brightness path.
-        // Do not translate another frontend's brightness here: Slot's own
-        // stored setting and PWM calibration already worked on this panel.
-        power.set_backlight(self.state.brightness);'''),
-])
 
 # Two mGBA-only calls in the original Miyoo Slot remain outside the core
 # opening routine. The first is already adapted above; the second runs while
@@ -746,45 +436,35 @@ edit("crates/slot/src/core.rs", [
     }'''),
 ])
 
-# Ver. 5 wrote the OnionOS brightness preference into SlotState.brightness.
-# Ver. 8 reverted that import but left the modified value persisted on SD.
-# On the first Onion launch of this repair, restore the original Miyoo Slot's
-# default (5/9) *only if* that saved level is below 5. A marker makes the
-# migration one-time, so the player's later deliberate dim setting is respected.
-# Other firmware and already-bright preferences are unchanged. No PWM map or
-# rendering code is modified.
-edit("crates/slot/src/app.rs", [
-    ('''    pub fn set_power(&mut self, mut power: Power) {
-        // Restore Dean's previously working original Miyoo brightness path.
-        // Do not translate another frontend's brightness here: Slot's own
-        // stored setting and PWM calibration already worked on this panel.
-        power.set_backlight(self.state.brightness);''',
-     '''    pub fn set_power(&mut self, mut power: Power) {
-        // Older custom builds imported Onion's 0..10 brightness directly
-        // into Slot's saved 0..9 setting. Reverting the import alone did not
-        // restore a low value already written to Config/slot.state.
-        if std::env::var_os("SLOT_ONION_VISUALS").is_some() {
-            if let Some(root) = self.root() {
-                let marker = root.join("Config/.select-slot-miyoo-brightness-restored");
-                if !marker.is_file() {
-                    if self.state.brightness < 5 {
-                        self.state.brightness = 5;
-                        self.persist();
-                    }
-                    // Create after persisting. On later launches, user-chosen
-                    // levels (including below 5) must never be overridden.
-                    let _ = std::fs::write(&marker, b"1\\n");
-                }
-            }
-        }
-        power.set_backlight(self.state.brightness);'''),
-])
 
-# A software renderer cannot use the H700 GLSL effects; Authentic is deferred
-# pending a measured LUT/lookup-table implementation. Do not fake it.
+# Invariants: all hardware/display modules from Dean's proven Miyoo port
+# must remain byte-for-byte identical. No custom power or launcher handlers.
+allowed = {
+    "crates/slot-store/src/core.rs",
+    "crates/slot-store/src/slot_state.rs",
+    "crates/slot-store/src/gb_palette.rs",
+    "crates/slot/src/core.rs",
+    "crates/slot/src/session.rs",
+    "crates/slot/src/video_mode.rs",
+    "crates/slot/src/app.rs",
+    "crates/slot-ui/src/quick_menu.rs",
+}
+if set(changes) != allowed:
+    raise RuntimeError(f"rebuild source changed unexpected paths: {sorted(set(changes) ^ allowed)}")
+# Ignore unified diff context; check only changed lines, not unchanged neighbors.
+for path, diff in changes.items():
+    for line in diff.splitlines():
+        if not (line.startswith("+") or line.startswith("-")) or line.startswith(("+++", "---")):
+            continue
+        if any(term in line for term in (
+            "set_backlight", "self.state.brightness", "SLOT_ONION_",
+            "blue_light_gain", "onion_splash", "PWM_STEPS",
+            "fn sleep(", "fn wake(", "fn doze(",
+        )):
+            raise RuntimeError(f"forbidden brightness/power patch in {path}: {line}")
 
 parts = []
 for path, diff in changes.items():
     parts.append(f"diff --git a/{path} b/{path}\n{diff}")
 dest.write_text("".join(parts))
-print(f"Generated {dest}: {len(changes)} Miyoo-only source files")
+print(f"Clean Miyoo rebuild patch: {len(changes)} non-hardware files only; display/backlight untouched")
