@@ -9,7 +9,7 @@ PORT="$WORK/slot-miyoo"
 STAGE="$PORT/release/stage"
 PORT_COMMIT="d096bdb87f25f3aba62de6b40ef859b61d841e43"
 SLOT_VERSION="1.8.1"
-CUSTOM_VERSION="2"
+CUSTOM_VERSION="3"
 ZIP="$WORK/custom-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo.zip"
 
 for command in git task docker zip unzip python3 file; do
@@ -79,6 +79,9 @@ PY
 # Supply both optional startup methods as examples, without enabling either.
 # Installing into Onion's .tmp_update/startup/ remains an explicit user action.
 cp "$ROOT/miyoo/onion-autoboot.sh" "$STAGE/System/autoboot/onion-startup.sh"
+cp "$ROOT/miyoo/onion-splash.sh" "$STAGE/System/onion-splash.sh"
+test -s "$STAGE/System/onion-splash.sh"
+grep -q "SLOT_ONION_VISUALS" "$STAGE/System/launch_frontend.sh"
 cp "$ROOT/miyoo/INSTALL.md" "$STAGE/System/custom-slot-install.md"
 cat > "$STAGE/System/custom-slot-version.txt" <<EOF
 Custom slot. $SLOT_VERSION Ver. $CUSTOM_VERSION
@@ -92,6 +95,7 @@ Menu Screen Off: Off/1/3/5/10/15/30 min (default 3)
 Menu Power Off: Off/1/3/5/10/15/30 min (default 15)
 GB/GBC default: Gambatte
 GBA default: gpSP
+Onion theme visuals: Boot (native), End_Save (shutdown/sleep), Boot (wake); opt-out supported
 Authentic renderer: NOT YET PORTED
 Scaling: Original, Integer, Aspect Fit, Fill/Crop, Full Stretch (per game)
 State: experimental; this custom variant has not been hardware-tested
