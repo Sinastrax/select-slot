@@ -9,7 +9,7 @@ PORT="$WORK/slot-miyoo"
 STAGE="$PORT/release/stage"
 PORT_COMMIT="d096bdb87f25f3aba62de6b40ef859b61d841e43"
 SLOT_VERSION="1.8.1"
-CUSTOM_VERSION="20"
+CUSTOM_VERSION="21"
 ZIP="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo.zip"
 
 for command in git task docker zip unzip python3 file; do
@@ -101,27 +101,32 @@ cmp -s "$STAGE/System/launch_frontend.sh" "$PORT/card/System/launch_frontend.sh"
 ! grep -Fq "diff --git a/crates/slot-gfx/" "$PORT/patches/0028-custom-gambatte-defaults.patch"
 grep -Fq 'diff --git a/crates/slot-power/src/device.rs' "$PORT/patches/0028-custom-gambatte-defaults.patch"
 ! grep -E '^diff --git a/crates/slot-power/src/(power|lib)\.rs' "$PORT/patches/0028-custom-gambatte-defaults.patch"
-# Full level range must be wired through settings, menu, and hardware.
-grep -Fq 'BRIGHTNESS_MAX: u8 = 12' "$PORT/patches/0028-custom-gambatte-defaults.patch"
-grep -Fq 'QuickValue::Level12' "$PORT/patches/0028-custom-gambatte-defaults.patch"
-grep -Fq 'let percent: u32' "$PORT/patches/0028-custom-gambatte-defaults.patch"
+# Check that the original nine levels and PWM duty table are untouched.
+# The generated patch includes only a migration for older brightness=10..12
+# values so the *rest* of slot.state still loads.
+grep -Fq 'pub const BRIGHTNESS_MAX: u8 = 9;' "$PORT/upstream/slot/crates/slot-store/src/slot_state.rs"
+grep -Fq 'pub const LEVELS: [QuickValue; 10]' "$PORT/upstream/slot/crates/slot-ui/src/quick_menu.rs"
+grep -Fq '+            "brightness" => brightness = Some(value.parse::<u8>().ok()?.min(BRIGHTNESS_MAX)),' "$PORT/patches/0028-custom-gambatte-defaults.patch"
+! grep -Eq '^\+.*(BRIGHTNESS_MAX: u8 = 12|Level10|Level11|Level12|let percent: u32|set_backlight\(12\))' "$PORT/patches/0028-custom-gambatte-defaults.patch"
+! grep -Fq '+                let duty = if step <= TOP_STEP as u8 {' "$PORT/patches/0028-custom-gambatte-defaults.patch"
+echo 'Verified legacy brightness 0–9 and compatibility migration'
 
 # Optional autoboot delegates to the original launcher and leaves Onion's
-# runtime, keymon, BMO theme assets, and display services unmodified.
+# runtime, keymon, the selected theme, and display services unmodified.
 cp "$ROOT/miyoo/onion-autoboot.sh" "$STAGE/System/autoboot/onion-startup.sh"
 cp "$ROOT/miyoo/INSTALL.md" "$STAGE/System/select-slot-install.md"
 cat > "$STAGE/System/select-slot-version.txt" <<EOF
-select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - shaders disabled
+select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - original brightness 1-9, shaders disabled
 Base: https://github.com/deanmarano/slot-miyoo
 Pinned original: $PORT_COMMIT
 GB/GBC: Miyoo-native mGBA default; Gambatte optional; GBA: gpSP default (mGBA alternative)
 Per-game scaling: Original, Integer, Aspect Fit, Fill/Crop, Full Stretch
 Resume On Power / Insert: independent
-Brightness: original 1-9 PWM values, boost levels 10-12 (20%,30%,50% of PWM period)
+Brightness: original 0-9 PWM hardware levels (UI 1-9); previously saved 10-12 migrate to 9 without resetting other settings
 Framebuffer: original unfiltered Miyoo CPU renderer; no effects, orientation and launcher unchanged
 Shaders: disabled globally for GB/GBC/GBA; menu controls hidden and shortcuts inert; pre-existing shader settings ignored
-Onion PWM: period-aware scaling of boost steps; Onion keymon owns POWER and BMO; Slot uses Onion PWM instead of legacy backlight/dispdbg
-OnionOS BMO: native theme and power path
+OnionOS: theme-independent keymon POWER/suspend/shutdown handoff; retains whichever OnionOS theme is selected
+Onion PWM: original 0-9 brightness duty table; select physical PWM over unrelated legacy backlight interfaces
 Experimental preview; no H700 OTA publication
 EOF
 
