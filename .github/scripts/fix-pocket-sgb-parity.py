@@ -38,7 +38,7 @@ rgb_idx = shader.index("                vec3 panelRgb = raw;", pocket_start)
 import re
 # Locate the actual measured-color block without depending on its indentation.
 window = shader[rgb_idx:rgb_idx + 900]
-match = re.search(r"(?m)^[ \\t]*if \\(u_lcd\\.x < (?:2\\.5|3\\.5)\\) \\{", window)
+match = re.search(r"(?m)^[ \t]*if \(u_lcd\.x < (?:2\.5|3\.5)\) \{", window)
 assert match is not None, "Expected Pocket GBC color branch near source RGB; got: " + repr(window)
 gbc_idx = rgb_idx + match.start()
 gbc_if = match.group(0)
