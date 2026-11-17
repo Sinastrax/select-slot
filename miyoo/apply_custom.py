@@ -687,6 +687,94 @@ edit("crates/slot-store/src/slot_state.rs", [
             shader_gbc: Shader::Off,'''),
 ])
 
+
+# Menu-only inactivity controls, adapted for OnionOS. Keep menu timers
+# independent from OnionOS's own sleep setting, and never intercept POWER.
+edit("crates/slot-store/src/slot_state.rs", [
+    ('''    pub lid_off_min: Option<u8>,
+    pub bezel_gba: BezelPick,''',
+     '''    pub lid_off_min: Option<u8>,
+    pub menu_screen_off_min: u8,
+    pub menu_power_off_min: u8,
+    pub bezel_gba: BezelPick,'''),
+    ('''            lid_off_min: None,
+            bezel_gba: BezelPick::Ags102,''',
+     '''            lid_off_min: None,
+            menu_screen_off_min: 3,
+            menu_power_off_min: 15,
+            bezel_gba: BezelPick::Ags102,'''),
+    ('''    if let Some(min) = s.lid_off_min {
+        text.push_str(&format!("lid_off_min={min}\\n"));
+    }
+    text.push_str(&format!("bezel_gba={}\\n", s.bezel_gba.key()));''',
+     '''    if let Some(min) = s.lid_off_min {
+        text.push_str(&format!("lid_off_min={min}\\n"));
+    }
+    text.push_str(&format!("menu_screen_off_min={}\\n", s.menu_screen_off_min));
+    text.push_str(&format!("menu_power_off_min={}\\n", s.menu_power_off_min));
+    text.push_str(&format!("bezel_gba={}\\n", s.bezel_gba.key()));'''),
+    ('''    let mut lid_off_min = None;
+    let mut bezel_gba = None;''',
+     '''    let mut lid_off_min = None;
+    let mut menu_screen_off_min = None;
+    let mut menu_power_off_min = None;
+    let mut bezel_gba = None;'''),
+    ('''            "lid_off_min" => lid_off_min = value.parse().ok().filter(|m| LID_OFF_MIN.contains(m)),
+            "bezel_gba"''',
+     '''            "lid_off_min" => lid_off_min = value.parse().ok().filter(|m| LID_OFF_MIN.contains(m)),
+            "menu_screen_off_min" => {
+                menu_screen_off_min = value.parse::<u8>().ok().filter(|m| [0, 1, 3, 5, 10, 15, 30].contains(m))
+            }
+            "menu_power_off_min" => {
+                menu_power_off_min = value.parse::<u8>().ok().filter(|m| [0, 1, 3, 5, 10, 15, 30].contains(m))
+            }
+            "bezel_gba"'''),
+    ('''        lid_off_min,
+        bezel_gba: bezel_gba.unwrap_or(fallback.bezel_gba),''',
+     '''        lid_off_min,
+        menu_screen_off_min: menu_screen_off_min.unwrap_or(fallback.menu_screen_off_min),
+        menu_power_off_min: menu_power_off_min.unwrap_or(fallback.menu_power_off_min),
+        bezel_gba: bezel_gba.unwrap_or(fallback.bezel_gba),'''),
+])
+edit("crates/slot-ui/src/quick_menu.rs", [
+    ('''    ResumePowerOn,
+}
+
+impl QuickRow''',
+     '''    ResumePowerOn,
+    MenuScreenOff,
+    MenuPowerOff,
+}
+
+impl QuickRow'''),
+    ('''    pub const ALL: [QuickRow; 82]''', '''    pub const ALL: [QuickRow; 84]'''),
+    ('''        QuickRow::ResumePowerOn,
+    ];
+
+    pub const MAIN:''',
+     '''        QuickRow::ResumePowerOn,
+        QuickRow::MenuScreenOff,
+        QuickRow::MenuPowerOff,
+    ];
+
+    pub const MAIN:'''),
+    ('''    pub const GENERAL: [QuickRow; 7]''', '''    pub const GENERAL: [QuickRow; 9]'''),
+    ('''        QuickRow::LidOff,
+        QuickRow::DateTime,''',
+     '''        QuickRow::LidOff,
+        QuickRow::MenuScreenOff,
+        QuickRow::MenuPowerOff,
+        QuickRow::DateTime,'''),
+    ('''            | QuickRow::LidOff => &QuickRow::GENERAL,''',
+     '''            | QuickRow::LidOff
+            | QuickRow::MenuScreenOff
+            | QuickRow::MenuPowerOff => &QuickRow::GENERAL,'''),
+    ('''            QuickRow::LidOff => "Lid Power Off",''',
+     '''            QuickRow::LidOff => "Lid Power Off",
+            QuickRow::MenuScreenOff => "Menu Screen Off",
+            QuickRow::MenuPowerOff => "Menu Power Off",'''),
+])
+
 # Invariants: only allow the two explicit PWM backlight edits above in
 # slot-power; framebuffer and compositor source stay original. Launcher,
 # keymon, theme, screen-off / power lifecycle paths are never patched.
