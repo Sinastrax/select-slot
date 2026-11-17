@@ -524,6 +524,50 @@ edit("crates/slot-power/src/device.rs", [
                     scaled.max(PWM_STEPS[TOP_STEP as usize].min(cap)).min(cap)
                 };'''),
 ])
+# Onion keymon is an independent backlight owner: it restores its own
+# 0..10 level after standby, and while it believes MainUI is active it can
+# rewrite brightness on key events. Notify its supported state-change hook when
+# Slot launches as an app, then reapply Slot's saved level once on returning
+# from a long process suspension. Never patch/stop keymon or alter Onion config.
+edit("crates/slot/src/app.rs", [
+    ('''        power.set_backlight(self.state.brightness);
+        self.headphones = power.headphones();''',
+     '''        power.set_backlight(self.state.brightness);
+        // Onion keymon also writes this PWM. Tell it the active process
+        // has changed so it does not keep applying MainUI brightness here.
+        if self.root.as_ref().is_some_and(|r| r.join(".tmp_update/bin/keymon").is_file()) {
+            let _ = std::fs::write("/tmp/state_changed", b"");
+        }
+        self.headphones = power.headphones();'''),
+    ('''    fn copy_card_log(&self, power: &Power) {''',
+     '''    pub fn restore_onion_backlight(&mut self) {
+        // Called only after a sizeable process gap (standby/resume). Onion
+        // keymon restores its own setting *before* resuming this process;
+        // reapply the user's Slot level once after that handoff.
+        if self.root.as_ref().is_some_and(|r| r.join(".tmp_update/bin/keymon").is_file()) {
+            if let Some(power) = &mut self.power {
+                power.set_backlight(self.state.brightness);
+            }
+        }
+    }
+
+    fn copy_card_log(&self, power: &Power) {'''),
+])
+edit("crates/slot/src/frontend.rs", [
+    ('''        let dt = self.last.elapsed().as_secs_f32();
+        self.last = Instant::now();
+        self.session.update(dt);''',
+     '''        let elapsed = self.last.elapsed();
+        if elapsed >= Duration::from_secs(1) {
+            // Keymon may have replaced Slot's PWM while we were stopped.
+            // Reapply once, not continuously and not on every game frame.
+            self.session.app_mut().restore_onion_backlight();
+        }
+        let dt = elapsed.as_secs_f32();
+        self.last = Instant::now();
+        self.session.update(dt);'''),
+])
+
 # Unit tests for 800 (Onion default), 400 (custom frequency), 100 (short).
 edit("crates/slot-power/tests/device.rs", [
     ('''#[test]
@@ -567,6 +611,7 @@ allowed = {
     "crates/slot-ui/src/quick_menu.rs",
     "crates/slot-power/src/device.rs",
     "crates/slot-power/tests/device.rs",
+    "crates/slot/src/frontend.rs",
 }
 if set(changes) != allowed:
     raise RuntimeError(f"rebuild source changed unexpected paths: {sorted(set(changes) ^ allowed)}")
