@@ -131,6 +131,9 @@ jobs:
           # SGB must draw through Pocket Color's exact optical LCD pipeline.
           python3 ../.github/scripts/fix-pocket-sgb-parity.py
           python3 ../.github/scripts/verify-pocket-sgb-parity.py
+          # The source still ships; make H700 OTA tolerant of slower Wi-Fi.
+          python3 ../.github/scripts/extend-ota-timeout.py
+          python3 ../.github/scripts/verify-slim-ota.py
 
       - name: Capture merged source for integration review
         uses: actions/upload-artifact@v4
@@ -227,22 +230,32 @@ jobs:
         run: |
           set -euo pipefail
           version="$(cat ../.github/ota-version.txt)"
+          # Move corresponding mGBA source out of the runtime System/ tree.
+          # The publisher MUST attach it as a separate source asset.
+          python3 ../.github/scripts/separate-mgba-source.py "$version" select-slot-h700
           zip="slot-v${version}-h700.zip"
           zip -qry "../$zip" select-slot-h700
           VERSION="$version" ZIP="$zip" python3 - <<'PY'
           import hashlib, json, os, pathlib
           filename = pathlib.Path("..") / os.environ["ZIP"]
           payload = filename.read_bytes()
+          source = pathlib.Path("../mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz")
+          source_bytes = source.read_bytes()
           result = {"stable": {
               "version": os.environ["VERSION"],
               "tag": "v" + os.environ["VERSION"],
               "zip": os.environ["ZIP"],
               "size": len(payload),
-              "sha256": hashlib.sha256(payload).hexdigest()}}
+              "sha256": hashlib.sha256(payload).hexdigest(),
+              "source": {
+                  "file": source.name,
+                  "size": len(source_bytes),
+                  "sha256": hashlib.sha256(source_bytes).hexdigest()}}}
           pathlib.Path("../versions.json").write_text(json.dumps(result, indent=2) + "\n")
           print(result)
           PY
           unzip -t "../$zip" | tail -1
+          python3 ../.github/scripts/verify-slim-ota-assets.py "$version"
 
       - name: Upload complete OTA-ready firmware
         uses: actions/upload-artifact@v4
@@ -250,6 +263,7 @@ jobs:
           name: select-slot-complete-h700
           path: |
             slot-v*-h700.zip
+            mgba-*-source.tar.gz
             versions.json
           if-no-files-found: error
 
