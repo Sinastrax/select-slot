@@ -716,8 +716,9 @@ fn dot_axis_factor(centre: f32, footprint: f32) -> f32 {
     let half = footprint.max(0.0001) * 0.5;
     let coverage = ((integrated(centre + half) - integrated(centre - half))
         / (2.0 * half)).clamp(0.0, 1.0);
-    // Near-neutral mean luminance at native and fractional scaling.
-    0.82 + 0.24 * coverage
+    // Keep the fixed-point source-row intermediate within u16 at white.
+    // Mild dot gap attenuation; no brightening beyond 1.0 (256/256).
+    0.86 + 0.14 * coverage
 }
 
 #[derive(Clone, Copy, PartialEq)]
