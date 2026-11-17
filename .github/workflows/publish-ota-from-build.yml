@@ -39,7 +39,7 @@ jobs:
           stable = json.loads((release / "versions.json").read_text())["stable"]
           version = stable["version"]
           assert version == expected, f"Stale build {version}, main is now {expected}"
-          assert "-custom." in version
+          assert "-custom." in version or "-rgsp." in version
           assert stable["tag"] == "v" + version
           assert stable["zip"] == "slot-v" + version + "-h700.zip"
           archive = release / stable["zip"]
