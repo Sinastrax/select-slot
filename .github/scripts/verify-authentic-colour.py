@@ -29,7 +29,7 @@ required("vec3 gbcBlack = pow(vec3(14.0, 25.0, 28.0) / 255.0, vec3(2.2));",
 assert "authentic_corrected_linear(" not in shader, "Obsolete gamut/luminance lock has survived"
 
 # Extract the published GBA ramp/matrix from the same Slot source we build.
-ramp_text = authentic.split("pub(crate) const RAMPS:", 1)[1].split("];", 1)[0]
+ramp_text = authentic.split("pub(crate) const RAMPS:", 1)[1].split("= [", 1)[1].split("];", 1)[0]
 ramp_rows = re.findall(r"\[\s*((?:\d+[\s,]+){31}\d+,?)\s*\]", ramp_text)
 assert len(ramp_rows) >= 2, "Measured GBA and GBC ramps missing"
 gba_ramp = [int(x) / 255 for x in re.findall(r"\d+", ramp_rows[0])]
