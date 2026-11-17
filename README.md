@@ -110,13 +110,14 @@ Custom slot builds the same **H700 ARM64 device package** as its Slot base. The 
 
 | Device | Supported by Slot | Custom build hardware verification |
 |---|---|---|
-| Anbernic RG SP / RG35XXSP | Yes | Tested during custom development |
-| Anbernic RG34XXSP | Yes | Tested during custom development |
-| Anbernic RG34XX | Yes | Not individually verified |
+| Anbernic RG SP | Yes | Tested |
+| Anbernic RG35XXSP | Yes | Not tested |
+| Anbernic RG34XXSP | Yes | Tested |
+| Anbernic RG34XX | Yes | Not tested |
 | Anbernic RG35XX H | Yes | Tested |
-| Anbernic RG35XX Plus | Yes | Not individually verified |
-| Anbernic RG35XX Pro | Yes | Not individually verified |
-| Anbernic RG28XX | Yes | Not individually verified |
+| Anbernic RG35XX Plus | Yes | Not tested |
+| Anbernic RG35XX Pro | Yes | Not tested |
+| Anbernic RG28XX | Yes | Not tested |
 
 This is **not an RGSP-exclusive firmware**. Device-specific controls such as L3/R3 and analog stick directions only appear where the hardware provides them.
 
