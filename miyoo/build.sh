@@ -9,7 +9,7 @@ PORT="$WORK/slot-miyoo"
 STAGE="$PORT/release/stage"
 PORT_COMMIT="d096bdb87f25f3aba62de6b40ef859b61d841e43"
 SLOT_VERSION="1.8.1"
-CUSTOM_VERSION="11"
+CUSTOM_VERSION="12"
 ZIP="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo.zip"
 
 for command in git task docker zip unzip python3 file; do
@@ -83,21 +83,29 @@ cmp -s "$STAGE/System/launch_frontend.sh" "$PORT/card/System/launch_frontend.sh"
     echo "Packaged launcher differs from original Miyoo port; refusing build" >&2
     exit 1
 }
-! grep -E '^diff --git a/crates/(slot-gfx|slot-power)/' "$PORT/patches/0028-custom-gambatte-defaults.patch"
-! grep -q 'set_backlight' "$PORT/patches/0028-custom-gambatte-defaults.patch"
+# Only the PWM implementation and its test may differ in slot-power.
+! grep -E '^diff --git a/crates/slot-gfx/' "$PORT/patches/0028-custom-gambatte-defaults.patch"
+grep -Fq 'diff --git a/crates/slot-power/src/device.rs' "$PORT/patches/0028-custom-gambatte-defaults.patch"
+! grep -E '^diff --git a/crates/slot-power/src/(power|lib)\.rs' "$PORT/patches/0028-custom-gambatte-defaults.patch"
+# Full level range must be wired through settings, menu, and hardware.
+grep -Fq 'BRIGHTNESS_MAX: u8 = 12' "$PORT/patches/0028-custom-gambatte-defaults.patch"
+grep -Fq 'QuickValue::Level12' "$PORT/patches/0028-custom-gambatte-defaults.patch"
+grep -Fq 'let percent: u32' "$PORT/patches/0028-custom-gambatte-defaults.patch"
 
 # Optional autoboot delegates to the original launcher and leaves Onion's
 # runtime, keymon, BMO theme assets, and display services unmodified.
 cp "$ROOT/miyoo/onion-autoboot.sh" "$STAGE/System/autoboot/onion-startup.sh"
 cp "$ROOT/miyoo/INSTALL.md" "$STAGE/System/select-slot-install.md"
 cat > "$STAGE/System/select-slot-version.txt" <<EOF
-select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - clean Miyoo rebuild
+select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - brightness boost experiment
 Base: https://github.com/deanmarano/slot-miyoo
 Pinned original: $PORT_COMMIT
 GB/GBC: Gambatte; GBA: gpSP; mGBA available for legacy selections
 Per-game scaling: Original, Integer, Aspect Fit, Fill/Crop, Full Stretch
 Resume On Power / Insert: independent
-Physical brightness, framebuffer, renderer, PWM, launcher: original Miyoo port
+Brightness: original 1-9 PWM values, boost levels 10-12 (20%,30%,50% of PWM period)
+Framebuffer, renderer, orientation and launcher: unchanged Miyoo originals
+Onion PWM: period-aware scaling of boost steps; Onion keymon still controls sleep
 OnionOS BMO: native theme and power path
 Experimental preview; no H700 OTA publication
 EOF
