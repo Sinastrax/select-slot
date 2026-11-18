@@ -134,6 +134,9 @@ fn a_game_keeps_enabled_wifi_even_before_dhcp_completes() {
     no_lease.store(true, std::sync::atomic::Ordering::SeqCst);
     let (_d, mut a, log) = booted(true, fake);
     settle(&mut a);
+    // Fake::demo does not auto-start a saved profile: explicitly request
+    // the join while suppressing DHCP, then confirm recovery in the game.
+    join_home(&mut a);
     assert!(a.wifi().held);
     assert!(!a.wifi_up());
     a.apply(Action::Insert);
