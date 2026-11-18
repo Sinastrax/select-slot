@@ -27,11 +27,19 @@ jobs:
         id: manifest
         env:
           GH_TOKEN: ${{ github.token }}
+          BUILD_SHA: ${{ github.event.workflow_run.head_sha }}
         shell: bash
         run: |
           set -euo pipefail
           current="$(gh api "repos/$GITHUB_REPOSITORY/contents/.github/ota-version.txt" --jq '.content' | base64 -d | tr -d '\r\n')"
           echo "Current version on main: $current"
+          # A build from an earlier source commit may have the same version.
+          # Never let an older, incomplete revision publish in its place.
+          head="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
+          if [ "$head" != "$BUILD_SHA" ]; then
+            echo "Refusing stale firmware build: $BUILD_SHA; main now $head" >&2
+            exit 1
+          fi
           python3 - "$current" <<'PY'
           import hashlib, json, os, pathlib, sys
           expected = sys.argv[1]
