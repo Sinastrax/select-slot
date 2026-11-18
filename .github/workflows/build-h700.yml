@@ -178,10 +178,6 @@ jobs:
           # handling, and GBA's missing visible 2x Scale choice on 720x480.
           # No color shader or optical raster changes.
           python3 ../.github/scripts/fix-menu-status-wifi-eject-gba-scale.py
-          # Ver.23: keep infrastructure Wi-Fi active for gameplay and online
-          # achievements, including lost leases and post-eject recovery.
-          # Link-play radio handoff, sleep and explicit Wi-Fi Off remain intact.
-          python3 ../.github/scripts/keep-wlan-through-gameplay.py
           # Root Wi-Fi fix: ordinary cartridge ejection must never emit a
           # link radio Down job. Preserve enabled Wi-Fi during normal games,
           # while giving it to direct-console link play only when requested.
