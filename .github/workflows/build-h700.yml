@@ -192,7 +192,7 @@ jobs:
           set -euo pipefail
           sed -i '/bullseye-security/d' /etc/apt/sources.list
           apt-get -o Acquire::Check-Valid-Until=false update
-          apt-get install -y --no-install-recommends zip unzip cmake file curl ca-certificates git build-essential pkg-config libpng-dev bison flex bsdextrautils glslang-tools
+          apt-get install -y --no-install-recommends zip unzip cmake file curl ca-certificates git build-essential pkg-config libpng-dev bison flex bsdextrautils glslang-tools python3-pil
           task_tgz=task_linux_arm64.tar.gz
           curl -fsSLO --http1.1 --retry 5 --retry-delay 10 --retry-all-errors \
             "https://github.com/go-task/task/releases/download/v3.54.0/$task_tgz"
@@ -230,6 +230,7 @@ jobs:
           cargo test -p slot --no-default-features --features device --test update -- --nocapture
           cargo test -p slot --no-default-features --features device --lib menu_idle::tests -- --nocapture
           cargo test -p slot --no-default-features --features device --test boot -- --nocapture
+          cargo test -p slot --no-default-features --features device --test bezel -- --nocapture
 
       - name: Build the H700 device tree
         working-directory: upstream
@@ -238,12 +239,46 @@ jobs:
           set -euo pipefail
           export SLOT_VERSION="$(cat ../.github/ota-version.txt)"
           task dist:device OUT=select-slot-h700
-          # Derive an original-GBA wordmark from the licensed stock
-          # 640x480 SP strip; preserve entire screen and alpha mask.
-          python3 ../.github/scripts/make-h700-original-gba-bezel.py \
-            select-slot-h700/System/bezels/640x480.png \
-            select-slot-h700/System/bezels/640x480-gba-original.png
-          test -s select-slot-h700/System/bezels/640x480-gba-original.png
+
+      - name: Add the existing original-GBA bezel to the 640x480 H700 package
+        working-directory: upstream
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Already proven on Miyoo Ver. 2: mugwomp93's Perfect GBA
+          # bitmap has the pixel-identical alpha cutout as Slot's AGS-102.
+          # Slot 1.8.1 and 1.16.0 contain the same SP asset (Git blob
+          # c7bc6119dcb0a37c5fcf118280d28a7658e60dad).
+          source="https://raw.githubusercontent.com/chrizzo-hb/knulli-bezels/75aa66c41548ebaa95f31d260d47eea2baab9d8a/default-knulli/systems/gba-4_3.png"
+          sha="1d25c249c08580c6082656d353d001158e8378653b9a3d90c80e85700990ca93"
+          original="/tmp/h700-perfect-gba.png"
+          strip="select-slot-h700/System/bezels"
+          test -s "$strip/640x480.png"
+          test ! -e "$strip/640x480-gba-original.png"
+          curl -fsSL --retry 5 --retry-all-errors "$source" -o "$original"
+          echo "$sha  $original" | sha256sum -c -
+          python3 - "$original" "$strip/640x480.png" "$strip/640x480-gba-original.png" <<'PY'
+          from pathlib import Path
+          import sys
+          from PIL import Image, ImageChops
+          source, old, dest = map(Path, sys.argv[1:])
+          with Image.open(source) as im:
+              assert im.size == (1024, 768), im.size
+              gba = im.convert("RGBA").resize((640, 480), Image.Resampling.LANCZOS)
+          with Image.open(old) as im:
+              sp = im.convert("RGBA")
+          assert sp.size == gba.size == (640, 480), "Incorrect bezel size"
+          if ImageChops.difference(sp.getchannel("A"), gba.getchannel("A")).getbbox():
+              raise SystemExit("Original GBA must match existing SP alpha opening")
+          if not ImageChops.difference(sp.convert("RGB"), gba.convert("RGB")).getbbox():
+              raise SystemExit("Expected independent original-GBA artwork")
+          gba.save(dest, optimize=True)
+          with Image.open(dest) as im:
+              assert im.convert("RGBA").tobytes() == gba.tobytes()
+          print("Verified existing Original GBA 640x480 alpha and picture position")
+          PY
+          cp ../.github/assets/H700-GBA-BEZEL-CREDITS.txt \
+            select-slot-h700/System/licenses/gba-original-bezel-credits.txt
 
       - name: Replace stock mGBA with the verified older core
         working-directory: upstream
@@ -268,6 +303,7 @@ jobs:
           test -s select-slot-h700/System/gambatte_libretro.so
           test -s select-slot-h700/System/bezels/640x480.png
           test -s select-slot-h700/System/bezels/640x480-gba-original.png
+          test -s select-slot-h700/System/licenses/gba-original-bezel-credits.txt
 
       - name: Package full firmware and OTA release manifest
         working-directory: upstream
