@@ -9,7 +9,7 @@ PORT="$WORK/slot-miyoo"
 STAGE="$PORT/release/stage"
 PORT_COMMIT="d096bdb87f25f3aba62de6b40ef859b61d841e43"
 SLOT_VERSION="1.8.1"
-CUSTOM_VERSION="26"
+CUSTOM_VERSION="1"
 ZIP="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo.zip"
 ZIP_ONION="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo-onion-autoboot.zip"
 ZIP_STOCK="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo-stock-autoboot.zip"
@@ -202,7 +202,7 @@ Menu Power Off: Off/1/3/5/10/15/30 minutes; default 15; instant input lock and O
 Power hold: on OnionOS, quick hold uses native themed shutdown; short press stays native OnionOS standby
 OnionOS: theme-independent keymon POWER/suspend/shutdown handoff; retains whichever OnionOS theme is selected
 Onion PWM: original 0-9 brightness duty table; select physical PWM over unrelated legacy backlight interfaces
-Experimental preview; no H700 OTA publication
+Miyoo release; separate from H700 firmware and OTA
 EOF
 
 # Keep the original app-only ZIP for people who do NOT want autostart.

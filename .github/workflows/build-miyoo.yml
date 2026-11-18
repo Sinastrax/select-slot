@@ -1,11 +1,10 @@
-name: Build select. slot. Miyoo Unfiltered
+name: Verify select. slot. Miyoo ARMv7
 
 on:
   workflow_dispatch:
   push:
     branches:
       - main
-      - feature/select-slot-miyoo-pwm-priority
     paths:
       - "miyoo/**"
       - ".github/workflows/build-miyoo.yml"
@@ -38,7 +37,7 @@ jobs:
           curl -fsSL https://taskfile.dev/install.sh | sh -s -- -b "$HOME/.local/bin"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-      - name: Build Miyoo unfiltered preview
+      - name: Build Miyoo offline release
         shell: bash
         run: bash miyoo/build.sh
 
@@ -73,139 +72,13 @@ jobs:
           ! unzip -Z1 "$archive" | grep -q '^.tmp_update/'
 
 
-      - name: Upload experimental ZIP and checksum
+      - name: Upload verified ZIPs and checksums (CI artifact only)
         uses: actions/upload-artifact@v4
         with:
-          name: select-slot-miyoo-preview
+          name: select-slot-miyoo-build-artifact
           path: |
             .build/miyoo/select-slot-*-miyoo*.zip
             .build/miyoo/select-slot-*-miyoo*.zip.sha256
           if-no-files-found: error
           retention-days: 30
 
-  publish-miyoo-preview:
-    name: Publish Miyoo prerelease (never H700 stable)
-    # Only trusted pushes/manual builds on the two Miyoo development branches.
-    # Pull-request builds remain read-only and cannot publish releases.
-    if: >-
-      github.event_name != 'pull_request' &&
-      (github.ref == 'refs/heads/feature/select-slot-miyoo-pwm-priority' ||
-       github.ref == 'refs/heads/main')
-    needs: build-miyoo
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Download verified Miyoo package from this run
-        uses: actions/download-artifact@v4
-        with:
-          name: select-slot-miyoo-preview
-          path: .build/miyoo
-
-      - name: Verify standalone package and derive distinct Miyoo tag
-        id: preview
-        shell: bash
-        run: |
-          set -euo pipefail
-          shopt -s nullglob
-          archives=(.build/miyoo/select-slot-*-miyoo.zip)
-          test "${#archives[@]}" -eq 1
-          archive="${archives[0]}"
-          test -s "$archive"
-          test -s "$archive.sha256"
-          onion="$(dirname "$archive")/$(basename "$archive" .zip)-onion-autoboot.zip"
-          stock="$(dirname "$archive")/$(basename "$archive" .zip)-stock-autoboot.zip"
-          for variant in "$onion" "$stock"; do
-            test -s "$variant"
-            test -s "$variant.sha256"
-            unzip -t "$variant" | tail -1 | grep -q 'No errors detected'
-            actual="$(sha256sum "$variant" | cut -d' ' -f1)"
-            expected="$(awk 'NR==1 {print $1}' "$variant.sha256")"
-            test "$actual" = "$expected"
-          done
-          unzip -Z1 "$onion" | grep -qx '.tmp_update/startup/select-slot.sh'
-          ! unzip -Z1 "$onion" | grep -qx '.tmp_update/runtime.sh'
-          unzip -Z1 "$stock" | grep -qx '.tmp_update/runtime.sh'
-          ! unzip -Z1 "$stock" | grep -qx '.tmp_update/startup/select-slot.sh'
-          ! unzip -Z1 "$archive" | grep -q '^.tmp_update/'
-
-          # The checksum file records the source runner's absolute ZIP path.
-          # Verify its digest against the ZIP on this release runner instead.
-          expected="$(awk 'NR==1 {print $1}' "$archive.sha256")"
-          actual="$(sha256sum "$archive" | cut -d' ' -f1)"
-          test "$actual" = "$expected"
-          unzip -t "$archive" | tail -n 1 | grep -q 'No errors detected'
-          unzip -Z1 "$archive" | grep -qx 'System/slot'
-          unzip -Z1 "$archive" | grep -qx 'System/select-slot-version.txt'
-          unzip -Z1 "$archive" | grep -qx 'App/Slot/config.json'
-          unzip -Z1 "$archive" | grep -qx 'Apps/slot.pak/config.json'
-          # Prevent an H700 package or accidental version mismatch being published.
-          [[ "$(basename "$archive")" =~ ^select-slot-([0-9]+\.[0-9]+\.[0-9]+)-ver([0-9]+)-miyoo\.zip$ ]]
-          version="${BASH_REMATCH[1]}"
-          revision="${BASH_REMATCH[2]}"
-          info="$(unzip -p "$archive" System/select-slot-version.txt)"
-          grep -Fq "select. slot. $version Ver. $revision - " <<<"$(head -n1 <<<"$info")"
-          grep -Fq 'GB/GBC: Miyoo-native mGBA default' <<<"$info"
-          tag="miyoo-v${version}-ver${revision}-preview.${GITHUB_RUN_NUMBER}.${GITHUB_RUN_ATTEMPT}"
-          {
-            echo "tag=$tag"
-            echo "version=$version"
-            echo "revision=$revision"
-            echo "archive=$archive"
-            echo "onion=$onion"
-            echo "stock=$stock"
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Publish immutable prerelease, excluded from H700 latest and OTA
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ steps.preview.outputs.tag }}
-          RELEASE_ZIP: ${{ steps.preview.outputs.archive }}
-          RELEASE_ONION: ${{ steps.preview.outputs.onion }}
-          RELEASE_STOCK: ${{ steps.preview.outputs.stock }}
-          DISPLAY_VERSION: ${{ steps.preview.outputs.version }}
-          DISPLAY_REVISION: ${{ steps.preview.outputs.revision }}
-        run: |
-          set -euo pipefail
-          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "Prerelease $RELEASE_TAG already exists; not overwriting."
-            exit 0
-          fi
-          cat > miyoo-preview-notes.md <<EOF
-          ## select. slot. Miyoo $DISPLAY_VERSION Ver. $DISPLAY_REVISION (experimental)
-          
-          Miyoo Mini / Mini Plus / Mini Flip ARMv7 build. Not for H700 devices.
-          Default GB/GBC core: original Miyoo mGBA; GBA: gpSP.
-          Refer to System/select-slot-install.md inside the ZIP for build-specific
-          changes and installation instructions.
-          
-          The build and ZIP checks passed, but device performance and display
-          quality have **not** been verified on physical hardware.
-          Brightness is limited to the original 1–9 settings (former 10–12 values load as 9).
-          No in-app updater or Wi-Fi connection is needed.
-          
-          Full, SD-root installation packages:
-          - miyoo.zip: app-only, no automatic startup.
-          - miyoo-onion-autoboot.zip: OnionOS 4.3+; starts via
-            .tmp_update/startup/select-slot.sh and NEVER replaces runtime.sh.
-          - miyoo-stock-autoboot.zip: STOCK MIYOO FIRMWARE ONLY;
-            overwrites .tmp_update/runtime.sh. NEVER install over OnionOS,
-            Allium or an existing third-party runtime.sh.
-          Choose ONE ZIP, back up the SD card, extract at the SD root.
-          
-          Commit: ${GITHUB_SHA}
-          This prerelease is separate from the stable H700 release/OTA channel.
-          EOF
-          gh release create "$RELEASE_TAG" "$RELEASE_ZIP" "$RELEASE_ZIP.sha256" \
-            "$RELEASE_ONION" "$RELEASE_ONION.sha256" \
-            "$RELEASE_STOCK" "$RELEASE_STOCK.sha256" \
-            --repo "$GITHUB_REPOSITORY" \
-            --target "$GITHUB_SHA" \
-            --title "select. slot. Miyoo $DISPLAY_VERSION Ver. $DISPLAY_REVISION (Preview ${GITHUB_RUN_NUMBER})" \
-            --notes-file miyoo-preview-notes.md \
-            --prerelease --latest=false
-          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" \
-            --jq '{tag:.tag_name,prerelease:.prerelease,draft:.draft}'
-          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq .prerelease)" = true
-          test "$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" --jq '.assets | length')" = 6
