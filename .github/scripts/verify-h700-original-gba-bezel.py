@@ -20,12 +20,12 @@ assert hashlib.sha256(shader).hexdigest()=="2f45846d17f641f77db94542292b779312ff
 assert hashlib.sha256(auth).hexdigest()=="6990dbe1e03ee7d03cd2b53f5a826b7345ab05ab9ee401af14050a8242a0ca12", "Ver17 Pocket/SGB looks changed"
 assert "    Ags102,\n    Agb001,\n    File(String)," in s
 assert 'BezelPick::Agb001 => "agb-001".to_string()' in s
-assert 'BezelPick::Agb001 => "Original GBA".to_string()' in s
+assert 'BezelPick::Agb001 => "GBA".to_string()' in s
 assert '"agb-001" => BezelPick::Agb001' in s
 assert "bezel_gba: BezelPick::Ags102," in s, "Original GBA must not change user default"
 menu=app.split("fn bezel_choices(&self, platform: Platform)",1)[1].split("fn bezel_pick",1)[0]
 assert "if self.framed_panel() {" in menu
-assert "if platform.hardware() == Platform::Gba {" in menu
+assert "crate::bezel::original_gba_available(self.panel, platform)" in menu
 assert "choices.push(BezelPick::Ags102);" in menu
 assert "choices.push(BezelPick::Agb001);" in menu
 sp=app.split("pub fn sp_frame(&self) -> bool {",1)[1].split("\n    }",1)[0]
@@ -37,9 +37,15 @@ assert "gba_original_strip: None" in app
 assert "fn draw_sp_strip(&self" in app and "BezelPick::Agb001 => self.gba_original_strip.or(self.sp_strip)" in app
 assert 'root.join(crate::bezel::BEZELS)' in front
 assert '"640x480-gba-original.png"' in front
+assert 'panel == (640, 480)' in front
+assert 'let label = app.bezel_label(platform);' in front
+assert '"GBA SP".to_string()' in app
+assert 'pub fn original_gba_available(panel: (u32, u32), platform: Platform) -> bool' in Path("crates/slot/src/bezel.rs").read_text()
+assert 'panel == (640, 480) && platform.hardware() == Platform::Gba' in Path("crates/slot/src/bezel.rs").read_text()
 assert "set_gba_original_strip(Some(tex))" in front
 assert "BezelPick::None | BezelPick::Ags102 | BezelPick::Agb001 => None" in front
 assert "c.w == 640.0 && c.h == 480.0" in gfx
+assert 'fn original_gba_only_for_640x480_gba_panels()' in Path("crates/slot/tests/bezel.rs").read_text()
 assert "let (w, h) = self.session.app().game_bezel_size();" in front
 # Panel gating is the only hardware selector; NOT any naming heuristics.
 def is_framed(panel):
