@@ -443,3 +443,24 @@ change(net,
                             cached: false,
                         });''',
 "report unsupported ROMs through standard game-ready status");
+
+# Upstream's heartbeat unit test constructs Active directly and must declare
+# the new path and unmatched fields.
+change(net,
+'''        let active = Active {
+            generation: 2,
+            hash: "rom-hash".into(),
+            ready: true,
+            online: true,
+            last_ping: Instant::now(),
+        };''',
+'''        let active = Active {
+            generation: 2,
+            hash: "rom-hash".into(),
+            path: PathBuf::from("test.gba"),
+            ready: true,
+            online: true,
+            unmatched: false,
+            last_ping: Instant::now(),
+        };''',
+"update existing heartbeat regression for new active-game fields")
