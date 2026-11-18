@@ -191,6 +191,8 @@ jobs:
           python3 ../.github/scripts/ra-menu-login-tests-ver25.py
           # Ver.26: preserve compatible existing RA settings and show accurate save errors.
           python3 ../.github/scripts/ra-login-save-ver26.py
+          # Ver.27: migrate pre-existing RA config on first boot; preserve account data.
+          python3 ../.github/scripts/ra-config-migration-ver27.py
 
       - name: Capture merged source for integration review
         uses: actions/upload-artifact@v4
