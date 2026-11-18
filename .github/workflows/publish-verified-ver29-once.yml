@@ -1,0 +1,57 @@
+name: Publish verified select. slot. Ver. 29
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/publish-verified-ver29-once.yml']
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download already verified H700 firmware from successful main build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p release
+          gh run download 44327257522 --repo "$GITHUB_REPOSITORY" --name select-slot-complete-h700 --dir release
+          test -s release/versions.json
+      - name: Verify release checksum and manifest
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, pathlib
+          root = pathlib.Path("release")
+          d = json.loads((root / "versions.json").read_text())["stable"]
+          assert d["tag"] == "v1.16.0-rgsp.29", d
+          assert d["version"] == "1.16.0-rgsp.29", d
+          archive = root / d["zip"]
+          assert archive.is_file(), d["zip"]
+          assert archive.stat().st_size == d["size"]
+          assert hashlib.sha256(archive.read_bytes()).hexdigest() == d["sha256"]
+          print("Validated Ver.29 firmware:", archive, d["sha256"])
+          PY
+      - name: Publish public release and OTA manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: v1.16.0-rgsp.29
+        shell: bash
+        run: |
+          set -euo pipefail
+          zip="release/slot-${TAG}-h700.zip"
+          test -s "$zip"
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release already exists; retaining it unchanged"
+            exit 0
+          fi
+          gh release create "$TAG" "$zip" release/versions.json \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "7a9e70013e1960979e4f89e088519b21edb62b02" \
+            --title "select. slot. 1.16.0 Ver. 29" \
+            --notes-file RELEASE_NOTES.md
