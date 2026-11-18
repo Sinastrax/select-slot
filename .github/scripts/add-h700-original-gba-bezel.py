@@ -51,7 +51,13 @@ edit("crates/slot/src/app.rs",[
         }""",
      "GBA bezel menu options"),
     ("""    pub fn sp_frame(&self) -> bool {
-        self.resolved_bezel(self.playing_platform()) == BezelPick::Ags102
+        // Built-in lower strips ONLY exist on 3.5-inch 640x480 screens.
+        // Never alter fullscreen GBA on RG SP or RG34XXSP.
+        self.framed_panel()
+            && matches!(
+                self.resolved_bezel(self.playing_platform()),
+                BezelPick::Ags102 | BezelPick::Agb001
+            )
             && !self.game_layout().panel
     }""",
      """    pub fn sp_frame(&self) -> bool {
