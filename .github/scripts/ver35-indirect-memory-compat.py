@@ -163,6 +163,18 @@ change(rs,
     pub fn activate(&mut self, id: u32, definition: &str) -> bool {''',
 "expose exact pointer-failure path to unit tests")
 
+change(tests,
+'''    // Indirect reads into a hole must not treat the missing byte as zero.''',
+'''    // An out-of-range pointer-chain read yields zero, as in official rc_client.
+    // Only invalid static memrefs are disabled during address validation.''',
+"document official rcheevos pointer handling in the legacy GB test")
+change(tests,
+'''    ram[0xc000] = 1;
+    assert!(indirect.frame(&ram, &memory).is_empty());''',
+'''    ram[0xc000] = 1;
+    assert_eq!(indirect.frame(&ram, &memory), &[8]);''',
+"GB bank-hole test expects official rc_client pointer-chain semantics")
+
 with Path(tests).open("a") as f:
     f.write(r'''
 
