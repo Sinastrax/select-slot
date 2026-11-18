@@ -206,6 +206,10 @@ jobs:
           python3 ../.github/scripts/ver30-cleanup.py
           # Shared row viewport: scroll all long quick-menu pages, protect footer.
           python3 ../.github/scripts/fix-menu-overflow-all-pages.py
+          # Ver.31: per-game RA refresh, session/presence separation and measured progress.
+          python3 ../.github/scripts/ver31-ra-network.py
+          python3 ../.github/scripts/ver31-ra-viewer.py
+          python3 ../.github/scripts/ver31-ra-tests.py
 
       - name: Capture merged source for integration review
         uses: actions/upload-artifact@v4
