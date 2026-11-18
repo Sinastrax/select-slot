@@ -50,7 +50,8 @@ jobs:
             unzip -t "$z" | tail -n 1 | grep -q 'No errors detected'
             unzip -Z1 "$z" | grep -qx 'System/slot'
             unzip -Z1 "$z" | grep -qx 'System/select-slot-version.txt'
-            test "$(unzip -p "$z" System/select-slot-version.txt | head -n 1 | cut -d' ' -f1-6)" = 'select. slot. 1.8.1 Ver. 1'
+            info="$(unzip -p "$z" System/select-slot-version.txt | head -n 1)"
+            [[ "$info" == 'select. slot. 1.8.1 Ver. 1 - '* ]]
             ! unzip -p "$z" System/select-slot-version.txt | grep -Fq 'Ver. 26'
             unzip -Z1 "$z" | grep -qx 'App/Slot/config.json'
             unzip -Z1 "$z" | grep -qx 'Apps/slot.pak/config.json'
