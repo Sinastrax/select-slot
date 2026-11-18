@@ -44,7 +44,10 @@ change(c,
             return 0;
         }''',
 '''        if (address > UINT32_MAX - i || !valid_address(address + i)) {
-            if (current->evaluating) {
+            /* Only a wholly unmapped starting address is a possible pointer
+               chain. A static multibyte read beginning in mapped RAM but
+               crossing an unmapped edge is still treated as unsafe. */
+            if (current->evaluating && !valid_address(address)) {
                 /*
                  * rcheevos rc_client_peek: an unavailable address reached by
                  * a pointer chain is an observed zero, NOT a reason to reset
@@ -185,3 +188,21 @@ fn an_invalid_indirect_pointer_does_not_reset_unrelated_achievements() {
 }
 ''')
 print("Ver35: independent award survives an invalid pointer-chain read")
+
+with Path(tests).open("a") as f:
+    f.write(r'''
+
+#[test]
+fn a_direct_multi_byte_read_crossing_unmapped_memory_is_still_rejected() {
+    let mut runtime = runtime::Runtime::new().unwrap();
+    assert!(runtime.activate(7200, "0xX047FFF=1"));
+    let mut ram = vec![0; RAM_SIZE];
+    let valid = AchievementMemory::new([0..0x8000, 0x8000..0x48000]);
+    ram[0x47fff] = 1;
+    assert!(runtime.frame(&ram, &valid).is_empty());
+    assert_ne!(runtime.diagnostic_bits() & 1, 0,
+        "a static 32-bit read crossing the end of mapped RAM must fail closed");
+}
+''')
+print("Ver35: strict rejection of static reads crossing unmapped RAM")
+
