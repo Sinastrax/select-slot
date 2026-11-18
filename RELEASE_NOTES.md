@@ -1,13 +1,11 @@
-# select. slot. 1.16.0 Ver. 27
+# select. slot. 1.16.0 Ver. 28
 
-## Changes since Ver. 26
+## Changes since Ver. 27
 
-- **Automatic RetroAchievements TOML migration.** On the first boot after updating, the firmware reads and interprets the existing `Config/retroachievements.toml` and rewrites it once in a normalized, supported format—no manual editing required.
-- **Account data preserved.** The migration retains your username, login token, pending password, enabled/disabled setting, on-device login marker, and other compatible configuration values.
-- **Verified, safe write.** The rewritten data is parsed again and checked for consistency before an atomic write; if the original file is unreadable or malformed, it is not overwritten. Future-schema files are left alone, and already-migrated files are not rewritten.
-- **Achievement progress untouched.** Saved game data, offline achievements, unlock caches and account history under `Saves/RetroAchievements` are never modified by the migration.
-- **Regression tests.** Tests cover preservation of login information and extra settings, single-run migration, malformed-file protection, future schema and saved unlock isolation.
+- **Original-style select. slot. boot logo.** The bundled logo now reads `select. slot.`, with the same minimal white-on-dark styling as the original Slot wordmark. It is built into the frontend and included in the full firmware update package.
+- **Branded OTA installation screen.** During firmware installation, the progress screen now says `UPDATING SELECT. SLOT.` instead of `UPDATING SLOT`.
+- **Persistent branding across updates.** Branding is applied to the upstream source before compiling and checked in the release archive, rather than patched only in the final package.
 
-Existing **Tools → RetroAchievements** menu login, masked password entry and **restart required** behavior are unchanged. Migration normalizes configuration; it cannot repair a genuinely read-only or damaged SD card. TOML comments may not survive normalization, but meaningful setting values are preserved.
+**Existing custom boot logos are preserved.** A user-provided `Config/bootlogo.bmp` continues to take priority. The boot-resource logo is installed by the firmware at startup, so the old startup logo may still appear during the first installation of this release; the new logo appears on a subsequent power-on.
 
-H700 firmware. Physical-device verification of the reported login-save error remains necessary.
+H700 firmware only. No changes to emulators, RetroAchievements configuration, saves, scaling or shaders.
