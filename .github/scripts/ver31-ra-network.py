@@ -279,4 +279,12 @@ change(net,
 '''                .timeout_global(Some(Duration::from_secs(20)))''',
 "allow larger achievement sets to complete on slower network links")
 
+change(net,
+'''                                if game.ready
+                                    && crate::library::fresh(&dir, &load.path, now())''',
+'''                                if game.ready
+                                    && !load.refresh
+                                    && crate::library::fresh(&dir, &load.path, now())''',
+"manual refresh also rechecks previously unregistered ROMs")
+
 print("Ver.31 active-game refresh and independent session/presence state installed")
