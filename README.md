@@ -122,6 +122,13 @@ These are the **custom changes in the H700 build**, on top of upstream Slot and 
 - **Light-mode clock and battery percentage (Ver. 22).** Status text at the top of quick menus, including in-game menus, uses independent bright HUD text textures so both the **time** and **battery percentage** remain visible against the dark menu background. The existing shelf footer and wallpaper-specific colors remain untouched.
 - **Corrected Resume on Power On.** **On** starts the last game and loads its resume state; **Off** boots to the shelf with that game selected but not running. **Resume on Insert** stays independent for manual launches.
 
+### Ver. 35: rcheevos-compatible indirect memory handling
+
+- Fixed the **unavailable indirect RAM read** found in the German Pokémon Smaragd device log. The old wrapper reset *all* achievements when any dynamic pointer briefly pointed outside available memory; official `rc_client` treats this as a zero-valued pointer read without resetting unrelated achievements.
+- Direct memory-address validation remains strict: invalid static achievement addresses and reads crossing unmapped boundaries are rejected. Real achievement tracking still runs for every emulated frame, including fast-forward.
+- Added regression tests for invalid pointers, independent awards, and direct unmapped reads; routine injected server warnings no longer flood logs.
+- Existing game saves, core selection, color modes, device naming, and original System manifest updater are unchanged. Hardware confirmation remains necessary.
+
 ### Ver. 34: reliable achievements during fast-forward
 
 - **Evaluate every emulated frame**, including fast-forward steps not displayed on the LCD. The evaluator now runs immediately after the emulator frame instead of using an eight-frame RAM snapshot queue that could drop momentary achievement conditions.
