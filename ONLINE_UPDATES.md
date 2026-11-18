@@ -25,7 +25,7 @@ the inherited Slot updater, not Unslot's separately signed `.pak` format.
 Every release contains all previous working Slot modifications and the pinned older mGBA
 core (`c758314a639aa0066e7b65a8341448181b73c804`). The older core is rebuilt from
 source by `.github/scripts/build-stable-mgba.sh` and replaces the upstream core before
-the release archive is packaged. Its modified source is retained under `System/licenses/`.
+the release archive is packaged. Its modified source is published as a separate GitHub release asset (`mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz`) next to each firmware ZIP; a small source/license notice is retained in `System/licenses/`.
 
 Every release preserves all previous working changes. The workflow checks that the new archive includes `System/slot`, its launcher, mGBA, gpSP,
 Gambatte and the standard supporting files. Do not publish a partial hotkey or emulator-only

@@ -1,0 +1,182 @@
+#!/usr/bin/env python3
+"""Ver.30 menus: top-level Restart, in-game Achievements, Tools storage cleanup."""
+from pathlib import Path
+import re
+
+def change(path, old, new, label):
+    p=Path(path)
+    s=p.read_text()
+    n=s.count(old)
+    if n!=1: raise SystemExit(f"{path}: {label}: expected 1, found {n}")
+    p.write_text(s.replace(old,new,1))
+
+ui="crates/slot-ui/src/quick_menu.rs"
+change(ui,"    RaBackground,\n}","    RaBackground,\n    Restart,\n    Achievements,\n    AchievementList,\n    Cleanup,\n    CleanupScan,\n    CleanupDelete,\n}","enum")
+p=Path(ui);s=p.read_text()
+old="        QuickRow::RaBackground,\n    ];"
+new="        QuickRow::RaBackground,\n        QuickRow::Restart,\n        QuickRow::Achievements,\n        QuickRow::AchievementList,\n        QuickRow::Cleanup,\n        QuickRow::CleanupScan,\n        QuickRow::CleanupDelete,\n    ];"
+assert s.count(old)>=1, "ALL rows not found"
+p.write_text(s.replace(old,new,1))
+p=Path(ui);s=p.read_text()
+m=re.search(r'(pub const ALL: \[QuickRow; )(\d+)( \+ cfg!\(feature = "nds"\) as usize\])',s)
+assert m, "QuickRow count missing"
+s=s[:m.start(2)]+str(int(m.group(2))+6)+s[m.end(2):]
+p.write_text(s)
+change(ui,'''    pub const MAIN: [QuickRow; 6] = [
+        QuickRow::General,
+        QuickRow::Game,
+        QuickRow::Controls,
+        QuickRow::Screen,
+        QuickRow::Network,
+        QuickRow::System,
+    ];''','''    pub const MAIN: [QuickRow; 7] = [
+        QuickRow::General,
+        QuickRow::Game,
+        QuickRow::Controls,
+        QuickRow::Screen,
+        QuickRow::Network,
+        QuickRow::System,
+        QuickRow::Restart,
+    ];''',"Restart below System")
+p=Path(ui);s=p.read_text()
+s,n=re.subn(r'(pub const NETWORK: \[QuickRow; )(\d+)( \+ cfg!\(feature = "nds"\) as usize\])',lambda m:m[1]+str(int(m[2])+1)+m[3],s)
+assert n==1,"Tools menu count"
+p.write_text(s)
+change(ui,'''        QuickRow::RetroAchievements,
+    ];''','''        QuickRow::RetroAchievements,
+        QuickRow::Cleanup,
+    ];''',"Tools cleanup")
+change(ui,'''    pub const CHEAT_LIST: [QuickRow; 1] = [QuickRow::CheatList];''','''    pub const CHEAT_LIST: [QuickRow; 1] = [QuickRow::CheatList];
+    pub const ACHIEVEMENT_LIST: [QuickRow; 1] = [QuickRow::AchievementList];
+    pub const CLEANUP: [QuickRow; 2] = [QuickRow::CleanupScan, QuickRow::CleanupDelete];''',"subpages")
+change(ui,'''    pub const PLAY: [QuickRow; 10] = [''','''    pub const PLAY: [QuickRow; 11] = [''',"in-game count")
+change(ui,'''        QuickRow::Cheats,
+        QuickRow::Guide,
+        QuickRow::Settings,''','''        QuickRow::Cheats,
+        QuickRow::Achievements,
+        QuickRow::Guide,
+        QuickRow::Settings,''',"in-game entry")
+change(ui,'''            QuickRow::RetroAchievements => &QuickRow::NETWORK,''','''            QuickRow::RetroAchievements | QuickRow::Cleanup => &QuickRow::NETWORK,
+            QuickRow::CleanupScan | QuickRow::CleanupDelete => &QuickRow::CLEANUP,''',"cleanup navigation")
+change(ui,'''            QuickRow::CheatList => &QuickRow::CHEAT_LIST,''','''            QuickRow::CheatList => &QuickRow::CHEAT_LIST,
+            QuickRow::AchievementList => &QuickRow::ACHIEVEMENT_LIST,''',"achievement page")
+change(ui,'''            | QuickRow::Cheats
+            | QuickRow::Guide
+            | QuickRow::Settings''','''            | QuickRow::Cheats
+            | QuickRow::Achievements
+            | QuickRow::Guide
+            | QuickRow::Settings''',"play mapping")
+change(ui,'''            QuickRow::CheatList => Some(QuickRow::Cheats),''','''            QuickRow::CheatList => Some(QuickRow::Cheats),
+            QuickRow::AchievementList => Some(QuickRow::Achievements),
+            QuickRow::CleanupScan => Some(QuickRow::Cleanup),''',"back navigation")
+change(ui,'''            QuickRow::Romm => Some(QuickRow::ROMM[0]),''','''            QuickRow::Romm => Some(QuickRow::ROMM[0]),
+            QuickRow::Cleanup => Some(QuickRow::CLEANUP[0]),''',"submenu")
+change(ui,'''            QuickRow::About => "About",''','''            QuickRow::About => "About",
+            QuickRow::Restart => "Restart",
+            QuickRow::Achievements | QuickRow::AchievementList => "Achievements",
+            QuickRow::Cleanup => "Storage Cleanup",
+            QuickRow::CleanupScan => "Scan Storage",
+            QuickRow::CleanupDelete => "Clean Detected Files",''',"labels")
+change(ui,'''                | QuickRow::About
+                | QuickRow::Screen''','''                | QuickRow::About
+                | QuickRow::Restart
+                | QuickRow::Cleanup
+                | QuickRow::CleanupScan
+                | QuickRow::CleanupDelete
+                | QuickRow::Achievements
+                | QuickRow::AchievementList
+                | QuickRow::Screen''',"opens")
+app="crates/slot/src/app.rs"
+change(app,'''            QuickRow::About => self.phase = Phase::About,''','''            QuickRow::About => self.phase = Phase::About,
+            QuickRow::Restart => self.begin_restart(),
+            QuickRow::CleanupScan => self.scan_cleanup(),
+            QuickRow::CleanupDelete => self.delete_cleanup(),''',"actions")
+change(app,'''            | QuickRow::RetroAchievements
+            | QuickRow::Wifi
+            | QuickRow::Controls''','''            | QuickRow::RetroAchievements
+            | QuickRow::Cleanup
+            | QuickRow::Wifi
+            | QuickRow::Controls''',"submenu")
+change(app,'''            | QuickRow::RaBackground
+            | QuickRow::RetroAchievements
+            | QuickRow::Nickname''','''            | QuickRow::RaBackground
+            | QuickRow::RetroAchievements
+            | QuickRow::Restart
+            | QuickRow::Cleanup
+            | QuickRow::CleanupScan
+            | QuickRow::CleanupDelete
+            | QuickRow::Achievements
+            | QuickRow::AchievementList
+            | QuickRow::Nickname''',"settings exhaustive")
+change(app,'''            QuickRow::Cheats => {
+                self.cheat_row = 0;''','''            QuickRow::Achievements => {
+                self.achievement_row = 0;
+                self.achievement_detail = false;
+                self.achievement_names.clear();
+                self.achievement_values.clear();
+                self.achievement_badges.clear();
+                self.achievement_header = None;
+                self.achievement_description = None;
+                self.in_game_menu = Some(QuickRow::AchievementList);
+            }
+            QuickRow::Cheats => {
+                self.cheat_row = 0;''',"open achievements")
+change(app,'''        if row == QuickRow::CheatList {
+            return self.cheat_list_input(action);
+        }''','''        if row == QuickRow::CheatList {
+            return self.cheat_list_input(action);
+        }
+        if row == QuickRow::AchievementList {
+            return self.achievement_list_input(action);
+        }''',"achievements input")
+p=Path(app);s=p.read_text()
+old="            | QuickRow::CheatList\n            | QuickRow::Guide"
+new="            | QuickRow::CheatList\n            | QuickRow::Achievements\n            | QuickRow::AchievementList\n            | QuickRow::Guide"
+assert s.count(old)>=1,"exhaustive in-game not found"
+p.write_text(s.replace(old,new,1))
+p=Path(app);s=p.read_text()
+old="            | QuickRow::About\n            | QuickRow::Screen"
+new="            | QuickRow::About\n            | QuickRow::Restart\n            | QuickRow::Cleanup\n            | QuickRow::CleanupScan\n            | QuickRow::CleanupDelete\n            | QuickRow::Screen"
+assert s.count(old)>=1,"quick_value no-value actions absent"
+p.write_text(s.replace(old,new,1))
+change(app,
+'''            | QuickRow::MenuPowerOff => {}''',
+'''            | QuickRow::MenuPowerOff
+            | QuickRow::Achievements
+            | QuickRow::AchievementList => {}''',"open_quick_row exhaustive rows")
+test="crates/slot/tests/update_ui.rs"
+change(test,
+'''    s.app_mut().apply(Action::QuickMenu);
+    s.app_mut().apply(Action::GbaDown(Btn::Up));
+    s.app_mut().apply(Action::GbaUp(Btn::Up));
+    s.app_mut().apply(Action::GbaDown(Btn::A));''',
+'''    s.app_mut().apply(Action::QuickMenu);
+    // Restart is below System; seek System without relying on a fixed
+    // row offset (the Tools menu may be hidden on devices without Wi-Fi).
+    for _ in 0..slot_ui::QuickRow::MAIN.len() {
+        if s.app().quick_menu() == Some(slot_ui::QuickRow::System) { break; }
+        s.app_mut().apply(Action::GbaDown(Btn::Down));
+        s.app_mut().apply(Action::GbaUp(Btn::Down));
+    }
+    assert_eq!(s.app().quick_menu(), Some(slot_ui::QuickRow::System));
+    s.app_mut().apply(Action::GbaDown(Btn::A));''',"navigate to About without assuming last main row")
+with Path(test).open("a") as out:
+    out.write("""
+#[test]
+fn direct_restart_is_below_system_and_reuses_shutdown() {
+    use slot_ui::QuickRow;
+    assert_eq!(QuickRow::MAIN[5], QuickRow::System);
+    assert_eq!(QuickRow::MAIN[6], QuickRow::Restart);
+    // A single cart auto-launches in this fixture; use two for the shelf menu.
+    let d = tmp_root_with_carts(&["Emerald", "Fusion"]);
+    let (mut s, _) = common::session_with_platform(d.path());
+    assert!(matches!(s.app().phase(), Phase::Shelf));
+    s.app_mut().apply(Action::QuickMenu);
+    s.app_mut().apply(Action::GbaDown(Btn::Up));
+    s.app_mut().apply(Action::GbaUp(Btn::Up));
+    assert_eq!(s.app().quick_menu(), Some(QuickRow::Restart));
+    s.app_mut().apply(Action::GbaDown(Btn::A));
+    assert!(s.app().restarting());
+}
+""")
+print("Ver.30 menu rows installed")

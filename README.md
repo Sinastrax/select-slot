@@ -103,7 +103,7 @@ These are the **custom changes in the H700 build**, on top of upstream Slot and 
 ### Emulation and audio
 
 - **Three supported cores:** mGBA and Gambatte for GB/GBC, and mGBA and gpSP for GBA.
-- **Pinned older mGBA core.** Our complete H700 build uses the older mGBA revision `c758314a639aa0066e7b65a8341448181b73c804` rather than replacing it with a newer experimental core. Its corresponding source is packaged.
+- **Pinned older mGBA core.** Our complete H700 build uses the older mGBA revision `c758314a639aa0066e7b65a8341448181b73c804` rather than replacing it with a newer experimental core. Its modified corresponding source is supplied as a separate asset alongside each firmware release.
 - **GB/GBC mGBA performance and audio changes.** Core-specific CPU governor selection, audio-ring overflow handling with short crossfades, buffer recovery, and pitch-neutral drift behavior. Gambatte and GBA playback are not modified by the mGBA-only audio path.
 - **SameBoy is not bundled.** Experimental SameBoy work was retired after unfavorable performance; the supported GB/GBC choices remain mGBA and Gambatte.
 
@@ -121,6 +121,14 @@ These are the **custom changes in the H700 build**, on top of upstream Slot and 
 - **Reliable Wi-Fi through games and cartridge removal (Ver. 23).** Fixed the real shutdown source: ordinary ejection was incorrectly issuing the **link-play radio Down** command, and its script also killed home Wi-Fi. Normal games now keep enabled WLAN running while RetroAchievements are online, including during initial DHCP/reconnection, with no unnecessary shutdown on ejection. **Real wireless link play** temporarily borrows the radio for a direct softAP/STA connection, then automatically restores the saved home network afterward. Wi-Fi Off, sleep and power-off still release the radio normally.
 - **Light-mode clock and battery percentage (Ver. 22).** Status text at the top of quick menus, including in-game menus, uses independent bright HUD text textures so both the **time** and **battery percentage** remain visible against the dark menu background. The existing shelf footer and wallpaper-specific colors remain untouched.
 - **Corrected Resume on Power On.** **On** starts the last game and loads its resume state; **Off** boots to the shelf with that game selected but not running. **Resume on Insert** stays independent for manual launches.
+
+### In-game RetroAchievements and storage cleanup (Ver. 30)
+
+- **In-game only:** open the existing paused game menu and select **Achievements**. Browse the current game's cached badges, descriptions, unlocked/locked state and point totals. A opens details; X changes between original and locked-first ordering; B goes back. No shelf achievement menu and no extra pause system.
+- **Restart:** a selectable item immediately **below System** in the main settings list. The original About restart remains available.
+- **Tools → Storage Cleanup:** Scan Storage reports optional old rotated logs and temporary cache files; Clean Detected Files requires a second explicit confirmation. No ROMs, saves, screenshots, settings, RetroAchievements history or unknown files are deleted. The `System/` updater continues to use the **original manifest-based cleanup**, unchanged.
+- **Extra exclusions:** create `Config/cleanup-protected.txt`, one relative folder per line, to exclude additional paths such as `Cache/my-folder`. The scanner never follows symlinks.
+- **Smaller firmware ZIP:** the exact modified MPL-2.0 mGBA source archive is published beside the firmware as a separate release asset. Installed devices retain the compiled mGBA core and a source/license notice; the firmware ZIP does not install the source archive. Previous on-card source bundles are removed by the existing `System/` update manifest.
 
 ### Online updates
 
