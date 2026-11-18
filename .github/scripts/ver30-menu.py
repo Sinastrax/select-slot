@@ -12,7 +12,11 @@ def change(path, old, new, label):
 
 ui="crates/slot-ui/src/quick_menu.rs"
 change(ui,"    RaBackground,\n}","    RaBackground,\n    Restart,\n    Achievements,\n    AchievementList,\n    Cleanup,\n    CleanupScan,\n    CleanupDelete,\n}","enum")
-change(ui,"        QuickRow::RaBackground,\n    ];","        QuickRow::RaBackground,\n        QuickRow::Restart,\n        QuickRow::Achievements,\n        QuickRow::AchievementList,\n        QuickRow::Cleanup,\n        QuickRow::CleanupScan,\n        QuickRow::CleanupDelete,\n    ];","ALL")
+p=Path(ui);s=p.read_text()
+old="        QuickRow::RaBackground,\n    ];"
+new="        QuickRow::RaBackground,\n        QuickRow::Restart,\n        QuickRow::Achievements,\n        QuickRow::AchievementList,\n        QuickRow::Cleanup,\n        QuickRow::CleanupScan,\n        QuickRow::CleanupDelete,\n    ];"
+assert s.count(old)>=1, "ALL rows not found"
+p.write_text(s.replace(old,new,1))
 p=Path(ui);s=p.read_text()
 m=re.search(r'(pub const ALL: \[QuickRow; )(\d+)( \+ cfg!\(feature = "nds"\) as usize\])',s)
 assert m, "QuickRow count missing"
