@@ -348,8 +348,7 @@ change(net,
 change(net,
 '''            badges.step(&mut http);
             deferred_error.map_or(Ok(()), Err)''',
-'''              }
-              // Badge art is decorative; its failures must not block unlocks or gameplay.
+'''              // Badge art is decorative; its failures must not block unlocks or gameplay.
               badges.step(&mut http);
             }
             deferred_error.map_or(Ok(()), Err)''',
