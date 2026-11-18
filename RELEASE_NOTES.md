@@ -1,20 +1,14 @@
-# select. slot. 1.16.0 Ver. 29
+# select. slot. 1.16.0 Ver. 30
 
-## RetroAchievements improvements
+## Menu and storage quality-of-life
+- **Restart:** direct main settings entry immediately below System, using the original restart code.
+- **RetroAchievements in-game browser:** from the paused game's menu, browse cached achievements and badges, locked/unlocked status, total points and a detailed description. X toggles locked-first order. No shelf viewer.
+- **Storage Cleanup under Tools:** scan only eligible 7+-day-old rotated log files and temporary cache files. Preview count/size, then confirm a separate deletion action. Unrecognized files are never selected.
+- **Protected folders:** System and its update staging folder, Games, Saves, Config, BIOS and screenshots are excluded. Custom exclusions can be added to Config/cleanup-protected.txt. Symlinks are never followed.
+- **Original System manifest behavior preserved:** full OTA updates still remove System files absent from the package manifest, as before.
+- **Smaller firmware download:** publish the MPL-2.0 corresponding modified mGBA source as an independent release asset, alongside the full firmware ZIP; retain the compiled emulator and the required license/source notice in System.
 
-- **Tools → RetroAchievements:** dedicated Account, Sync Status, Prepare Library, Retry Failed Games, and Background Index controls.
-- **Game-first activation:** the currently launched game's achievements remain available regardless of full-library indexing.
-- **Optional full-library indexing:** automatic library-wide preparation is disabled by default; switch on Background Index or use Prepare Library to run it manually.
-- **Regional ROMs without achievements:** confirmed unmatched hashes are cached as valid results, marked ready and not repeatedly queried until the cache expires.
-- **Quiet background recovery:** unreadable ROMs are tracked individually for Retry Failed Games rather than leaving a persistent orange warning for the entire shelf.
-- **Badge download retry:** a temporary badge failure no longer makes the global sync state an actionable error.
-- **Respect handheld use:** background ROM hashing and badge prefetch pause during gameplay; new network work pauses while the lid is closed.
-- **Account and achievements preserved:** existing credentials, authenticated tokens, unlock history and offline caches are not reset by this update.
+**Unchanged:** Wi-Fi while gaming, existing mGBA performance governor for all supported systems, GBA/GB/GBC/SGB shaders, color correction, scaling, bezels, RetroAchievements account and cache handling, and Miyoo firmware.
 
-The sync-status screen distinguishes ready, syncing, offline/retrying, and action-required states and shows the count of failed ROMs.
-
-**H700 only** (RG34XXSP, RG35XXSP, RG35XX H). No changes to Miyoo firmware, shaders, emulators, scaling, or screen settings.
-
-### Notes
-Automatic background indexing is now opt-in. Existing caches remain available. RetroAchievements server acceptance of offline unlocks is not guaranteed; launch an online session for supported games.
-
+### Compatibility
+H700 devices (RG34XXSP, RG35XXSP, RG35XX H); firmware updater remains version compatible. No ROMs or BIOS files included.
