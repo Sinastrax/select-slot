@@ -122,6 +122,12 @@ These are the **custom changes in the H700 build**, on top of upstream Slot and 
 - **Light-mode clock and battery percentage (Ver. 22).** Status text at the top of quick menus, including in-game menus, uses independent bright HUD text textures so both the **time** and **battery percentage** remain visible against the dark menu background. The existing shelf footer and wallpaper-specific colors remain untouched.
 - **Corrected Resume on Power On.** **On** starts the last game and loads its resume state; **Off** boots to the shelf with that game selected but not running. **Resume on Insert** stays independent for manual launches.
 
+### Ver. 33: RetroAchievements tracking reliability
+
+- Optional **Rich Presence memory errors** cannot erase legitimate achievement triggers or reset the game evaluator. Invalid gameplay memory still fails closed to prevent false awards.
+- If tracking still misses an unlock, `Logs/slot.log` reports the first relevant issue per game: an unexposed memory address, an invalid Rich Presence read, or evaluator queue saturation. This separates server connection from actual RAM evaluation.
+- Existing save data, offline awards, emulator and shader settings, online update manifest, and device nicknames are unchanged.
+
 ### Ver. 32: safer in-game Achievements browsing
 
 - **Repeated X sorting and scrolling** now reuse a fixed pool of six visible achievement rows instead of accumulating GPU textures for all badges and labels. Descriptions and temporarily unavailable badges also keep reusable texture handles.
