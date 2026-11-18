@@ -502,3 +502,25 @@ fn a_one_frame_unlock_survives_six_times_fast_forward_without_racing_the_worker(
 ''')
 print("Ver34: full core-to-ledger fast-forward burst regression installed")
 
+change(tests,
+'''    let (frames, _frames_rx) = mpsc::sync_channel(QUEUE_SIZE);
+    let (_, notices) = mpsc::channel();''',
+'''    let (frames, _frames_rx) = mpsc::sync_channel(QUEUE_SIZE);
+    let (earned, _earned_rx) = mpsc::channel();
+    let (_, notices) = mpsc::channel();''',
+"update existing no-blocking regression fixture")
+change(tests,
+'''    let service = Service {
+        controls,
+        frames,
+        notices,''',
+'''    let service = Service {
+        controls,
+        frames,
+        earned,
+        playing: Arc::new(Mutex::new(None)),
+        notices,''',
+"initialize per-frame shared state in legacy queue test")
+print("Ver34: existing service regression fixture updated")
+
+
