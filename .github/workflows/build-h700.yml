@@ -221,6 +221,8 @@ jobs:
           python3 ../.github/scripts/ver34-achievements-every-frame.py
           # Match official rc_client: injected server warnings are not achievements.
           python3 ../.github/scripts/ver34-ra-server-warning-filter.py
+          # Ver.35: use official rcheevos indirect-pointer invalid-read behavior.
+          python3 ../.github/scripts/ver35-indirect-memory-compat.py
 
       - name: Capture merged source for integration review
         uses: actions/upload-artifact@v4
