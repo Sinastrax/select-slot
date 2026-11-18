@@ -50,10 +50,5 @@ install -m 644 "$core" "$out/System/mgba_libretro.so"
 sha256sum "$out/System/mgba_libretro.so" | tee "$out/System/licenses/mgba-stable.sha256"
 printf 'commit=%s\nsource=https://github.com/libretro/mgba/tree/%s\ncustom_fix=legacy-libretro-cmake-compatibility\n' \
   "$commit" "$commit" > "$out/System/licenses/mgba-$commit.meta"
-# MPL-2.0 permits the matching source to be distributed separately from the binary.
-# Archive the *modified* build tree, including the CMake/libretro compatibility fixes.
-# The CI release publishes this exact source archive beside the firmware ZIP.
-tar -czf "mgba-$commit-source.tar.gz" -C "$source_dir" --exclude=.git .
-install -m 644 "$source_dir/LICENSE" "$out/System/licenses/mgba-LICENSE.txt"
-printf 'mGBA source: https://github.com/Sinastrax/select-slot/releases/tag/v%s\\n' "${SLOT_RELEASE_VERSION:-1.16.0-rgsp.30}" > "$out/System/licenses/mgba-source-location.txt"
+tar -czf "$out/System/licenses/mgba-$commit-source.tar.gz" -C "$source_dir" --exclude=.git .
 echo "Stable mGBA core installed and corresponding source packaged"
