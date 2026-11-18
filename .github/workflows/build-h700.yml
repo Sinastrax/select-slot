@@ -186,6 +186,8 @@ jobs:
           # offline readiness, without changing the Wi-Fi On/Off radio policy.
           python3 ../.github/scripts/ra-game-connection-ver24.py
           python3 ../.github/scripts/ra-launch-banner-ver24.py
+          # Ver.25: RA login via masked on-device keyboard, applied on restart.
+          python3 ../.github/scripts/ra-menu-login-ver25.py
 
       - name: Capture merged source for integration review
         uses: actions/upload-artifact@v4
