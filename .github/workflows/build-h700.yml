@@ -206,6 +206,13 @@ jobs:
           python3 ../.github/scripts/ver30-cleanup.py
           # Shared row viewport: scroll all long quick-menu pages, protect footer.
           python3 ../.github/scripts/fix-menu-overflow-all-pages.py
+          # Ver.31: per-game RA refresh, session/presence separation and measured progress.
+          python3 ../.github/scripts/ver31-ra-network.py
+          python3 ../.github/scripts/ver31-ra-viewer.py
+          python3 ../.github/scripts/ver31-ra-ui-efficiency.py
+          python3 ../.github/scripts/ver31-ra-tests.py
+          # BaseOS target fixes RG35XX H's default link nickname on 640x480 panels.
+          python3 ../.github/scripts/ver31-device-nicknames.py
 
       - name: Capture merged source for integration review
         uses: actions/upload-artifact@v4
@@ -284,6 +291,7 @@ jobs:
           cargo test -p slot-ui --lib secret_input_test -- --nocapture
           cargo test -p slot-ui --lib select_ra_menu_tests -- --nocapture
           cargo test -p slot-ui --lib menu_viewport_tests -- --nocapture
+          cargo test -p slot --no-default-features --features device --lib hardware_nickname_regression -- --nocapture
           cargo test -p slot --no-default-features --features device --lib launch_status_distinguishes_real_ra_online_from_wifi_only -- --nocapture
 
       - name: Brand the boot image and update splash before compiling

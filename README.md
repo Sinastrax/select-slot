@@ -122,6 +122,14 @@ These are the **custom changes in the H700 build**, on top of upstream Slot and 
 - **Light-mode clock and battery percentage (Ver. 22).** Status text at the top of quick menus, including in-game menus, uses independent bright HUD text textures so both the **time** and **battery percentage** remain visible against the dark menu background. The existing shelf footer and wallpaper-specific colors remain untouched.
 - **Corrected Resume on Power On.** **On** starts the last game and loads its resume state; **Off** boots to the shelf with that game selected but not running. **Resume on Insert** stays independent for manual launches.
 
+### Ver. 31: menu scrolling and current-game RetroAchievements refresh
+
+- **Hardware-correct default link-play nicknames:** use the BaseOS device identifier (e.g. `rg35xxh`) to distinguish RG35XX H from RG35XX SP. Any custom nickname remains unchanged.
+- **Every long quick-menu page** now scrolls within the available rows rather than colliding with the footer, including the main settings list, GBA/GB/GBC display options and paused game menus.
+- **In-game Achievements → Y Refresh** verifies the running ROM's MD5, requests a fresh online game session, updates cached definitions/unlocks and reports the actual connection stage. Saved progress and offline awards are never deleted.
+- **Measured achievement progress** is read from the local rcheevos runtime where supported. Previously completed conditions are not auto-awarded from a save file.
+- An accepted RetroAchievements game session is **not undone by a failing Rich Presence ping**. Wi-Fi behavior, the mGBA governor and the original `System/` update manifest are unchanged.
+
 ### In-game RetroAchievements and storage cleanup (Ver. 30)
 
 - **In-game only:** open the existing paused game menu and select **Achievements**. Browse the current game's cached badges, descriptions, unlocked/locked state and point totals. A opens details; X changes between original and locked-first ordering; B goes back. No shelf achievement menu and no extra pause system.

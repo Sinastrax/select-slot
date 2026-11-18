@@ -1,14 +1,15 @@
-# select. slot. 1.16.0 Ver. 30
+# select. slot. 1.16.0 Ver. 31
 
-## Menu and storage quality-of-life
-- **Restart:** direct main settings entry immediately below System, using the original restart code.
-- **RetroAchievements in-game browser:** from the paused game's menu, browse cached achievements and badges, locked/unlocked status, total points and a detailed description. X toggles locked-first order. No shelf viewer.
-- **Storage Cleanup under Tools:** scan only eligible 7+-day-old rotated log files and temporary cache files. Preview count/size, then confirm a separate deletion action. Unrecognized files are never selected.
-- **Protected folders:** System and its update staging folder, Games, Saves, Config, BIOS and screenshots are excluded. Custom exclusions can be added to Config/cleanup-protected.txt. Symlinks are never followed.
-- **Original System manifest behavior preserved:** full OTA updates still remove System files absent from the package manifest, as before.
-- **Smaller firmware download:** publish the MPL-2.0 corresponding modified mGBA source as an independent release asset, alongside the full firmware ZIP; retain the compiled emulator and the required license/source notice in System.
+## Menus and in-game RetroAchievements
 
-**Unchanged:** Wi-Fi while gaming, existing mGBA performance governor for all supported systems, GBA/GB/GBC/SGB shaders, color correction, scaling, bezels, RetroAchievements account and cache handling, and Miyoo firmware.
+- **All-menu scrolling fix:** the main settings menu and every long quick-menu page, including GB/GBC/GBA, gameplay, RomM, shortcuts and the paused game menu, scroll before entering the footer. Original typography and six-row 480p viewport are retained.
+- **In-game Achievements → Y Refresh:** force-read the active ROM's true MD5, reconnect to its registered RetroAchievements game, refresh the achievement definitions and unlock state. Keeps the game running, preserves its achievement hit counters, existing save RAM and offline award records.
+- **Verified game connection:** show whether the exact ROM is unregistered, cached and offline, connecting, rejected, or has an accepted online session. A failed Rich Presence ping can no longer cancel an otherwise accepted achievement session; it retries separately.
+- **Measured achievements:** show actual partial progress from rcheevos for achievements that define measurable goals. Already-completed milestones from an old save are not retroactively awarded.
+- **Accurate default multiplayer nicknames:** RG35XX H is now identified from BaseOS hardware target `rg35xxh` instead of being confused with the RG35XX SP by their shared 640 × 480 screen size. Manually set nicknames remain authoritative.
+- **Regression tests:** viewport safety for all pages, ROM rehash even against stale cached fingerprints, refresh save safety, and successful session reporting despite a failed presence ping. Hardware nickname identification tests also cover the H, SP, and other BaseOS models.
+
+**Unchanged:** existing manifest-based `System/` update cleanup, Wi-Fi behavior during play, mGBA performance governor, supported cores, shaders, color correction, scaling, bezels, credentials and existing save/RetroAchievements files.
 
 ### Compatibility
-H700 devices (RG34XXSP, RG35XXSP, RG35XX H); firmware updater remains version compatible. No ROMs or BIOS files included.
+Anbernic H700 devices (RG34XXSP, RG35XXSP, RG35XX H). Full OTA package remains compatible; no ROMs or BIOS files included.
