@@ -306,4 +306,25 @@ fn light_theme_menu_draws_separate_bright_clock_and_battery_text() {
     assert!(!has(8802), "Menu reused the shelf battery ink");
 }
 """)
+with Path("crates/slot/src/app.rs").open("a") as out:
+    out.write("""
+#[cfg(test)]
+mod eject_wifi_policy_regression {
+    use super::{App, Phase};
+
+    #[test]
+    fn ejecting_a_cart_is_no_longer_treated_as_active_gameplay_for_wifi() {
+        let mut app = App::new(Vec::new());
+        app.phase = Phase::Ejecting {
+            cart: "Emerald".into(),
+            t: 0.0,
+        };
+        app.wifi_held = true;
+        assert!(app.wifi_wanted(), "ejection must preserve held WLAN even with no DHCP address");
+        app.state.wifi_off = true;
+        assert!(!app.wifi_wanted(), "explicit Wi-Fi Off must still win");
+    }
+}
+""")
+
 print("Added H700 top-corner drawing, Wi-Fi ejection, and GBA scale regressions")
