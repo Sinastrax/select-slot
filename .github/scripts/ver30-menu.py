@@ -167,8 +167,10 @@ fn direct_restart_is_below_system_and_reuses_shutdown() {
     use slot_ui::QuickRow;
     assert_eq!(QuickRow::MAIN[5], QuickRow::System);
     assert_eq!(QuickRow::MAIN[6], QuickRow::Restart);
-    let d = tmp_root_with_carts(&["Emerald"]);
+    // A single cart auto-launches in this fixture; use two for the shelf menu.
+    let d = tmp_root_with_carts(&["Emerald", "Fusion"]);
     let (mut s, _) = common::session_with_platform(d.path());
+    assert!(matches!(s.app().phase(), Phase::Shelf));
     s.app_mut().apply(Action::QuickMenu);
     s.app_mut().apply(Action::GbaDown(Btn::Up));
     s.app_mut().apply(Action::GbaUp(Btn::Up));
