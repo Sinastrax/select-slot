@@ -174,6 +174,10 @@ jobs:
           # versions, and keep the shelf clock legible over the built-in dark
           # wallpaper. Leave archive names, checksums and shaders unchanged.
           python3 ../.github/scripts/fix-ota-label-wifi-eject.py
+          # Exact menu-corner light-theme texture fix, Wi-Fi Ejecting phase
+          # handling, and GBA's missing visible 2x Scale choice on 720x480.
+          # No color shader or optical raster changes.
+          python3 ../.github/scripts/fix-menu-status-wifi-eject-gba-scale.py
 
       - name: Capture merged source for integration review
         uses: actions/upload-artifact@v4
@@ -238,6 +242,8 @@ jobs:
           cargo test -p slot --no-default-features --features device --test update_ui -- --nocapture
           cargo test -p slot --no-default-features --features device --test wifi_ui -- --nocapture
           cargo test -p slot --no-default-features --features device --test theme_clock -- --nocapture
+          cargo test -p slot --no-default-features --features device --test menu_status -- --nocapture
+          cargo test -p slot-gfx --test placement -- --nocapture
 
       - name: Build the H700 device tree
         working-directory: upstream
