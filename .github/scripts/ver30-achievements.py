@@ -421,4 +421,13 @@ replace(front,
 }
 
 fn sync_cheat_names(app: &mut App, compositor: &mut Compositor, state: &mut CheatNames) {''',"frontend view synchronization")
+tests=Path("crates/slot-achievements/src/tests.rs")
+t=tests.read_text()
+old="&mut playing, &store, &notices, &mut unsaved);"
+assert t.count(old)==4,f"one-line evaluator fixtures changed: {t.count(old)}"
+t=t.replace(old,"&mut playing, &store, &notices, &mut unsaved, &Arc::new(Status::default()));")
+old="            &mut unsaved,\n        );"
+assert t.count(old)==4,f"multi-line evaluator fixtures changed: {t.count(old)}"
+t=t.replace(old,"            &mut unsaved,\n            &Arc::new(Status::default()),\n        );")
+tests.write_text(t)
 print("Ver.30 in-game achievement browser installed")
