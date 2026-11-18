@@ -65,6 +65,17 @@ jobs:
             test "$actual" = "$expected"
             unzip -Z1 "$variant" | grep -qx 'System/slot'
           done
+          # Ver. 3 ships only mGBA and gpSP. A stale Gambatte core,
+          # source archive or launch entry must fail the build.
+          for variant in "$archive" "$onion" "$stock"; do
+            ! unzip -Z1 "$variant" | grep -Eiq 'gambatte'
+            unzip -Z1 "$variant" | grep -qx 'System/mgba_libretro.so'
+            unzip -Z1 "$variant" | grep -qx 'System/gpsp_libretro.so'
+            unzip -p "$variant" 'System/select-slot-version.txt' | grep -Fq 'Ver. 3'
+          done
+          test ! -e .build/miyoo/slot-miyoo/cores/gambatte
+          grep -Fq '"gambatte" => Some(Core::Mgba),' \
+            .build/miyoo/slot-miyoo/patches/0028-select-miyoo-config.patch
           unzip -Z1 "$onion" | grep -qx '.tmp_update/startup/select-slot.sh'
           ! unzip -Z1 "$onion" | grep -qx '.tmp_update/runtime.sh'
           unzip -Z1 "$stock" | grep -qx '.tmp_update/runtime.sh'
