@@ -92,7 +92,23 @@ jobs:
               --notes-file ".github/release-notes/miyoo-ver2.md" \
               --latest=false
           else
-            echo 'Release already exists; do not silently overwrite its assets.'
+            # Same Ver. 2 release, corrected bezel labels. Replace the three
+            # previously verified artifacts and checksums only after the NEW
+            # build and all ZIP tests above succeed. Never publish Ver. 3
+            # for a display-label correction.
+            echo 'Updating the existing Ver. 2 release with its verified label-corrected build.'
+            gh release upload "$stable" \
+              "$d/select-slot-1.8.1-ver2-miyoo.zip" \
+              "$d/select-slot-1.8.1-ver2-miyoo.zip.sha256" \
+              "$d/select-slot-1.8.1-ver2-miyoo-onion-autoboot.zip" \
+              "$d/select-slot-1.8.1-ver2-miyoo-onion-autoboot.zip.sha256" \
+              "$d/select-slot-1.8.1-ver2-miyoo-stock-autoboot.zip" \
+              "$d/select-slot-1.8.1-ver2-miyoo-stock-autoboot.zip.sha256" \
+              --repo "$repo" --clobber
+            gh release edit "$stable" --repo "$repo" \
+              --title "select. slot. 1.8.1 Ver. 2 — Miyoo" \
+              --notes-file ".github/release-notes/miyoo-ver2.md" \
+              --latest=false
           fi
 
           # Never run deletion if the replacement is absent/incomplete.
