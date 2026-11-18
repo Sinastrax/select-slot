@@ -374,6 +374,16 @@ p.write_text(s[:start] + new_prefix + s[impl_at:])
 print("Ver34: core now owns a reusable RAM buffer and evaluates synchronously")
 
 change(core,
+'''use crate::{network, Control, Frame, Service, QUEUE_SIZE, RAM_SIZE};''',
+'''use crate::{network, Control, Service, RAM_SIZE};''',
+"remove references to the old snapshot transport")
+change(core,
+'''        self.reported_backpressure = false;
+        self.current.store(self.generation, Ordering::Release);''',
+'''        self.current.store(self.generation, Ordering::Release);''',
+"remove old queue-backpressure state from the load path")
+
+change(core,
 '''        self.current.store(self.generation, Ordering::Release);''',
 '''        self.reported_tracking = false;
         self.current.store(self.generation, Ordering::Release);''',
