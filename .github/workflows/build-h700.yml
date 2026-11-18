@@ -189,6 +189,8 @@ jobs:
           # Ver.25: RA login via masked on-device keyboard, applied on restart.
           python3 ../.github/scripts/ra-menu-login-ver25.py
           python3 ../.github/scripts/ra-menu-login-tests-ver25.py
+          # Ver.26: preserve compatible existing RA settings and show accurate save errors.
+          python3 ../.github/scripts/ra-login-save-ver26.py
 
       - name: Capture merged source for integration review
         uses: actions/upload-artifact@v4

@@ -1,14 +1,12 @@
-# select. slot. 1.16.0 Ver. 25
+# select. slot. 1.16.0 Ver. 26
 
-## Changes since Ver. 24
+## Changes since Ver. 25
 
-- **RetroAchievements login from Tools.** Select **Tools → RetroAchievements**, enter the account username and password with Slot's existing on-screen keyboard, and save.
-- **Masked password entry.** The keyboard renders stars in place of characters, retaining the actual secret only to submit the login. Existing login passwords are never prefilled into the on-screen keyboard.
-- **Restart required, explicitly indicated.** A confirmation states: “RetroAchievements saved. Restart Slot for the login to take effect.” This intentionally avoids live account switching.
-- **Safe staged configuration.** Login is written atomically to the SD card; the password is needed across the restart to perform the first login, after which the token is remembered and the UI-entered password is automatically cleared. A previously saved account can be selected without retyping its password.
-- **Compatibility.** Manual TOML configurations continue working; a manually written password is not automatically erased. Existing offline achievement caches and unsynced unlocks are retained per account.
-- **Regression tests.** Verify login staging, account isolation, password scrubbing, masked keyboard display and the existing RetroAchievements suite.
+- **Fix RetroAchievements login saving when an existing configuration contains additional settings.** The on-device login editor under **Tools → RetroAchievements** now accepts and preserves compatible additional TOML fields instead of rejecting them.
+- **Accurate error messages.** Invalid existing configurations are identified as such, rather than presenting every failure as an SD-card problem. Missing or unreadable files and genuine write errors are distinguished; only write failures advise checking the card. The device log records the underlying filesystem error without exposing credentials.
+- **No destructive recovery.** Invalid TOML configurations are never silently replaced, keeping existing user settings intact.
+- **Tests.** Added coverage for existing extra fields, invalid TOML and genuine file-access errors; existing on-device login tests remain enabled.
 
-No changes to the single Wi-Fi On/Off control, Ver. 23 Wi-Fi/ejection fixes, Ver. 24 launch status, actual unlock popups, graphics, cores or bezels.
+The on-device login **still requires a Slot restart** before the new credentials take effect. No changes to the single Wi-Fi On/Off switch, achievements, games, graphics, shaders, bezels, scaling or emulation cores.
 
-H700 firmware. Hardware login flow and live RetroAchievements acceptance require on-device verification.
+H700 firmware; hardware retesting required to confirm the original user's save failure is resolved.
