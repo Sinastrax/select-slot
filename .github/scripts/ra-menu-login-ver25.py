@@ -50,12 +50,12 @@ repl("crates/slot-ui/src/quick_menu.rs",[
 # The System page already includes custom firmware rows in earlier patches.
 q=Path("crates/slot-ui/src/quick_menu.rs")
 s=q.read_text()
-pat=r'(pub const SYSTEM: \\[QuickRow; )(\\d+)(\\] = \\[\\n        QuickRow::Wifi,)'
+pat=r'(pub const SYSTEM: \[QuickRow; )(\d+)(\] = \[\n        QuickRow::Wifi,)'
 m=re.search(pat,s)
 if m is None:
     raise SystemExit("Cannot locate System menu row capacity")
 s=s[:m.start(2)] + str(int(m.group(2))+1) + s[m.end(2):]
-s=s.replace("        QuickRow::Wifi,\\n", "        QuickRow::Wifi,\\n        QuickRow::RetroAchievements,\\n",1)
+s=s.replace("        QuickRow::Wifi,\n", "        QuickRow::Wifi,\n        QuickRow::RetroAchievements,\n",1)
 q.write_text(s)
 
 # Keep all upstream and custom rows; earlier patches may already grow ALL.
