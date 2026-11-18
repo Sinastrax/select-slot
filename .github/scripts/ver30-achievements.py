@@ -63,12 +63,10 @@ replace(service,
                     *status.presence.lock().unwrap() = None;
                     *status.viewer.lock().unwrap() = None;
                     let _ = loads.send(None);''',"clear viewer on eject")
-replace(service,
-'''                evaluate(frame, &mut playing, &store, &notices, &mut unsaved);''',
-'''                evaluate(frame, &mut playing, &store, &notices, &mut unsaved, &status);''',"first evaluator")
-replace(service,
-'''            evaluate(frame, &mut playing, &store, &notices, &mut unsaved);''',
-'''            evaluate(frame, &mut playing, &store, &notices, &mut unsaved, &status);''',"second evaluator")
+p=Path(service);s=p.read_text()
+old="evaluate(frame, &mut playing, &store, &notices, &mut unsaved);"
+assert s.count(old)==2,"expected two evaluator call sites"
+p.write_text(s.replace(old,"evaluate(frame, &mut playing, &store, &notices, &mut unsaved, &status);"))
 replace(service,
 '''            if let Some(game) = playing.as_mut() {
                 // Preserve hits for unchanged definitions.''',
