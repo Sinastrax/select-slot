@@ -54,7 +54,9 @@ fn accepted_game_session_is_online_even_if_presence_ping_fails() {
     let mut core=service.wrap(Box::<TestCore>::default());
     core.load(&rom).unwrap();
     wait_for(|| service.game_connection()==GameConnection::Online);
-    assert!(service.game_connection_detail().unwrap_or_default().contains("Connected"));
+    let detail=service.game_connection_detail().unwrap_or_default();
+    assert!(detail.contains("session accepted") || detail.contains("Connected;"),
+        "expected an accepted game session, got {detail}");
     assert!(requests.try_iter().any(|entry| entry == "startsession"));
     // Actual game remains running, and cached definitions are still present.
     core.run_frame(ButtonMask(0));
