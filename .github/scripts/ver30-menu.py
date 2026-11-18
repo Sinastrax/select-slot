@@ -144,4 +144,32 @@ change(app,
 '''            | QuickRow::MenuPowerOff
             | QuickRow::Achievements
             | QuickRow::AchievementList => {}''',"open_quick_row exhaustive rows")
+test="crates/slot/tests/update_ui.rs"
+change(test,
+'''    s.app_mut().apply(Action::QuickMenu);
+    s.app_mut().apply(Action::GbaDown(Btn::Up));
+    s.app_mut().apply(Action::GbaUp(Btn::Up));
+    s.app_mut().apply(Action::GbaDown(Btn::A));''',
+'''    s.app_mut().apply(Action::QuickMenu);
+    // Restart is below System; select System explicitly, not by wrapping Up.
+    for _ in 0..5 {
+        s.app_mut().apply(Action::GbaDown(Btn::Down));
+        s.app_mut().apply(Action::GbaUp(Btn::Down));
+    }
+    s.app_mut().apply(Action::GbaDown(Btn::A));''',"navigate to About without assuming last main row")
+with Path(test).open("a") as out:
+    out.write("""
+#[test]
+fn direct_restart_is_below_system_and_reuses_shutdown() {
+    use slot_ui::QuickRow;
+    assert_eq!(QuickRow::MAIN[5], QuickRow::System);
+    assert_eq!(QuickRow::MAIN[6], QuickRow::Restart);
+    let d = tmp_root_with_carts(&["Emerald"]);
+    let (mut s, _) = common::session_with_platform(d.path());
+    s.app_mut().apply(Action::QuickMenu);
+    s.app_mut().apply(Action::GbaDown(Btn::Up));
+    s.app_mut().apply(Action::GbaDown(Btn::A));
+    assert!(s.app().restarting());
+}
+""")
 print("Ver.30 menu rows installed")
