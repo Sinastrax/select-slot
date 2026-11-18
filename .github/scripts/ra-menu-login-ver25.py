@@ -54,8 +54,7 @@ pat=r'(pub const SYSTEM: \[QuickRow; )(\d+)(\] = \[\n        QuickRow::Wifi,)'
 m=re.search(pat,s)
 if m is None:
     raise SystemExit("Cannot locate System menu row capacity")
-s=s[:m.start(2)] + str(int(m.group(2))+1) + s[m.end(2):]
-s=s.replace("        QuickRow::Wifi,\n", "        QuickRow::Wifi,\n        QuickRow::RetroAchievements,\n",1)
+s=s[:m.start()] + m.group(1) + str(int(m.group(2))+1) + m.group(3) + "\n        QuickRow::RetroAchievements," + s[m.end():]
 q.write_text(s)
 
 # Keep all upstream and custom rows; earlier patches may already grow ALL.
