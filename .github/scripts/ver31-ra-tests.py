@@ -84,7 +84,23 @@ fn manual_refresh_rechecks_romanized_rom_identity_without_touching_saves() {
     let store=Store::open(root.path(),"Player").unwrap();
     assert_eq!(library::hash(&store.dir,&rom).unwrap(),original_hash);
     assert_eq!(std::fs::read(save).unwrap(),b"precious in-game progress");
-    assert!(requests.try_iter().filter(|req| req=="startsession").count()>=2);
+    // Wait for the second accepted session, not merely the previous Online flag.
+    let mut started = requests.try_iter().filter(|req| req == "startsession").count();
+    wait_for(|| {
+        started += requests.try_iter().filter(|req| req == "startsession").count();
+        started >= 2 && service.game_connection() == GameConnection::Online
+    });
 }
 """)
+
+# Fix a legitimate Ver.29 test race: per-game status is published before pending
+# is recomputed by the independent HTTP worker.
+tests=Path("crates/slot-achievements/src/tests.rs")
+data=tests.read_text()
+needle='''    assert!(library::fresh(&store.dir, &rom, network::now()));
+    assert!(!service.sync_pending());'''
+replacement='''    assert!(library::fresh(&store.dir, &rom, network::now()));
+    wait_for(|| !service.sync_pending());'''
+assert data.count(needle)==1, "Ver29 negative cache test anchor changed"
+tests.write_text(data.replace(needle,replacement,1))
 print("Ver.31 network/session and forced rehash regression tests added")
