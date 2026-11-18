@@ -47,7 +47,7 @@ fn menu_login_requires_credentials_when_changing_accounts() {
     let account = format!("{:x}", md5::compute("player"));
     let auth_dir = root.path().join("Saves/RetroAchievements").join(account);
     std::fs::create_dir_all(&auth_dir).unwrap();
-    std::fs::write(auth_dir.join("auth.json"), "{}").unwrap();
+    std::fs::write(auth_dir.join("auth.json"), r#"{"username":"Player","token":"cached"}"#).unwrap();
     configure_login(root.path(), "Player", "").unwrap();
     assert_eq!(configured_username(root.path()).as_deref(), Some("Player"));
 }
