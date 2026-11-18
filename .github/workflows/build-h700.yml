@@ -242,6 +242,7 @@ jobs:
           cargo test -p slot --no-default-features --features device --test update_ui -- --nocapture
           cargo test -p slot --no-default-features --features device --test wifi_ui -- --nocapture
           cargo test -p slot --no-default-features --features device --test theme_clock -- --nocapture
+          cargo test -p slot --no-default-features --features device --lib eject_wifi_policy_regression -- --nocapture
           cargo test -p slot --no-default-features --features device --test menu_status -- --nocapture
           cargo test -p slot-gfx --test placement -- --nocapture
 
