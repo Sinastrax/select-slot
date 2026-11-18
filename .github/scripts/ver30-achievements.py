@@ -46,10 +46,12 @@ replace(service,
 replace(service,
 '''                Ok(Control::Load(load)) => {
                     generation = load.generation;
+                    status.set_game(generation, GameConnection::Checking);
                     playing = None;
                     *status.presence.lock().unwrap() = None;''',
 '''                Ok(Control::Load(load)) => {
                     generation = load.generation;
+                    status.set_game(generation, GameConnection::Checking);
                     playing = None;
                     *status.presence.lock().unwrap() = None;
                     *status.viewer.lock().unwrap() = None;''',"clear viewer for new ROM")
