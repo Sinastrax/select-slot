@@ -105,11 +105,9 @@ change(app,
             achievement_detail: false,''',
 "initialize six-slot cache")
 change(app,
+'''            achievement_description: None,''',
 '''            achievement_description: None,
-            shelves,''',
-'''            achievement_description: None,
-            achievement_description_slot: None,
-            shelves,''',
+            achievement_description_slot: None,''',
 "initialize reusable description texture")
 
 change(app,
