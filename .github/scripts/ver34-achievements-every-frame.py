@@ -181,19 +181,17 @@ change(lib,
 # When the entire state is replaced in the worker, assigning into the shared
 # guard must dereference it.
 change(lib,
-'''                    playing = None;
-                    *status.presence.lock().unwrap() = None;''',
-'''                    *playing = None;
-                    *status.presence.lock().unwrap() = None;''',
+'''                    status.set_game_detail(generation, "Loading achievement metadata");
+                    playing = None;''',
+'''                    status.set_game_detail(generation, "Loading achievement metadata");
+                    *playing = None;''',
 "discard stale game evaluator on load")
 
 change(lib,
-'''                    playing = None;
-                    *status.presence.lock().unwrap() = None;
-                    let _ = loads.send(None);''',
-'''                    *playing = None;
-                    *status.presence.lock().unwrap() = None;
-                    let _ = loads.send(None);''',
+'''                    status.set_game(0, GameConnection::Checking);
+                    playing = None;''',
+'''                    status.set_game(0, GameConnection::Checking);
+                    *playing = None;''',
 "discard stale game evaluator on unload")
 
 change(lib,
@@ -427,10 +425,10 @@ change(core,
 "do not carry a previous hit state into link play")
 
 change(core,
-'''        self.timeline += 1;
-        self.core.stop_link();''',
-'''        self.reset_achievements();
-        self.core.stop_link();''',
+'''        self.core.stop_link();
+        self.timeline += 1;''',
+'''        self.core.stop_link();
+        self.reset_achievements();''',
 "do not carry a previous hit state out of link play")
 
 # Keep the old worker-only Frame fixture and evaluate function for regression
