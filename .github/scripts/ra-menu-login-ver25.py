@@ -6,6 +6,7 @@ displays previously saved passwords. Credentials are written atomically and
 UI-created passwords are scrubbed after a successful login token is saved.
 """
 from pathlib import Path
+import re
 
 def repl(path, changes):
     p=Path(path)
@@ -26,8 +27,6 @@ repl("crates/slot-ui/src/quick_menu.rs",[
     System,
     RetroAchievements,
 }""","new enum row"),
-("""pub const ALL: [QuickRow; 143 + cfg!(feature = "nds") as usize]""",
-"""pub const ALL: [QuickRow; 144 + cfg!(feature = "nds") as usize]""","row array capacity"),
 ("""        QuickRow::BatteryDisplay,
         QuickRow::System,
     ];""",
@@ -52,6 +51,16 @@ repl("crates/slot-ui/src/quick_menu.rs",[
                 | QuickRow::RetroAchievements
                 | QuickRow::RommServer""","row opens"),
 ])
+
+# Keep all upstream and custom rows; earlier patches may already grow ALL.
+q=Path("crates/slot-ui/src/quick_menu.rs")
+s=q.read_text()
+pattern=r'pub const ALL: \\[QuickRow; (\\d+) \\+ cfg!\\(feature = "nds"\\) as usize\\]'
+match=re.search(pattern,s)
+if match is None:
+    raise SystemExit("Cannot locate QuickRow::ALL capacity")
+s=s[:match.start(1)] + str(int(match.group(1))+1) + s[match.end(1):]
+q.write_text(s)
 
 repl("crates/slot-ui/src/keyboard.rs", [
 ("""    help: bool,
