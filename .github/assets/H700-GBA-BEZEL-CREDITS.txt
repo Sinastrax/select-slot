@@ -1,0 +1,17 @@
+Original horizontal GBA bottom bezel — select. slot. H700 (640x480 only)
+
+Original artwork: "Perfect GBA (no grid)" by mugwomp93.
+Author credit and pinned source:
+  https://github.com/chrizzo-hb/knulli-bezels/blob/75aa66c41548ebaa95f31d260d47eea2baab9d8a/default-knulli.md
+Source image:
+  https://github.com/chrizzo-hb/knulli-bezels/blob/75aa66c41548ebaa95f31d260d47eea2baab9d8a/default-knulli/systems/gba-4_3.png
+License: Creative Commons Attribution-ShareAlike 4.0 International
+  https://creativecommons.org/licenses/by-sa/4.0/
+
+The existing authored GBA image is resized from 1024x768 to 640x480
+using Lanczos filtering for H700 devices with 640x480 panels. The
+build checks its alpha mask pixel by pixel against the existing
+Slot AGS-102 lower bezel before packaging it. The GBA image is not
+redrawn, and the existing AGS-102 asset remains byte-for-byte intact.
+Only GBA game screens offer the additional "GBA" bezel. "GBA SP" names
+the unchanged existing AGS-102 option; GB/GBC labeling is unchanged.
