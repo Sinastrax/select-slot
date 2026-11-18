@@ -198,6 +198,7 @@ jobs:
           # Ver.29: opt-in RA indexing, reliable negative caching and actionable Tools UI.
           python3 ../.github/scripts/ra-library-ver29.py
           python3 ../.github/scripts/ra-tools-ver29.py
+          python3 ../.github/scripts/ra-badges-ver29.py
           python3 ../.github/scripts/ra-tests-ver29.py
 
       - name: Capture merged source for integration review
