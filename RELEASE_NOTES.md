@@ -1,11 +1,14 @@
-# select. slot. 1.16.0 Ver. 24
+# select. slot. 1.16.0 Ver. 25
 
-## Changes since Ver. 23
+## Changes since Ver. 24
 
-- **RetroAchievements connection status at game launch.** A silent, brief achievement-themed banner reports the actual state of the selected game's RetroAchievements session. "Connected" requires a successful RetroAchievements session and is not inferred from Wi-Fi being on. With a prepared game cache, "Offline ready" means achievements can still be earned without internet; the banner also distinguishes connecting, missing offline data, no supported achievements, and disabled RetroAchievements.
-- **Status updates during launch.** The banner changes from cached or connecting to connected if the achievement service completes a session while it is visible. Status rendering happens away from the UI thread and uses a separate texture, so it does not overwrite an actual achievement award.
-- **Achievement unlock popups remain unchanged.** Earned badges, achievement titles, points and the existing brief chime continue to work online or from a previously prepared offline cache. Earned notifications take priority if both banners occur together.
-- **No new Wi-Fi modes.** The existing single Wi-Fi On/Off control and Ver. 23 gameplay connection, ejection and wireless link-play handling are unchanged.
-- **New automated checks.** The complete slot-achievements test suite is included in H700 CI, with additional launch-status and per-game session-generation checks. No changes to emulation cores, shaders, bezels, scaling, audio or firmware update behavior.
+- **RetroAchievements login from System settings.** Select **System → RetroAchievements**, enter the account username and password with Slot's existing on-screen keyboard, and save.
+- **Masked password entry.** The keyboard renders stars in place of characters, retaining the actual secret only to submit the login. Existing login passwords are never prefilled into the on-screen keyboard.
+- **Restart required, explicitly indicated.** A confirmation states: “RetroAchievements saved. Restart Slot for the login to take effect.” This intentionally avoids live account switching.
+- **Safe staged configuration.** Login is written atomically to the SD card; the password is needed across the restart to perform the first login, after which the token is remembered and the UI-entered password is automatically cleared. A previously saved account can be selected without retyping its password.
+- **Compatibility.** Manual TOML configurations continue working; a manually written password is not automatically erased. Existing offline achievement caches and unsynced unlocks are retained per account.
+- **Regression tests.** Verify login staging, account isolation, password scrubbing, masked keyboard display and the existing RetroAchievements suite.
 
-H700 firmware. Final pop-up timing and live RetroAchievements server verification still require testing on a physical device.
+No changes to the single Wi-Fi On/Off control, Ver. 23 Wi-Fi/ejection fixes, Ver. 24 launch status, actual unlock popups, graphics, cores or bezels.
+
+H700 firmware. Hardware login flow and live RetroAchievements acceptance require on-device verification.
