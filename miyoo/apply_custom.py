@@ -33,94 +33,17 @@ def edit(path, operations):
     desired[path] = new
     changes[path] = diff
 
-# Use the known-good original Miyoo mGBA for GB/GBC and gpSP for GBA; untouched framebuffer.
+# Only the two original Miyoo emulator cores remain: mGBA (GB/GBC and
+# optional GBA), gpSP (default GBA). Gambatte was removed for Ver. 3.
+# Migrate a previous per-game core="gambatte" choice to mGBA without changing
+# the rest of that game's saved profile or loading Gambatte as a fallback.
 edit("crates/slot-store/src/core.rs", [
-    ("    Gpsp,\n}", "    Gpsp,\n    Gambatte,\n}"),
-    ('            Core::Gpsp => "gpsp",', '            Core::Gpsp => "gpsp",\n            Core::Gambatte => "gambatte",'),
-    ('            Core::Gpsp => "gpSP",', '            Core::Gpsp => "gpSP",\n            Core::Gambatte => "Gambatte",'),
-    ('            "gpsp" => Some(Core::Gpsp),', '            "gpsp" => Some(Core::Gpsp),\n            "gambatte" => Some(Core::Gambatte),'),
-    ('            Core::Gpsp => platform == Platform::Gba,',
-     '            Core::Gpsp => platform == Platform::Gba,\n            Core::Gambatte => platform != Platform::Gba,'),
+    ('            "gpsp" => Some(Core::Gpsp),',
+     '            "gpsp" => Some(Core::Gpsp),\n            "gambatte" => Some(Core::Mgba),'),
     ('            Platform::Gba | Platform::Gb | Platform::Gbc => Core::Mgba,',
      '            Platform::Gba => Core::Gpsp,\n            Platform::Gb | Platform::Gbc => Core::Mgba,'),
 ])
-# Keep the classic two-chip GBA picker unchanged. GB/GBC default to mGBA.
-# Gambatte remains an optional compatibility alternative; no SGB mode is added.
 
-edit("crates/slot/src/core.rs", [
-    ('        Core::Gpsp => Some((\n            "gpsp_color_correction",',
-     '        Core::Gambatte => Some((\n            "gambatte_gbc_color_correction",\n            if on { "GBC only" } else { "disabled" },\n        )),\n        Core::Gpsp => Some((\n            "gpsp_color_correction",'),
-    ('    if which == Core::Gpsp {\n        core.set_option("gpsp_serial", serial);',
-     '''    if which == Core::Gambatte {
-        // Do not request SGB palettes or emulate SGB hardware. GB titles may
-        // use the chosen built-in palette; GBC titles supply their own colors.
-        match palette {
-            Some(slot_store::GbColors::Palette(p)) => {
-                let name = match p.label() {
-                    "DMG Green" => "GB - DMG",
-                    "GB Pocket" => "GB - Pocket",
-                    "GB Light" => "GB - Light",
-                    "Grayscale" => "GBC - Grayscale",
-                    "GBC Brown" => "GBC - Brown",
-                    "GBC Red" => "GBC - Red",
-                    "GBC Dark Brown" => "GBC - Dark Brown",
-                    "GBC Blue" => "GBC - Blue",
-                    "GBC Dark Blue" => "GBC - Dark Blue",
-                    "GBC Green" => "GBC - Green",
-                    "GBC Dark Green" => "GBC - Dark Green",
-                    other if other.starts_with("GBC ") => "GBC - Grayscale",
-                    _ => "GB - DMG",
-                };
-                core.set_option("gambatte_gb_colorization", "internal");
-                core.set_option("gambatte_gb_internal_palette", name);
-            }
-            Some(slot_store::GbColors::Auto) => core.set_option("gambatte_gb_colorization", "GBC"),
-            Some(slot_store::GbColors::Off) | None => core.set_option("gambatte_gb_colorization", "disabled"),
-        }
-        if let Some((key, value)) = colour_option(which, platform, colour) {
-            core.set_option(key, value);
-        }
-        // Gambatte's "fast" correction deliberately darkens and desaturates.
-        // Preserve the upstream accurate correction when enabled; Off stays Off.
-        core.set_option("gambatte_gbc_color_correction_mode", "accurate");
-        core.set_option("gambatte_dark_filter_level", "0");
-    }
-    if which == Core::Gpsp {
-        core.set_option("gpsp_serial", serial);'''),
-])
-# Update palette changes live for Gambatte rather than writing mGBA options to it.
-edit("crates/slot/src/session.rs", [
-    ('                emu.set_option("mgba_gb_colors", p.core_name());',
-     '''                match self.app.core() {
-                    slot_store::Core::Gambatte => {
-                        // Gambatte options are core-specific. Reopen on a
-                        // palette change to ensure the new core settings apply.
-                        if let slot_store::GbColors::Palette(palette) = p {
-                            let name = match palette.label() {
-                                "DMG Green" => "GB - DMG",
-                                "GB Pocket" => "GB - Pocket",
-                                "GB Light" => "GB - Light",
-                                "Grayscale" => "GBC - Grayscale",
-                                "GBC Brown" => "GBC - Brown",
-                                "GBC Red" => "GBC - Red",
-                                "GBC Dark Brown" => "GBC - Dark Brown",
-                                "GBC Blue" => "GBC - Blue",
-                                "GBC Dark Blue" => "GBC - Dark Blue",
-                                "GBC Green" => "GBC - Green",
-                                "GBC Dark Green" => "GBC - Dark Green",
-                                _ => "GB - DMG",
-                            };
-                            emu.set_option("gambatte_gb_colorization", "internal");
-                            emu.set_option("gambatte_gb_internal_palette", name);
-                        } else if p == slot_store::GbColors::Auto {
-                            emu.set_option("gambatte_gb_colorization", "GBC");
-                        } else {
-                            emu.set_option("gambatte_gb_colorization", "disabled");
-                        }
-                    }
-                    _ => emu.set_option("mgba_gb_colors", p.core_name()),
-                }'''),
-])
 # Per-game scaling stored in Config/video_mode.txt.
 edit("crates/slot/src/video_mode.rs", [
     ("    Actual,\n    Stretch,\n}", "    Actual,\n    Stretch,\n    Integer,\n    Aspect,\n    Fill,\n    FullStretch,\n}"),
@@ -303,8 +226,8 @@ edit("crates/slot/src/app.rs", [
             | QuickRow::Scaling => return,'''),
 ])
 
-# Gambatte "Auto" applies an automatic GBC palette even with filters Off.
-# Keep Auto available but add a genuinely neutral Off and default to Off.
+# Retain the neutral GB palette Off choice, distinct from automatic colors.
+# Off remains the default on mGBA, without any Gambatte dependency.
 edit("crates/slot-store/src/gb_palette.rs", [
     ('''pub enum GbColors {
     Auto,
@@ -423,32 +346,6 @@ edit("crates/slot-store/src/slot_state.rs", [
         // Older Auto setups migrate to neutral Off.
         gb_colors_off: gb_colors_off.unwrap_or(!gb_palettes.unwrap_or(false)),
         gb_palette: gb_palette.unwrap_or(fallback.gb_palette),'''),
-])
-
-
-# Two mGBA-only calls in the original Miyoo Slot remain outside the core
-# opening routine. The first is already adapted above; the second runs while
-# an emulator becomes ready and otherwise repeatedly sends mGBA options to
-# Gambatte (visible in user-provided slot.log.1). Skip mGBA-only setup there.
-# Gambatte's palette is set at opening and its live updates use its own API.
-edit("crates/slot/src/session.rs", [
-    ('''                if let (true, Some(emu)) = (self.app.palette_live(), &self.emu) {
-                    emu.set_option("mgba_gb_colors", self.app.gb_colors().core_name());
-                }''',
-     '''                if let (true, Some(emu)) = (self.app.palette_live(), &self.emu) {
-                    if self.app.core() == slot_store::Core::Mgba {
-                        emu.set_option("mgba_gb_colors", self.app.gb_colors().core_name());
-                    }
-                }'''),
-])
-
-# Gambatte has no `gambatte_frameskip` core option. Do not send a nonexistent
-# option at startup; the existing mGBA and gpSP setup remains untouched.
-edit("crates/slot/src/core.rs", [
-    ('''    core.set_option(&format!("{}_frameskip", which.as_str()), "auto");''',
-     '''    if which != Core::Gambatte {
-        core.set_option(&format!("{}_frameskip", which.as_str()), "auto");
-    }'''),
 ])
 
 
