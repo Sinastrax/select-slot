@@ -45,6 +45,34 @@ pub fn newer(release: &str, running: &str) -> bool {''',
 
 edit("crates/slot/src/app.rs", [
     (
+'''    pub fn status_ink(&self) -> [u8; 3] {
+        match self.phase {
+            Phase::Playing { .. } | Phase::Polaroids { .. } => footer_ink(false),
+            _ => footer_ink(self.light()),
+        }
+    }''',
+'''    pub fn status_ink(&self) -> [u8; 3] {
+        // The included Slot and Slot Blur wallpapers are dark even when the
+        // light menu theme is selected. Black clock glyphs disappear on that
+        // background. Keep clock ink white for those built-in backgrounds;
+        // leave user-supplied wallpaper theming unchanged.
+        let builtin_dark = self.collection_wallpaper.is_none() && match &self.state.wallpaper {
+            WallpaperPick::None | WallpaperPick::Default | WallpaperPick::Blur => true,
+            WallpaperPick::File(name) => {
+                name == crate::wallpaper::SLOT_FILE
+                    || name == crate::wallpaper::SLOT_BLUR_FILE
+            }
+            _ => false,
+        };
+        match self.phase {
+            Phase::Playing { .. } | Phase::Polaroids { .. } => footer_ink(false),
+            _ if builtin_dark => footer_ink(false),
+            _ => footer_ink(self.light()),
+        }
+    }''',
+    "readable light-theme clock on the bundled dark shelf background"
+    ),
+    (
 '''    wifi_held: bool,
     wifi_boot_blocked: bool,''',
 '''    wifi_held: bool,
@@ -243,3 +271,45 @@ fn a_failed_hold_tries_again_after_a_minute()''',
     "cartridge eject connection retention regression"
     ),
 ])
+
+# Theme regression: the default dark background must not receive black
+# clock glyphs just because the menu theme is light.
+Path("crates/slot/tests/theme_clock.rs").write_text("""mod common;
+
+use common::{app_booting_at, tmp_root_with_carts, CLOCK_IS_SET};
+use slot_store::{write_slot_state, Appearance, SlotState, WallpaperPick};
+
+#[test]
+fn light_theme_uses_visible_clock_ink_on_the_built_in_dark_wallpaper() {
+    let root = tmp_root_with_carts(&["Emerald"]);
+    write_slot_state(
+        root.path(),
+        &SlotState {
+            appearance: Appearance::Light,
+            wallpaper: WallpaperPick::Default,
+            clock_set: true,
+            ..SlotState::default()
+        },
+    ).unwrap();
+    let (app, _clock) = app_booting_at(root.path(), CLOCK_IS_SET);
+    assert!(app.light());
+    assert_eq!(app.status_ink(), slot_ui::footer_ink(false));
+}
+
+#[test]
+fn light_theme_without_a_wallpaper_uses_contrasting_clock_ink() {
+    let root = tmp_root_with_carts(&["Emerald"]);
+    write_slot_state(
+        root.path(),
+        &SlotState {
+            appearance: Appearance::Light,
+            wallpaper: WallpaperPick::None,
+            clock_set: true,
+            ..SlotState::default()
+        },
+    ).unwrap();
+    let (app, _clock) = app_booting_at(root.path(), CLOCK_IS_SET);
+    assert_eq!(app.status_ink(), slot_ui::footer_ink(false));
+}
+""")
+print("Added light theme / dark wallpaper clock contrast regression")
