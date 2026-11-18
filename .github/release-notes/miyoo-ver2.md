@@ -1,18 +1,18 @@
 # select. slot. 1.8.1 Ver. 2 — Miyoo
 
-Miyoo Mini-family release with an additional **Original GBA** lower bezel, using existing artwork. The previously available AGS-102 (SP) style and every other feature from Ver. 1 are preserved.
+Miyoo Mini-family release with an additional **GBA** lower bezel, using existing artwork. The previously available GBA SP style and every other feature from Ver. 1 are preserved.
 
-## New: Original GBA bottom bezel
+## New: GBA bottom bezel
 
 In **Screen → GBA → Bezel**, choose:
 
-- **AGS-102** — the existing SP lower bezel, unchanged and still the default.
-- **Original GBA** — the original Game Boy Advance lettering on the **same-size** lower bezel.
+- **GBA SP** — the existing SP lower bezel, unchanged and still the default.
+- **GBA** — the original Game Boy Advance lettering on the **same-size** lower bezel.
 - **None** — no lower bezel.
 
 The GBA game picture and scaling stay at exactly the same size and position. Both bezel styles use the same pixel-for-pixel 640×480 transparency mask, so the opening, bottom-strip height and screen animation are unchanged.
 
-**Artwork and credit:** The Original GBA option uses [mugwomp93's existing *Perfect GBA (no grid)*](https://github.com/chrizzo-hb/knulli-bezels/blob/75aa66c41548ebaa95f31d260d47eea2baab9d8a/default-knulli/systems/gba-4_3.png), via [KNULLI Bezels](https://github.com/chrizzo-hb/knulli-bezels), licensed under CC BY-SA 4.0. The original PNG was resized to 640×480, not redrawn. Attribution is included in the `System/licenses` directory.
+**Artwork and credit:** The GBA option uses [mugwomp93's existing *Perfect GBA (no grid)*](https://github.com/chrizzo-hb/knulli-bezels/blob/75aa66c41548ebaa95f31d260d47eea2baab9d8a/default-knulli/systems/gba-4_3.png), via [KNULLI Bezels](https://github.com/chrizzo-hb/knulli-bezels), licensed under CC BY-SA 4.0. The original PNG was resized to 640×480, not redrawn. Attribution is included in the `System/licenses` directory.
 
 ## Included features
 
