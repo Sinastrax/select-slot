@@ -232,8 +232,8 @@ change(net,
                         game.ready = true;
                         game.online = true;
                         game.unmatched = false;
-                        status.set_game(game.generation, crate::GameConnection::Online);
                         status.set_game_detail(game.generation, "Online session accepted");
+                        status.set_game(game.generation, crate::GameConnection::Online);
                         crate::library::checked(&dir, &game.path, now());
                         game.last_ping = Instant::now();
                         if let Err(error) = ping(&mut http, auth, &status, game, &data) {
