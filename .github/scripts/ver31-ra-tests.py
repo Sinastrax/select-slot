@@ -103,4 +103,43 @@ replacement='''    assert!(library::fresh(&store.dir, &rom, network::now()));
     wait_for(|| !service.sync_pending());'''
 assert data.count(needle)==1, "Ver29 negative cache test anchor changed"
 tests.write_text(data.replace(needle,replacement,1))
+
+tests=Path("crates/slot-achievements/src/tests.rs")
+with tests.open("a") as out:
+    out.write(r"""
+
+#[test]
+fn manual_refresh_rechecks_a_previously_unregistered_regional_rom() {
+    struct Regional {
+        enabled: Arc<AtomicBool>,
+        server: Server,
+    }
+    impl network::Transport for Regional {
+        fn call(&mut self, fields: &[(&str, String)]) -> Result<Value, network::Failure> {
+            let request=fields.iter().find(|(key,_)| *key=="r").unwrap().1.as_str();
+            if request == "gameid" && !self.enabled.load(Ordering::Acquire) {
+                let _ = self.server.calls.send(request.into());
+                return Ok(json!({"Success":true,"GameID":0}));
+            }
+            self.server.call(fields)
+        }
+    }
+    let root=configured();
+    let rom=root.path().join("Games/GBA/Localized Emerald.gba");
+    std::fs::write(&rom,b"regional fixture ROM").unwrap();
+    let enabled=Arc::new(AtomicBool::new(false));
+    let (calls,requests)=mpsc::channel();
+    let service=Service::start_with(root.path().into(),Regional {
+        enabled:enabled.clone(),server:Server { calls }
+    });
+    wait_for(|| service.enabled.load(Ordering::Acquire));
+    let mut core=service.wrap(Box::<TestCore>::default());
+    core.load(&rom).unwrap();
+    wait_for(|| service.game_connection()==GameConnection::NoAchievements);
+    enabled.store(true,Ordering::Release);
+    assert!(service.refresh_active());
+    wait_for(|| service.game_connection()==GameConnection::Online);
+    assert!(requests.try_iter().filter(|r| r=="gameid").count()>=2);
+}
+""")
 print("Ver.31 network/session and forced rehash regression tests added")
