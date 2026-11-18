@@ -1,11 +1,9 @@
-# select. slot. 1.16.0 Ver. 19
+# select. slot. 1.16.0 Ver. 20
 
-## Changes since select. slot. 1.16.0 Ver. 18
+## Changes since select. slot. 1.16.0 Ver. 19
 
-- **GBA / GBA SP bottom-bezel choice** under **Screen → Game Boy Advance → Bezel** on Anbernic **640×480 (3.5-inch-class)** screens, including RG35XX H. The existing AGS-102 bezel is now labeled **GBA SP** on GBA only; **GBA** selects the original horizontal Game Boy Advance surround. **None** and existing custom choices remain.
-- **Same screen size and opening.** Both versions use the original SP bottom-strip rendering position, animation and gameplay cutout. Scaling, pixel sampling, shader, color correction and game placement do not change.
-- **Strict panel restriction:** the new GBA choice appears only at exactly **640×480** for GBA games, not on RG SP/RG34XXSP's **720×480** screens, larger panels or GB/GBC pages. The existing SP option and all previous device layouts are retained.
-- **Saved selection:** the new GBA option persists as `bezel_gba=agb-001`. The pre-existing AGS-102/GBA SP choice remains the default.
-- **Pre-existing artwork, not a redraw:** mugwomp93's *Perfect GBA (no grid)* image, already used by the select. slot. Miyoo build, is sourced from the pinned [KNULLI bezels](https://github.com/chrizzo-hb/knulli-bezels) revision, resized for 640×480 and verified pixel-by-pixel to have exactly the same alpha mask as Slot's original SP bezel. Full CC BY-SA 4.0 attribution is included in the package.
+- **Rename the GBA bezel choices to `GBA` and `GBA SP`.** The existing AGS-102 SP strip is called **GBA SP** specifically in the Game Boy Advance menu; GB and GBC keep their established labels. The new original-horizontal option is simply **GBA**, including in its saved selection. Existing `ags-102` and `agb-001` settings remain compatible.
+- **Restrict the GBA-only alternative to physical 640×480 panels**, not just layouts that scale internally to 640×480. This includes RG35XX H and excludes RG SP/RG34XXSP 720×480 and larger 4:3 devices. A Rust regression test checks eligible and excluded panels.
+- **Use existing, attributed GBA bezel artwork** rather than deriving a new logo from the SP image. The pinned *Perfect GBA (no grid)* design by mugwomp93 is the same existing option used in the Miyoo branch. At packaging, CI checks its SHA-256, converts it to the exact existing SP dimensions, and compares the entire transparency mask pixel-for-pixel with Slot's untouched AGS-102 image. License and author attribution are included.
 
-**Verification:** CI checks 640×480-only eligibility and persistence, validates the original GBA image against the existing SP alpha mask, and locks the Ver. 18 shader/Authentic source hashes. Hardware appearance on the 3.5-inch Anbernic panel remains to be confirmed. No Miyoo changes are part of this H700 revision.
+**Preserved from Ver. 19:** the original SP default, image geometry and animation, persistent choice, arbitrary custom bezels, GB/GBC behavior and all Ver. 18 color/shader corrections. No emulator-core or Miyoo modifications. Hardware appearance still requires a 640×480 device test.
