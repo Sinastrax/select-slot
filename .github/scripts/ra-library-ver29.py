@@ -215,9 +215,15 @@ change(net,
                     Some(game)''',
 "do not repeatedly query fresh unsupported regional ROMs")
 change(net,
-'''                || library_failed
+'''        // Metadata preparation and badge downloads each occupy half of a cache refresh.
+        status.pending.store(
+            !library.is_empty()
+                || library_failed
                 || badges.pending()''',
-'''                || (badges.pending() && !badges.waiting)''',
+'''        // Metadata preparation and badge downloads each occupy half of a cache refresh.
+        status.pending.store(
+            !library.is_empty()
+                || (badges.pending() && !badges.waiting)''',
 "no permanent pending state from failed background indexing")
 change(net,
 '''        if rescanned.elapsed() >= Duration::from_secs(300) {
