@@ -215,6 +215,8 @@ jobs:
           python3 ../.github/scripts/ver31-device-nicknames.py
           # Ver.32: repeated X/Y presses render only six reusable achievement rows.
           python3 ../.github/scripts/ver32-achievement-stability.py
+          # Ver.33: invalid Rich Presence cannot cancel achievement unlocks.
+          python3 ../.github/scripts/ver33-ra-tracking-reliability.py
 
       - name: Capture merged source for integration review
         uses: actions/upload-artifact@v4
