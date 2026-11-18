@@ -200,8 +200,6 @@ jobs:
           python3 ../.github/scripts/ra-tools-ver29.py
           python3 ../.github/scripts/ra-badges-ver29.py
           python3 ../.github/scripts/ra-tests-ver29.py
-          # Standalone top-level Restart, directly after System.
-          python3 ../.github/scripts/ver30-restart-menu.py
           # Ver.30: direct restart, active-game achievement viewer and protected cleanup.
           python3 ../.github/scripts/ver30-menu.py
           python3 ../.github/scripts/ver30-achievements.py
