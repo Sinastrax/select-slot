@@ -1,10 +1,10 @@
-name: Publish select. slot. Miyoo 1.8.1 Ver. 1
+name: Publish select. slot. Miyoo 1.8.1 Ver. 2
 
 on:
   push:
     branches: [main]
     paths:
-      - ".github/workflows/publish-miyoo-ver1.yml"
+      - ".github/workflows/publish-miyoo-ver2.yml"
   workflow_dispatch:
 
 concurrency:
@@ -32,27 +32,30 @@ jobs:
           curl -fsSL https://taskfile.dev/install.sh | sh -s -- -b "$HOME/.local/bin"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
-      - name: Build complete ARMv7 Miyoo Ver. 1 release
+      - name: Build complete ARMv7 Miyoo Ver. 2 release
         shell: bash
         run: bash miyoo/build.sh
 
-      - name: Verify Ver. 1 packaging, model-specific hooks and checksums
+      - name: Verify Ver. 2 packaging, model-specific hooks and checksums
         shell: bash
         run: |
           set -euo pipefail
           d=.build/miyoo
-          archive="$d/select-slot-1.8.1-ver1-miyoo.zip"
-          onion="$d/select-slot-1.8.1-ver1-miyoo-onion-autoboot.zip"
-          stock="$d/select-slot-1.8.1-ver1-miyoo-stock-autoboot.zip"
+          archive="$d/select-slot-1.8.1-ver2-miyoo.zip"
+          onion="$d/select-slot-1.8.1-ver2-miyoo-onion-autoboot.zip"
+          stock="$d/select-slot-1.8.1-ver2-miyoo-stock-autoboot.zip"
           for z in "$archive" "$onion" "$stock"; do
             test -s "$z" && test -s "$z.sha256"
             sha256sum -c "$z.sha256"
             unzip -t "$z" | tail -n 1 | grep -q 'No errors detected'
             unzip -Z1 "$z" | grep -qx 'System/slot'
             unzip -Z1 "$z" | grep -qx 'System/select-slot-version.txt'
+            unzip -Z1 "$z" | grep -qx 'System/bezels/640x480.png'
+            unzip -Z1 "$z" | grep -qx 'System/bezels/gba-original.png'
+            unzip -Z1 "$z" | grep -qx 'System/licenses/gba-original-bezel-credits.txt'
             info="$(unzip -p "$z" System/select-slot-version.txt | head -n 1)"
-            [[ "$info" == 'select. slot. 1.8.1 Ver. 1 - '* ]]
-            ! unzip -p "$z" System/select-slot-version.txt | grep -Fq 'Ver. 26'
+            [[ "$info" == 'select. slot. 1.8.1 Ver. 2 - '* ]]
+            ! unzip -p "$z" System/select-slot-version.txt | grep -Fq 'Ver. 1'
             unzip -Z1 "$z" | grep -qx 'App/Slot/config.json'
             unzip -Z1 "$z" | grep -qx 'Apps/slot.pak/config.json'
           done
@@ -61,32 +64,32 @@ jobs:
           ! unzip -Z1 "$onion" | grep -qx '.tmp_update/runtime.sh'
           unzip -Z1 "$stock" | grep -qx '.tmp_update/runtime.sh'
           ! unzip -Z1 "$stock" | grep -qx '.tmp_update/startup/select-slot.sh'
-          echo 'Verified all three Version 1 packages and OS-safe hooks'
+          echo 'Verified all three Version 2 packages and OS-safe hooks'
 
-      - name: Publish Ver. 1, then delete ONLY older Miyoo releases and tags
+      - name: Publish Ver. 2 and clean up older Miyoo releases (never H700)
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
           repo="$GITHUB_REPOSITORY"
-          stable="miyoo-v1.8.1-ver1"
+          stable="miyoo-v1.8.1-ver2"
           d=".build/miyoo"
           latest_before="$(gh api "repos/$repo/releases/latest" --jq '.tag_name')"
           [[ "$latest_before" == v*-rgsp.* ]]
 
           if ! gh release view "$stable" --repo "$repo" >/dev/null 2>&1; then
             gh release create "$stable" \
-              "$d/select-slot-1.8.1-ver1-miyoo.zip" \
-              "$d/select-slot-1.8.1-ver1-miyoo.zip.sha256" \
-              "$d/select-slot-1.8.1-ver1-miyoo-onion-autoboot.zip" \
-              "$d/select-slot-1.8.1-ver1-miyoo-onion-autoboot.zip.sha256" \
-              "$d/select-slot-1.8.1-ver1-miyoo-stock-autoboot.zip" \
-              "$d/select-slot-1.8.1-ver1-miyoo-stock-autoboot.zip.sha256" \
+              "$d/select-slot-1.8.1-ver2-miyoo.zip" \
+              "$d/select-slot-1.8.1-ver2-miyoo.zip.sha256" \
+              "$d/select-slot-1.8.1-ver2-miyoo-onion-autoboot.zip" \
+              "$d/select-slot-1.8.1-ver2-miyoo-onion-autoboot.zip.sha256" \
+              "$d/select-slot-1.8.1-ver2-miyoo-stock-autoboot.zip" \
+              "$d/select-slot-1.8.1-ver2-miyoo-stock-autoboot.zip.sha256" \
               --repo "$repo" \
               --target "$GITHUB_SHA" \
-              --title "select. slot. 1.8.1 Ver. 1 — Miyoo" \
-              --notes-file ".github/release-notes/miyoo-ver1.md" \
+              --title "select. slot. 1.8.1 Ver. 2 — Miyoo" \
+              --notes-file ".github/release-notes/miyoo-ver2.md" \
               --latest=false
           else
             echo 'Release already exists; do not silently overwrite its assets.'
@@ -97,12 +100,12 @@ jobs:
           test "$(gh api "repos/$repo/releases/tags/$stable" --jq '.draft')" = false
           test "$(gh api "repos/$repo/releases/tags/$stable" --jq '.assets | length')" = 6
           for name in \
-            select-slot-1.8.1-ver1-miyoo.zip \
-            select-slot-1.8.1-ver1-miyoo-onion-autoboot.zip \
-            select-slot-1.8.1-ver1-miyoo-stock-autoboot.zip; do
+            select-slot-1.8.1-ver2-miyoo.zip \
+            select-slot-1.8.1-ver2-miyoo-onion-autoboot.zip \
+            select-slot-1.8.1-ver2-miyoo-stock-autoboot.zip; do
             gh api "repos/$repo/releases/tags/$stable" --jq '.assets[].name' | grep -Fxq "$name"
           done
-          echo 'Ver. 1 is confirmed public and complete; cleaning older Miyoo-only releases.'
+          echo 'Ver. 2 is confirmed public and complete; cleaning older Miyoo-only releases.'
 
           # Strict prefix guard: never delete v*-rgsp.* (H700) or unrelated tags.
           gh api --paginate "repos/$repo/releases?per_page=100" \

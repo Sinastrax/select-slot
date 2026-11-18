@@ -1,8 +1,8 @@
-# select. slot. 1.8.1 Ver. 1 — Miyoo
+# select. slot. 1.8.1 Ver. 2 — Miyoo
 
 **Offline ARMv7 build for the Miyoo Mini family**, based on [deanmarano/slot-miyoo](https://github.com/deanmarano/slot-miyoo) and Slot **1.8.1**. This is a **different build from select. slot. for Anbernic H700**, which is based on Slot 1.16.0. Do not interchange their firmware files.
 
-This is the first official numbered Miyoo release of select. slot. It packages the user-confirmed working Miyoo configuration. Emulator, display, input, power and settings behavior remain unchanged from the verified development build.
+This release keeps the verified Miyoo configuration and adds one optional GBA bottom-bezel style. Emulator cores, screen geometry, scaling, input, power and other settings remain unchanged.
 
 ## Features
 
@@ -14,6 +14,7 @@ This is the first official numbered Miyoo release of select. slot. It packages t
 | Scaling | Original, Integer, Aspect Fit, Fill/Crop, Full Stretch |
 | Scaling persistence | Independent defaults at **Screen → GB/GBC/GBA → Scaling**, saved in `Config/video_mode.txt`. In-game per-ROM overrides take priority |
 | Screen / rendering | Original unfiltered software pixels; shader controls removed and previous shader choices ignored |
+| GBA lower bezel | **Screen → GBA → Bezel**: None, AGS-102 (existing SP style and retained default), or **Original GBA**. The new style uses existing original-GBA artwork with the same 640×480 transparency mask, display opening and position as SP |
 | Menu Screen Off | Off, 1, 3, 5, 10, 15, 30 minutes; default 3; the first button press wakes without launching anything |
 | Menu Power Off | Off, 1, 3, 5, 10, 15, 30 minutes; default 15 |
 | Resume | Independent Resume on Power On and Resume on Insert settings |
@@ -26,9 +27,9 @@ Individual game scaling preferences and battery saves are kept independently of 
 
 | ZIP | Installed system | Result |
 | --- | --- | --- |
-| `select-slot-1.8.1-ver1-miyoo-onion-autoboot.zip` | **OnionOS 4.3+** on compatible Mini or Mini Plus | Starts select. slot. at boot through `.tmp_update/startup/select-slot.sh`, without replacing the OnionOS runtime or theme |
-| `select-slot-1.8.1-ver1-miyoo-stock-autoboot.zip` | **Genuine stock Miyoo firmware only** | Starts select. slot. at boot using `.tmp_update/runtime.sh` |
-| `select-slot-1.8.1-ver1-miyoo.zip` | App-only on compatible firmware | Adds Slot to the regular apps menu, without changing the startup sequence |
+| `select-slot-1.8.1-ver2-miyoo-onion-autoboot.zip` | **OnionOS 4.3+** on compatible Mini or Mini Plus | Starts select. slot. at boot through `.tmp_update/startup/select-slot.sh`, without replacing the OnionOS runtime or theme |
+| `select-slot-1.8.1-ver2-miyoo-stock-autoboot.zip` | **Genuine stock Miyoo firmware only** | Starts select. slot. at boot using `.tmp_update/runtime.sh` |
+| `select-slot-1.8.1-ver2-miyoo.zip` | App-only on compatible firmware | Adds Slot to the regular apps menu, without changing the startup sequence |
 
 **Never extract the stock autoboot ZIP over OnionOS, Allium or another third-party SD-card operating system.** It contains a replacement `.tmp_update/runtime.sh`; overwriting another OS's existing boot script can stop the OS from starting. On an unknown or modified SD card use the **app-only** package instead.
 
@@ -39,6 +40,8 @@ Individual game scaling preferences and battery saves are kept independently of 
 3. Eject the card safely and boot the handheld. Autoboot packages launch Slot automatically; with app-only, launch Slot from the normal apps menu.
 
 To disable OnionOS autoboot later, remove `.tmp_update/startup/select-slot.sh` or use the existing `.tmp_update/config/.skip-custom-slot-autoboot` skip flag. For stock firmware, back up and remove only a `.tmp_update/runtime.sh` file you know was installed by this package.
+
+The **Original GBA** bezel uses the existing [*Perfect GBA (no grid)* artwork by mugwomp93](https://github.com/chrizzo-hb/knulli-bezels/blob/75aa66c41548ebaa95f31d260d47eea2baab9d8a/default-knulli/systems/gba-4_3.png), provided by the KNULLI Bezels collection under **CC BY-SA 4.0**. The artwork is resized to 640×480; the build checks that its transparency mask exactly matches Slot's original SP bezel. See `System/licenses/gba-original-bezel-credits.txt` for attribution and license details. The SP PNG remains unchanged, and the GBA Bezel selection persists in `Config/slot.state`.
 
 ## Compatibility and limitations
 

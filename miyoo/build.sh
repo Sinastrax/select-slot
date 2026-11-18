@@ -9,7 +9,7 @@ PORT="$WORK/slot-miyoo"
 STAGE="$PORT/release/stage"
 PORT_COMMIT="d096bdb87f25f3aba62de6b40ef859b61d841e43"
 SLOT_VERSION="1.8.1"
-CUSTOM_VERSION="1"
+CUSTOM_VERSION="2"
 ZIP="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo.zip"
 ZIP_ONION="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo-onion-autoboot.zip"
 ZIP_STOCK="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo-stock-autoboot.zip"
@@ -127,6 +127,19 @@ check_patch '+                    self.menu_shutdown_onion = true;'
 check_patch '+        if self.shutting_down() {'
 check_patch '+                    && root.join(".tmp_update/onionVersion/version.txt").is_file()'
 echo "Verified menu scaling persistence, quick shutdown, and input lock"
+# The original GBA uses the SP bezel's exact static-surround geometry,
+# with its own saved menu value and independently loaded alternate texture.
+check_patch '+    Agb001,'
+check_patch '+            BezelPick::Agb001 => "agb-001".to_string(),'
+check_patch '+            BezelPick::Agb001 => "Original GBA".to_string(),'
+check_patch '+                choices.push(BezelPick::Agb001);'
+check_patch '+    gba_strip: Option<TexId>,'
+check_patch '+    pub fn set_gba_strip(&mut self, tex: Option<TexId>) {'
+check_patch '+            self.gba_strip.or(self.sp_strip)'
+check_patch '+            BezelPick::None | BezelPick::Ags102 | BezelPick::Agb001 => None,'
+check_patch '+        let gba_path = self.session.app().root()'
+echo "Verified original GBA / SP bottom-strip selector without new render backend"
+
 
 
 (
@@ -143,6 +156,50 @@ test -s "$STAGE/System/licenses/gambatte-src.tar.gz"
 test -s "$STAGE/System/licenses/build-info.txt"
 test -s "$STAGE/System/launch_frontend.sh"
 file "$STAGE/System/slot" | grep -q 'ELF 32-bit LSB .*ARM'
+
+# Use the EXISTING Perfect GBA (no grid) bezel by mugwomp93 from KNULLI,
+# not generated or redrawn artwork. Original source is a 1024x768 PNG.
+# Resizing it to 640x480 with Pillow LANCZOS preserves EXACTLY the same
+# alpha mask as Slot's current SP bezel (checked pixel-for-pixel).
+# Original Slot SP asset is preserved byte-for-byte.
+ORIGINAL_GBA_COMMIT="75aa66c41548ebaa95f31d260d47eea2baab9d8a"
+ORIGINAL_GBA_URL="https://raw.githubusercontent.com/chrizzo-hb/knulli-bezels/$ORIGINAL_GBA_COMMIT/default-knulli/systems/gba-4_3.png"
+ORIGINAL_GBA_SOURCE_SHA256="1d25c249c08580c6082656d353d001158e8378653b9a3d90c80e85700990ca93"
+command -v curl >/dev/null || { echo 'Missing build dependency: curl' >&2; exit 1; }
+if ! python3 -c 'from PIL import Image' >/dev/null 2>&1; then
+  echo "Installing Pillow for asset resizing (host build dependency, NOT shipped to Miyoo)"
+  python3 -m pip -q install pillow
+fi
+test -s "$STAGE/System/bezels/640x480.png"
+test ! -e "$STAGE/System/bezels/gba-original.png"
+curl --fail --location --silent --show-error --retry 3 "$ORIGINAL_GBA_URL" -o "$WORK/gba-original-source.png"
+echo "$ORIGINAL_GBA_SOURCE_SHA256  $WORK/gba-original-source.png" | sha256sum -c -
+python3 - "$WORK/gba-original-source.png" "$STAGE/System/bezels/640x480.png" "$STAGE/System/bezels/gba-original.png" <<'PY'
+from pathlib import Path
+import sys
+from PIL import Image, ImageChops
+original_path, sp_path, out_path = map(Path, sys.argv[1:])
+with Image.open(original_path) as inp:
+    if inp.size != (1024, 768):
+        raise SystemExit(f"Unexpected source dimensions: {inp.size}")
+    original = inp.convert("RGBA").resize((640, 480), Image.Resampling.LANCZOS)
+with Image.open(sp_path) as inp:
+    sp = inp.convert("RGBA")
+if original.size != sp.size or original.size != (640, 480):
+    raise SystemExit("The original GBA bezel and existing SP strip have different dimensions")
+if ImageChops.difference(original.getchannel("A"), sp.getchannel("A")).getbbox():
+    raise SystemExit("Refusing package: original GBA does not match SP opening and lower-strip shape")
+if not ImageChops.difference(original.convert("RGB"), sp.convert("RGB")).getbbox():
+    raise SystemExit("Original GBA logo is identical to SP; expected different artwork")
+original.save(out_path, optimize=True)
+with Image.open(out_path) as check:
+    if check.convert("RGBA").tobytes() != original.tobytes():
+        raise SystemExit("Original GBA PNG verification failed")
+print("Existing KNULLI Perfect GBA bezel: same 640x480 mask and lower strip as Slot SP")
+PY
+test -s "$STAGE/System/bezels/gba-original.png"
+test -s "$STAGE/System/licenses/bezel-CC-BY-SA-4.0.txt"
+cp "$ROOT/miyoo/GBA-BEZEL-CREDITS.txt" "$STAGE/System/licenses/gba-original-bezel-credits.txt"
 
 # Brand the launcher without renaming its directories or any runtime binary.
 # That preserves the install paths expected by the proven Miyoo port.
@@ -188,11 +245,12 @@ echo 'Verified legacy brightness 0–9 and compatibility migration'
 cp "$ROOT/miyoo/onion-autoboot.sh" "$STAGE/System/autoboot/onion-startup.sh"
 cp "$ROOT/miyoo/INSTALL.md" "$STAGE/System/select-slot-install.md"
 cat > "$STAGE/System/select-slot-version.txt" <<EOF
-select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - per-system scaling; shaders off; offline Miyoo build
+select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - Original GBA and SP lower bezels; offline Miyoo build
 Base: https://github.com/deanmarano/slot-miyoo
 Pinned original: $PORT_COMMIT
 GB/GBC: Miyoo-native mGBA default; Gambatte optional; GBA: gpSP default (mGBA alternative)
 Scaling: Original, Integer, Aspect Fit, Fill/Crop, Full Stretch; separate persisted defaults in Screen > GB/GBC/GBA plus in-game per-ROM overrides
+GBA Bezel: None, AGS-102 (unchanged default), Original GBA; same bottom size and pixel positions
 Resume On Power / Insert: independent
 Framebuffer: original unfiltered Miyoo CPU renderer; no effects, orientation and launcher unchanged
 Shaders: disabled globally for GB/GBC/GBA; menu controls hidden and shortcuts inert; pre-existing shader settings ignored
@@ -234,6 +292,8 @@ rm "$STAGE/.tmp_update/runtime.sh"
 for z in "$ZIP" "$ZIP_ONION" "$ZIP_STOCK"; do
   unzip -t "$z" | tail -1 | grep -q 'No errors detected'
   unzip -Z1 "$z" | grep -qx 'System/slot'
+  unzip -Z1 "$z" | grep -qx 'System/bezels/640x480.png'
+  unzip -Z1 "$z" | grep -qx 'System/bezels/gba-original.png'
   unzip -Z1 "$z" | grep -qx 'App/Slot/launch.sh'
   unzip -Z1 "$z" | grep -qx 'Apps/slot.pak/launch.sh'
   sha256sum "$z" > "$z.sha256"
