@@ -9,7 +9,7 @@ PORT="$WORK/slot-miyoo"
 STAGE="$PORT/release/stage"
 PORT_COMMIT="d096bdb87f25f3aba62de6b40ef859b61d841e43"
 SLOT_VERSION="1.8.1"
-CUSTOM_VERSION="2"
+CUSTOM_VERSION="3"
 ZIP="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo.zip"
 ZIP_ONION="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo-onion-autoboot.zip"
 ZIP_STOCK="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo-stock-autoboot.zip"
@@ -33,11 +33,7 @@ test "$(git -C "$PORT" rev-parse HEAD)" = "$PORT_COMMIT"
 # The port owns its ARMv7 patches and builds those plus our changes in order.
 # Keeping these separate avoids applying H700/GLES-only patches to the Miyoo.
 cp "$ROOT"/miyoo/patches/*.patch "$PORT/patches/"
-cp "$ROOT/miyoo/build-gambatte.sh" "$PORT/cores/gambatte-build-miyoo.sh"
-# The Taskfile expects a standalone subdirectory.
-mkdir -p "$PORT/cores/gambatte"
-cp "$ROOT/miyoo/build-gambatte.sh" "$PORT/cores/gambatte/build-miyoo.sh"
-python3 "$ROOT/miyoo/prepare_port.py" "$PORT"
+# Use only the port's existing mGBA/gpSP tasks. No Gambatte source or core is built.
 
 # Assemble the Miyoo port's exact patch baseline first. The custom patch is
 # generated against that baseline, then all patches are cleanly reapplied by
@@ -46,9 +42,9 @@ python3 "$ROOT/miyoo/prepare_port.py" "$PORT"
   cd "$PORT"
   task patch
 )
-python3 "$ROOT/miyoo/apply_custom.py" "$PORT/upstream/slot" "$PORT/patches/0028-custom-gambatte-defaults.patch"
+python3 "$ROOT/miyoo/apply_custom.py" "$PORT/upstream/slot" "$PORT/patches/0028-select-miyoo-config.patch"
 # Verify every control path is disabled in the generated patch before release.
-shader_patch="$PORT/patches/0028-custom-gambatte-defaults.patch"
+shader_patch="$PORT/patches/0028-select-miyoo-config.patch"
 grep -Fq '+        compositor.set_screen_effect(ScreenEffect::None);' "$shader_patch"
 grep -Fq '+    fn step_shader(&mut self, _right: bool) {' "$shader_patch"
 grep -Fq '+        // Force the unfiltered picture even for pre-existing saved choices.' "$shader_patch"
@@ -152,8 +148,9 @@ echo "Verified original GBA / SP bottom-strip selector without new render backen
 test -s "$STAGE/System/slot"
 test -s "$STAGE/System/mgba_libretro.so"
 test -s "$STAGE/System/gpsp_libretro.so"
-test -s "$STAGE/System/gambatte_libretro.so"
-test -s "$STAGE/System/licenses/gambatte-src.tar.gz"
+# Do not ship Gambatte; old per-game "gambatte" settings map to mGBA.
+test ! -e "$STAGE/System/gambatte_libretro.so"
+test ! -e "$STAGE/System/licenses/gambatte-src.tar.gz"
 test -s "$STAGE/System/licenses/build-info.txt"
 test -s "$STAGE/System/launch_frontend.sh"
 file "$STAGE/System/slot" | grep -q 'ELF 32-bit LSB .*ARM'
@@ -226,19 +223,19 @@ cmp -s "$STAGE/System/launch_frontend.sh" "$PORT/card/System/launch_frontend.sh"
     exit 1
 }
 # Only PWM selection/testing and menu-specific blanking may differ in slot-power.
-! grep -Fq "diff --git a/crates/slot-gfx/" "$PORT/patches/0028-custom-gambatte-defaults.patch"
-grep -Fq 'diff --git a/crates/slot-power/src/device.rs' "$PORT/patches/0028-custom-gambatte-defaults.patch"
-! grep -E '^diff --git a/crates/slot-power/src/lib\.rs' "$PORT/patches/0028-custom-gambatte-defaults.patch"
-grep -Fq 'diff --git a/crates/slot-power/src/power.rs' "$PORT/patches/0028-custom-gambatte-defaults.patch"
-grep -Fq '+    pub fn set_idle_blank(&mut self, blank: bool) {' "$PORT/patches/0028-custom-gambatte-defaults.patch"
+! grep -Fq "diff --git a/crates/slot-gfx/" "$PORT/patches/0028-select-miyoo-config.patch"
+grep -Fq 'diff --git a/crates/slot-power/src/device.rs' "$PORT/patches/0028-select-miyoo-config.patch"
+! grep -E '^diff --git a/crates/slot-power/src/lib\.rs' "$PORT/patches/0028-select-miyoo-config.patch"
+grep -Fq 'diff --git a/crates/slot-power/src/power.rs' "$PORT/patches/0028-select-miyoo-config.patch"
+grep -Fq '+    pub fn set_idle_blank(&mut self, blank: bool) {' "$PORT/patches/0028-select-miyoo-config.patch"
 # Check that the original nine levels and PWM duty table are untouched.
 # The generated patch includes only a migration for older brightness=10..12
 # values so the *rest* of slot.state still loads.
 grep -Fq 'pub const BRIGHTNESS_MAX: u8 = 9;' "$PORT/upstream/slot/crates/slot-store/src/slot_state.rs"
 grep -Fq 'pub const LEVELS: [QuickValue; 10]' "$PORT/upstream/slot/crates/slot-ui/src/quick_menu.rs"
-grep -Fq '+            "brightness" => brightness = Some(value.parse::<u8>().ok()?.min(BRIGHTNESS_MAX)),' "$PORT/patches/0028-custom-gambatte-defaults.patch"
-! grep -Eq '^\+.*(BRIGHTNESS_MAX: u8 = 12|Level10|Level11|Level12|let percent: u32|set_backlight\(12\))' "$PORT/patches/0028-custom-gambatte-defaults.patch"
-! grep -Fq '+                let duty = if step <= TOP_STEP as u8 {' "$PORT/patches/0028-custom-gambatte-defaults.patch"
+grep -Fq '+            "brightness" => brightness = Some(value.parse::<u8>().ok()?.min(BRIGHTNESS_MAX)),' "$PORT/patches/0028-select-miyoo-config.patch"
+! grep -Eq '^\+.*(BRIGHTNESS_MAX: u8 = 12|Level10|Level11|Level12|let percent: u32|set_backlight\(12\))' "$PORT/patches/0028-select-miyoo-config.patch"
+! grep -Fq '+                let duty = if step <= TOP_STEP as u8 {' "$PORT/patches/0028-select-miyoo-config.patch"
 echo 'Verified legacy brightness 0–9 and compatibility migration'
 
 # The OnionOS autoboot helper delegates to the original launcher and leaves
@@ -246,10 +243,10 @@ echo 'Verified legacy brightness 0–9 and compatibility migration'
 cp "$ROOT/miyoo/onion-autoboot.sh" "$STAGE/System/autoboot/onion-startup.sh"
 cp "$ROOT/miyoo/INSTALL.md" "$STAGE/System/select-slot-install.md"
 cat > "$STAGE/System/select-slot-version.txt" <<EOF
-select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - GBA and GBA SP lower bezels; offline Miyoo build
+select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - mGBA/gpSP-only Miyoo build; existing bezels and shaders preserved
 Base: https://github.com/deanmarano/slot-miyoo
 Pinned original: $PORT_COMMIT
-GB/GBC: Miyoo-native mGBA default; Gambatte optional; GBA: gpSP default (mGBA alternative)
+GB/GBC: Miyoo-native mGBA only; GBA: gpSP default (mGBA alternative); legacy Gambatte profile choices migrate to mGBA
 Scaling: Original, Integer, Aspect Fit, Fill/Crop, Full Stretch; separate persisted defaults in Screen > GB/GBC/GBA plus in-game per-ROM overrides
 GBA Bezel: None, GBA SP (unchanged default), GBA; same bottom size and pixel positions
 Resume On Power / Insert: independent
@@ -297,6 +294,7 @@ for z in "$ZIP" "$ZIP_ONION" "$ZIP_STOCK"; do
   unzip -Z1 "$z" | grep -qx 'System/bezels/gba-original.png'
   unzip -Z1 "$z" | grep -qx 'App/Slot/launch.sh'
   unzip -Z1 "$z" | grep -qx 'Apps/slot.pak/launch.sh'
+  ! unzip -Z1 "$z" | grep -Ei '(gambatte|gambatte-src)'
   sha256sum "$z" > "$z.sha256"
 done
 ! unzip -Z1 "$ZIP" | grep -q '^.tmp_update/'
