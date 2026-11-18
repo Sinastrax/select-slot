@@ -219,6 +219,7 @@ change(app,
 change(app,
 '''            | QuickRow::RommDisconnect
             | QuickRow::Nickname
+            | QuickRow::RetroAchievements
             | QuickRow::Server => return,''',
 '''            | QuickRow::RommDisconnect
             | QuickRow::RaAccount
