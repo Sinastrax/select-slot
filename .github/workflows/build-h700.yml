@@ -170,8 +170,9 @@ jobs:
           # Separate image with original alpha and SP placement. No shader edits.
           python3 ../.github/scripts/add-h700-original-gba-bezel.py
           python3 ../.github/scripts/verify-h700-original-gba-bezel.py
-          # Preserve the connection when pulling a cart and present branded
-          # versions in OTA without changing archive names or checksum logic.
+          # Preserve the connection when pulling a cart, present branded OTA
+          # versions, and keep the shelf clock legible over the built-in dark
+          # wallpaper. Leave archive names, checksums and shaders unchanged.
           python3 ../.github/scripts/fix-ota-label-wifi-eject.py
 
       - name: Capture merged source for integration review
