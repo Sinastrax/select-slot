@@ -73,6 +73,25 @@ pub(crate) struct Config {
     ),
 ])
 
+# Keep strict error detection for a mistyped core setting when the required
+# enabled key is absent, while preserving valid optional extension keys.
+patch("crates/slot-achievements/src/storage.rs",[
+    (
+'''        // TOML diagnostics include source lines, which may contain credentials.
+        toml::from_str(&text).map_err(|_| "Invalid achievement config")''',
+'''        // TOML diagnostics include source lines, which may contain credentials.
+        let doc: toml::Table = toml::from_str(&text).map_err(|_| "Invalid achievement config")?;
+        let config: Self = toml::from_str(&text).map_err(|_| "Invalid achievement config")?;
+        // An unknown field with no explicit enabled key is likely a typo
+        // (e.g. "enabeld"). Keep the original fail-closed behavior.
+        if !config.extra.is_empty() && !doc.contains_key("enabled") {
+            return Err("Invalid achievement config");
+        }
+        Ok(config)''',
+    "recognize config typo instead of silently treating account as disabled"
+    ),
+])
+
 patch("crates/slot/src/app.rs",[
     (
 '''    RaRestart,
