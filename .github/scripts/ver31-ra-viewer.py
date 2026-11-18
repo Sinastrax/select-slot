@@ -161,17 +161,13 @@ change(ache,
     /// Cloned cheaply by the paused in-game viewer; written by the evaluator only.''',
 "throttle progress sampling, not the emulator")
 change(ache,
-'''                    *status.viewer.lock().unwrap() = None;''',
 '''                    *status.viewer.lock().unwrap() = None;
-                    *status.last_measured.lock().unwrap() = None;''',
+                    // Cached games can start evaluating''',
+'''                    *status.viewer.lock().unwrap() = None;
+                    *status.last_measured.lock().unwrap() = None;
+                    // Cached games can start evaluating''',
 "reset progress sampling for a newly launched ROM")
 # This appears twice (load+unload); only reset needed on load, leaving unload unchanged.
-change(ache,
-'''    let _ = frame.recycle.try_send(frame.ram);
-}''',
-'''    let _ = frame.recycle.try_send(frame.ram);
-}''',
-"preserve evaluator lifecycle")
 # Insert the sample after evaluating a frame. It runs only every 5 seconds and
 # publishes a new Arc only when progress actually changed; UI receives it only
 # while the paused viewer is open, preventing per-frame texture churn.
