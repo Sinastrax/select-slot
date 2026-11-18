@@ -188,6 +188,7 @@ jobs:
           python3 ../.github/scripts/ra-launch-banner-ver24.py
           # Ver.25: RA login via masked on-device keyboard, applied on restart.
           python3 ../.github/scripts/ra-menu-login-ver25.py
+          python3 ../.github/scripts/ra-menu-login-tests-ver25.py
 
       - name: Capture merged source for integration review
         uses: actions/upload-artifact@v4
@@ -262,6 +263,7 @@ jobs:
           cargo test -p slot-gfx --test placement -- --nocapture
           # Full RetroAchievements regression suite and launch-status label test.
           cargo test -p slot-achievements -- --nocapture
+          cargo test -p slot-ui --lib secret_input_test -- --nocapture
           cargo test -p slot --no-default-features --features device --lib launch_status_distinguishes_real_ra_online_from_wifi_only -- --nocapture
 
       - name: Build the H700 device tree
