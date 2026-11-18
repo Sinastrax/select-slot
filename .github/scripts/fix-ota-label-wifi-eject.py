@@ -160,6 +160,23 @@ edit("crates/slot/src/app.rs", [
 
 edit("crates/slot/tests/update_ui.rs", [
     (
+'''    for _ in 0..6 {
+        if a.quick_menu() == Some(QuickRow::CheckUpdates) {
+            break;
+        }
+        press(&mut a, Btn::Down);
+    }''',
+'''    // The custom firmware has extra System settings. Navigate the real
+    // menu instead of assuming Check for Updates is only six rows down.
+    for _ in 0..QuickRow::SYSTEM.len() + 2 {
+        if a.quick_menu() == Some(QuickRow::CheckUpdates) {
+            break;
+        }
+        press(&mut a, Btn::Down);
+    }''',
+    "select updates without fixed menu row count"
+    ),
+    (
 '''            "slot is up to date".into(),
             format!("{running} is the latest version.")''',
 '''            "select. slot. is up to date".into(),
