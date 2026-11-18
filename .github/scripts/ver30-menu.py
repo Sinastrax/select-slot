@@ -112,6 +112,11 @@ change(app,'''            QuickRow::Cheats => {
                 self.cheat_row = 0;''','''            QuickRow::Achievements => {
                 self.achievement_row = 0;
                 self.achievement_detail = false;
+                self.achievement_names.clear();
+                self.achievement_values.clear();
+                self.achievement_badges.clear();
+                self.achievement_header = None;
+                self.achievement_description = None;
                 self.in_game_menu = Some(QuickRow::AchievementList);
             }
             QuickRow::Cheats => {
