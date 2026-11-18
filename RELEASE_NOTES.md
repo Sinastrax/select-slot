@@ -1,11 +1,11 @@
-# select. slot. 1.16.0 Ver. 23
+# select. slot. 1.16.0 Ver. 24
 
-## Changes since Ver. 22
+## Changes since Ver. 23
 
-- **Wi-Fi stays active during normal gameplay.** Previously Slot required an already-established IP address to retain Wi-Fi after a game launched. If Wi-Fi was still joining, or the IP lease was lost, it executed `Cmd::Release`, whose backend runs `slotlink wifi stop`. This could leave Wi-Fi disabled on return to the shelf. The game policy now retains a held service **or** starts a saved connection, independent of current DHCP status. This supports online features such as RetroAchievements when the selected emulator/core supports them.
-- **Automatic reconnection after gameplay.** Saved Wi-Fi may reconnect during gameplay or after ejection; no manual toggle is needed. Existing Ver. 22 ejection handling is retained.
-- **Local link play remains a special case.** Link play uses a dedicated radio handoff; it is not ordinary internet Wi-Fi and may require infrastructure Wi-Fi to stop temporarily. Normal Wi-Fi policy resumes when link play releases the radio.
-- **Explicit Wi-Fi Off, sleep and shutdown still release Wi-Fi.** No changes to verified shaders, color correction, scaling, bezels, emulator cores or OTA file safety.
-- **Regression tests:** Wi-Fi starts for a saved network even when a game begins before connection, remains held through gameplay and loss of DHCP, and survives cartridge ejection with subsequent reconnection.
+- **RetroAchievements connection status at game launch.** A silent, brief achievement-themed banner reports the actual state of the selected game's RetroAchievements session. "Connected" requires a successful RetroAchievements session and is not inferred from Wi-Fi being on. With a prepared game cache, "Offline ready" means achievements can still be earned without internet; the banner also distinguishes connecting, missing offline data, no supported achievements, and disabled RetroAchievements.
+- **Status updates during launch.** The banner changes from cached or connecting to connected if the achievement service completes a session while it is visible. Status rendering happens away from the UI thread and uses a separate texture, so it does not overwrite an actual achievement award.
+- **Achievement unlock popups remain unchanged.** Earned badges, achievement titles, points and the existing brief chime continue to work online or from a previously prepared offline cache. Earned notifications take priority if both banners occur together.
+- **No new Wi-Fi modes.** The existing single Wi-Fi On/Off control and Ver. 23 gameplay connection, ejection and wireless link-play handling are unchanged.
+- **New automated checks.** The complete slot-achievements test suite is included in H700 CI, with additional launch-status and per-game session-generation checks. No changes to emulation cores, shaders, bezels, scaling, audio or firmware update behavior.
 
-H700 firmware. Physical hardware validation remains necessary.
+H700 firmware. Final pop-up timing and live RetroAchievements server verification still require testing on a physical device.
