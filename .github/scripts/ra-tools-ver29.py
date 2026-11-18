@@ -256,7 +256,7 @@ change(app,
                     }
                     None => "Checking service".into(),
                 };
-                ("RetroAchievements", detail)
+                ("RetroAchievements".into(), detail)
             }
             UpdateState::Notice(NetNotice::RaQueued) => (
                 "Preparing library".into(),
