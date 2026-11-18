@@ -46,9 +46,9 @@ Choose **one** complete ZIP; back up the SD card, then extract the contents at i
 
 | Download | Intended firmware | What it installs |
 | --- | --- | --- |
-| **[OnionOS Autoboot ZIP](https://github.com/Sinastrax/select-slot/releases/download/miyoo-v1.8.1-ver2/select-slot-1.8.1-ver3-miyoo-onion-autoboot.zip)** | **OnionOS 4.3+** on supported Mini / Mini Plus | Automatically launches Slot from `.tmp_update/startup/select-slot.sh`, without replacing OnionOS's boot manager or active theme |
-| **[Stock Firmware Autoboot ZIP](https://github.com/Sinastrax/select-slot/releases/download/miyoo-v1.8.1-ver2/select-slot-1.8.1-ver3-miyoo-stock-autoboot.zip)** | **Genuine stock Miyoo firmware only** | Automatically launches Slot using stock's `.tmp_update/runtime.sh` |
-| **[App-only ZIP](https://github.com/Sinastrax/select-slot/releases/download/miyoo-v1.8.1-ver2/select-slot-1.8.1-ver3-miyoo.zip)** | Manual launch; safest for uncertain/modified firmware | Installs the Slot app **without** any startup hook |
+| **[OnionOS Autoboot ZIP](https://github.com/Sinastrax/select-slot/releases/download/miyoo-v1.8.1-ver3/select-slot-1.8.1-ver3-miyoo-onion-autoboot.zip)** | **OnionOS 4.3+** on supported Mini / Mini Plus | Automatically launches Slot from `.tmp_update/startup/select-slot.sh`, without replacing OnionOS's boot manager or active theme |
+| **[Stock Firmware Autoboot ZIP](https://github.com/Sinastrax/select-slot/releases/download/miyoo-v1.8.1-ver3/select-slot-1.8.1-ver3-miyoo-stock-autoboot.zip)** | **Genuine stock Miyoo firmware only** | Automatically launches Slot using stock's `.tmp_update/runtime.sh` |
+| **[App-only ZIP](https://github.com/Sinastrax/select-slot/releases/download/miyoo-v1.8.1-ver3/select-slot-1.8.1-ver3-miyoo.zip)** | Manual launch; safest for uncertain/modified firmware | Installs the Slot app **without** any startup hook |
 
 > [!CAUTION]
 > **Never install the Stock Firmware Autoboot ZIP over OnionOS, Allium or another SD-card OS that already uses `.tmp_update/runtime.sh`.** It can overwrite that operating system's boot script. Always back up your card and use only the matching ZIP.
@@ -60,7 +60,7 @@ Choose **one** complete ZIP; back up the SD card, then extract the contents at i
 - **No online updater and no Wi-Fi dependency.** Install new releases by SD card. Battery saves, settings and save states should be backed up before upgrades.
 - **Hardware/firmware support is not universal.** The current OnionOS Miyoo setup has been confirmed working by the project user, but not every stock-firmware/model/autoboot combination is physically tested. Official OnionOS is for Mini/Mini Plus, **not Mini Flip**; choose an appropriate compatible alternative for the Flip. Allium should use app-only unless its launcher is verified.
 - **OS power management still takes priority.** OnionOS manages theme artwork, suspend and shutdown, and its native idle timer may act before Slot's menu timers. Other OS builds can handle these transitions differently.
-- **Core choice and game performance vary.** mGBA/Gambatte/gpSP save states are not guaranteed interchangeable. Different Miyoo variants may have different performance and input hardware. ROMs, proprietary BIOS files and user saves are not in the downloads.
+- **Core choice and game performance vary.** mGBA and gpSP save states are not interchangeable, and previous Gambatte states cannot be loaded by mGBA. Different Miyoo variants may have different performance and input hardware. ROMs, proprietary BIOS files and user saves are not in the downloads.
 
 [**Miyoo full release and SHA-256 files**](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver3) · [Miyoo installation notes](miyoo/INSTALL.md) · [Miyoo build source](miyoo/)
 
