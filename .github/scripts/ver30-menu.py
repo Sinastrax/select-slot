@@ -151,11 +151,14 @@ change(test,
     s.app_mut().apply(Action::GbaUp(Btn::Up));
     s.app_mut().apply(Action::GbaDown(Btn::A));''',
 '''    s.app_mut().apply(Action::QuickMenu);
-    // Restart is below System; select System explicitly, not by wrapping Up.
-    for _ in 0..5 {
+    // Restart is below System; seek System without relying on a fixed
+    // row offset (the Tools menu may be hidden on devices without Wi-Fi).
+    for _ in 0..slot_ui::QuickRow::MAIN.len() {
+        if s.app().quick_menu() == Some(slot_ui::QuickRow::System) { break; }
         s.app_mut().apply(Action::GbaDown(Btn::Down));
         s.app_mut().apply(Action::GbaUp(Btn::Down));
     }
+    assert_eq!(s.app().quick_menu(), Some(slot_ui::QuickRow::System));
     s.app_mut().apply(Action::GbaDown(Btn::A));''',"navigate to About without assuming last main row")
 with Path(test).open("a") as out:
     out.write("""
