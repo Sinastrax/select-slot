@@ -113,12 +113,14 @@ These are the **custom changes in the H700 build**, on top of upstream Slot and 
 - **Menu Screen Off** under **Settings → System**: turns off the display backlight after menu inactivity, default **3 minutes**.
 - **Menu Power Off** under **Settings → System**: gracefully shuts down after menu inactivity, default **15 minutes**. Each timer is independently adjustable to **Off, 1, 3, 5, 10, 15 or 30 minutes**.
 - **Menu-only inactivity detection.** Active gameplay is excluded, and a button press wakes an idled, dark screen without accidentally launching a game. Active background operations are excluded.
+- **Keep connected Wi-Fi running when a cartridge is removed (Ver. 21).** Returning to the shelf does not stop an already-connected wireless session. Games still do not initiate a new Wi-Fi connection when offline, and Wi-Fi Off and lid sleep remain explicit shutdown conditions.
 - **Corrected Resume on Power On.** **On** starts the last game and loads its resume state; **Off** boots to the shelf with that game selected but not running. **Resume on Insert** stays independent for manual launches.
 
 ### Online updates
 
 - **Custom update channel** from **Settings → System → Check for Updates**. Updates come from [this repository's releases](https://github.com/Sinastrax/select-slot/releases), not an upstream build.
 - **Full releases only:** the updater downloads a complete H700 package, checks its size and SHA-256 checksum, then stages it for installation at restart.
+- **Correctly branded OTA version text (Ver. 21).** The updater displays **1.16.0 Ver. 21** instead of the internal `v1.16.0-rgsp.21` identifier. The technical ZIP filename stays unchanged to preserve backwards-compatible OTA updates.
 - **No forced background updates.** The user chooses whether to install. ROMs, saves and personal settings are not bundled in releases.
 
 See [ONLINE_UPDATES.md](ONLINE_UPDATES.md) for technical packaging and release procedures.
