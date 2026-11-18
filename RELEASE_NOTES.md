@@ -1,15 +1,13 @@
-# select. slot. 1.16.0 Ver. 31
+# select. slot. 1.16.0 Ver. 32
 
-## Menus and in-game RetroAchievements
+## In-game RetroAchievements stability
 
-- **All-menu scrolling fix:** the main settings menu and every long quick-menu page, including GB/GBC/GBA, gameplay, RomM, shortcuts and the paused game menu, scroll before entering the footer. Original typography and six-row 480p viewport are retained.
-- **In-game Achievements → Y Refresh:** force-read the active ROM's true MD5, reconnect to its registered RetroAchievements game, refresh the achievement definitions and unlock state. Keeps the game running, preserves its achievement hit counters, existing save RAM and offline award records.
-- **Verified game connection:** show whether the exact ROM is unregistered, cached and offline, connecting, rejected, or has an accepted online session. A failed Rich Presence ping can no longer cancel an otherwise accepted achievement session; it retries separately.
-- **Measured achievements:** show actual partial progress from rcheevos for achievements that define measurable goals. Already-completed milestones from an old save are not retroactively awarded.
-- **Accurate default multiplayer nicknames:** RG35XX H is now identified from BaseOS hardware target `rg35xxh` instead of being confused with the RG35XX SP by their shared 640 × 480 screen size. Manually set nicknames remain authoritative.
-- **Regression tests:** viewport safety for all pages, ROM rehash even against stale cached fingerprints, refresh save safety, and successful session reporting despite a failed presence ping. Hardware nickname identification tests also cover the H, SP, and other BaseOS models.
+- **Freeze prevention:** the Achievements screen renders only the six visible rows at a time. Sorting with X, scrolling and receiving new achievement data reuse existing GPU texture handles instead of allocating textures for an entire large game set on every interaction.
+- **Badge and description reuse:** reusable texture slots remain allocated even when an achievement temporarily has no downloaded badge. Switching games and repeatedly reopening the page cannot grow the texture cache with each interaction.
+- **Repeated Y presses:** requests to refresh the active ROM and RetroAchievements session are coalesced for a short interval, preventing bursts of repeated ROM hashing and online lookups.
+- **Tests:** verify that achievement lists up to 500 entries remain restricted to six visible rows, including the current selection.
 
-**Unchanged:** existing manifest-based `System/` update cleanup, Wi-Fi behavior during play, mGBA performance governor, supported cores, shaders, color correction, scaling, bezels, credentials and existing save/RetroAchievements files.
+**Unchanged:** all ROMs, in-game saves, RetroAchievements offline awards and existing unlock history, mGBA, Wi-Fi behavior, shaders, scaling, device detection, and the original manifest-based `System/` updater. Existing save milestones do not become retroactive achievements.
 
 ### Compatibility
-Anbernic H700 devices (RG34XXSP, RG35XXSP, RG35XX H). Full OTA package remains compatible; no ROMs or BIOS files included.
+Anbernic H700 devices (RG34XXSP, RG35XXSP, RG35XX H). No ROMs or BIOS files included.
