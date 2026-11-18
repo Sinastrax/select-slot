@@ -124,9 +124,9 @@ change(app,'''        if row == QuickRow::CheatList {
         if row == QuickRow::AchievementList {
             return self.achievement_list_input(action);
         }''',"achievements input")
-change(app,'''            | QuickRow::CheatList
-            | QuickRow::Guide''','''            | QuickRow::CheatList
-            | QuickRow::Achievements
-            | QuickRow::AchievementList
-            | QuickRow::Guide''',"exhaustive in-game")
+p=Path(app);s=p.read_text()
+old="            | QuickRow::CheatList\n            | QuickRow::Guide"
+new="            | QuickRow::CheatList\n            | QuickRow::Achievements\n            | QuickRow::AchievementList\n            | QuickRow::Guide"
+assert s.count(old)>=1,"exhaustive in-game not found"
+p.write_text(s.replace(old,new))
 print("Ver.30 menu rows installed")
