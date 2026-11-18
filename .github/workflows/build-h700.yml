@@ -161,6 +161,11 @@ jobs:
           # RGB source and LCD code; apply exact Pocket Color GPU Look last.
           python3 ../.github/scripts/restore-sgb-pocket-whitepoint.py
           python3 ../.github/scripts/verify-sgb-pocket-whitepoint.py
+          # GBA-only Authentic correction for RG35XX H's fractional 2.67x
+          # Fit scaling. Applied LAST; all verified Pocket/SGG output
+          # and standard GBA Dot/Grid/LCD color effects remain unchanged.
+          python3 ../.github/scripts/fix-gba-fit-lcd-intersections.py
+          python3 ../.github/scripts/verify-gba-fit-lcd-intersections.py
 
       - name: Capture merged source for integration review
         uses: actions/upload-artifact@v4
