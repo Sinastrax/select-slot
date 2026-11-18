@@ -1,10 +1,11 @@
 # select. slot. 1.16.0 Ver. 23
 
-## Changes since select. slot. 1.16.0 Ver. 22
+## Changes since Ver. 22
 
-- **Fix the underlying Wi-Fi shutdown on normal cartridge removal.** Plain game ejection calls `end_link()` as part of cleanup, even when no link-play session was started. Previously, that unconditional call queued `RadioJob::Down`, which runs `slotlink.sh link down`. The link script's cleanup calls `wifi_stop`, terminating the normal `wpa_supplicant` and `udhcpc` processes outside Slot's main Wi-Fi state machine. This bypassed the safeguards in Ver. 21/22. **Normal game ejection now never queues a link-radio Down job unless there is a real or in-flight link session.**
-- **Retain enabled home Wi-Fi throughout ordinary games.** A network still obtaining DHCP or reconnecting is no longer deliberately stopped at game launch. RetroAchievements can maintain online HTTPS access and rich presence during gameplay. The existing Wi-Fi Off toggle, sleep/power shutdown and no-config behavior are preserved.
-- **Keep direct-console link play working.** When link play actually takes the wireless radio for softAP/STA, normal internet Wi-Fi yields. The link-radio Down job still runs when that session ends. Saved home networks reconnect afterward; restoration is deferred sufficiently to avoid racing the link's asynchronous radio teardown.
-- **Test real teardown commands, not just UI flags.** Wi-Fi regressions assert that an ordinary cartridge eject never emits `RadioJob::Down` and never stops the wireless worker, even without a DHCP lease; verify that real link play still emits Down and subsequently reconnects; and preserve Wi-Fi Off, the network menu, RetroAchievements connectivity and existing link-play tests.
+- **Wi-Fi stays active during normal gameplay.** Previously Slot required an already-established IP address to retain Wi-Fi after a game launched. If Wi-Fi was still joining, or the IP lease was lost, it executed `Cmd::Release`, whose backend runs `slotlink wifi stop`. This could leave Wi-Fi disabled on return to the shelf. The game policy now retains a held service **or** starts a saved connection, independent of current DHCP status. This supports online features such as RetroAchievements when the selected emulator/core supports them.
+- **Automatic reconnection after gameplay.** Saved Wi-Fi may reconnect during gameplay or after ejection; no manual toggle is needed. Existing Ver. 22 ejection handling is retained.
+- **Local link play remains a special case.** Link play uses a dedicated radio handoff; it is not ordinary internet Wi-Fi and may require infrastructure Wi-Fi to stop temporarily. Normal Wi-Fi policy resumes when link play releases the radio.
+- **Explicit Wi-Fi Off, sleep and shutdown still release Wi-Fi.** No changes to verified shaders, color correction, scaling, bezels, emulator cores or OTA file safety.
+- **Regression tests:** Wi-Fi starts for a saved network even when a game begins before connection, remains held through gameplay and loss of DHCP, and survives cartridge ejection with subsequent reconnection.
 
-**Unchanged:** Ver. 22 light-theme clock/battery improvements and GBA scale choices, all verified color/shader and core fixes, GBA/GBA SP bezel artwork, OTA version display and checksum validation, and Miyoo builds. Hardware behavior still requires on-device confirmation.
+H700 firmware. Physical hardware validation remains necessary.
