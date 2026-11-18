@@ -166,6 +166,10 @@ jobs:
           # and standard GBA Dot/Grid/LCD color effects remain unchanged.
           python3 ../.github/scripts/fix-gba-fit-lcd-intersections.py
           python3 ../.github/scripts/verify-gba-fit-lcd-intersections.py
+          # H700 GBA-only bottom bezel option: 3.5-inch 640x480 screens.
+          # Separate image with original alpha and SP placement. No shader edits.
+          python3 ../.github/scripts/add-h700-original-gba-bezel.py
+          python3 ../.github/scripts/verify-h700-original-gba-bezel.py
 
       - name: Capture merged source for integration review
         uses: actions/upload-artifact@v4
@@ -234,6 +238,12 @@ jobs:
           set -euo pipefail
           export SLOT_VERSION="$(cat ../.github/ota-version.txt)"
           task dist:device OUT=select-slot-h700
+          # Derive an original-GBA wordmark from the licensed stock
+          # 640x480 SP strip; preserve entire screen and alpha mask.
+          python3 ../.github/scripts/make-h700-original-gba-bezel.py \
+            select-slot-h700/System/bezels/640x480.png \
+            select-slot-h700/System/bezels/640x480-gba-original.png
+          test -s select-slot-h700/System/bezels/640x480-gba-original.png
 
       - name: Replace stock mGBA with the verified older core
         working-directory: upstream
@@ -256,6 +266,8 @@ jobs:
           test -s select-slot-h700/System/launch_frontend.sh
           test -s select-slot-h700/System/gpsp_libretro.so
           test -s select-slot-h700/System/gambatte_libretro.so
+          test -s select-slot-h700/System/bezels/640x480.png
+          test -s select-slot-h700/System/bezels/640x480-gba-original.png
 
       - name: Package full firmware and OTA release manifest
         working-directory: upstream
