@@ -150,6 +150,16 @@ change(storage,
         let _ = count;''',
 "silence repeated known non-game warning entries")
 
+change(rs,
+'''    pub fn activate(&mut self, id: u32, definition: &str) -> bool {''',
+'''    #[cfg(test)]
+    pub(crate) fn diagnostic_bits(&self) -> u32 {
+        self.warned_diagnostics
+    }
+
+    pub fn activate(&mut self, id: u32, definition: &str) -> bool {''',
+"expose exact pointer-failure path to unit tests")
+
 with Path(tests).open("a") as f:
     f.write(r'''
 
@@ -167,6 +177,8 @@ fn an_invalid_indirect_pointer_does_not_reset_unrelated_achievements() {
     // memrefs, this is a dynamic lookup that may be temporarily unavailable.
     ram[0x20..0x24].copy_from_slice(&(0x70000u32).to_le_bytes());
     assert!(runtime.frame(&ram, &valid).is_empty());
+    assert_ne!(runtime.diagnostic_bits() & 8, 0,
+        "test must actually exercise an out-of-range indirect read");
     ram[0x10] = 1;
     assert_eq!(runtime.frame(&ram, &valid), &[7101]);
     assert!(runtime.frame(&ram, &valid).is_empty());
