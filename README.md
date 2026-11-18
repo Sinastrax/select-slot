@@ -124,6 +124,7 @@ These are the **custom changes in the H700 build**, on top of upstream Slot and 
 
 ### Ver. 31: menu scrolling and current-game RetroAchievements refresh
 
+- **Hardware-correct default link-play nicknames:** use the BaseOS device identifier (e.g. `rg35xxh`) to distinguish RG35XX H from RG35XX SP. Any custom nickname remains unchanged.
 - **Every long quick-menu page** now scrolls within the available rows rather than colliding with the footer, including the main settings list, GBA/GB/GBC display options and paused game menus.
 - **In-game Achievements → Y Refresh** verifies the running ROM's MD5, requests a fresh online game session, updates cached definitions/unlocks and reports the actual connection stage. Saved progress and offline awards are never deleted.
 - **Measured achievement progress** is read from the local rcheevos runtime where supported. Previously completed conditions are not auto-awarded from a save file.
