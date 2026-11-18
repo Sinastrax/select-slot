@@ -272,6 +272,16 @@ jobs:
           cargo test -p slot-ui --lib secret_input_test -- --nocapture
           cargo test -p slot --no-default-features --features device --lib launch_status_distinguishes_real_ra_online_from_wifi_only -- --nocapture
 
+      - name: Brand the boot image and update splash before compiling
+        working-directory: upstream
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Must run before dist:device: the Rust frontend embeds the BMP.
+          python3 ../.github/scripts/brand-h700-boot.py card/System
+          grep -qF 'say "UPDATING SELECT. SLOT."' card/System/launch_frontend.sh
+          ! grep -qF 'say "UPDATING SLOT"' card/System/launch_frontend.sh
+
       - name: Build the H700 device tree
         working-directory: upstream
         shell: bash
@@ -279,17 +289,6 @@ jobs:
           set -euo pipefail
           export SLOT_VERSION="$(cat ../.github/ota-version.txt)"
           task dist:device OUT=select-slot-h700
-
-      - name: Brand the H700 boot image and OTA installation splash
-        working-directory: upstream
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 ../.github/scripts/brand-h700-boot.py select-slot-h700/System
-          # The shipped wordmark is composed into the native screen dimensions
-          # by the existing bootlogo installer; user Config overrides remain.
-          grep -qF 'say "UPDATING SELECT. SLOT."' select-slot-h700/System/launch_frontend.sh
-          ! grep -qF 'say "UPDATING SLOT"' select-slot-h700/System/launch_frontend.sh
 
       - name: Add the existing original-GBA bezel to the 640x480 H700 package
         working-directory: upstream
@@ -353,6 +352,9 @@ jobs:
           test -s select-slot-h700/System/launch_frontend.sh
           test -s select-slot-h700/System/bootlogo.bmp
           grep -qF 'say "UPDATING SELECT. SLOT."' select-slot-h700/System/launch_frontend.sh
+          # CI must ship the same branded assets as the embedded frontend.
+          cmp card/System/bootlogo.bmp select-slot-h700/System/bootlogo.bmp
+          grep -qF 'say "UPDATING SELECT. SLOT."' card/System/launch_frontend.sh
           test -s select-slot-h700/System/gpsp_libretro.so
           test -s select-slot-h700/System/gambatte_libretro.so
           test -s select-slot-h700/System/bezels/640x480.png
