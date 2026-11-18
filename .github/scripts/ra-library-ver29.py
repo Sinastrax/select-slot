@@ -380,3 +380,45 @@ change(net,
                     SyncStatus::Ready
                 });''',
 "track active game readiness when otherwise idle")
+
+# Guard unsupported games from future session pings.
+change(net,
+'''    online: bool,
+    last_ping: Instant,''',
+'''    online: bool,
+    unmatched: bool,
+    last_ping: Instant,''',
+"distinguish negative-lookups from active achievement sessions")
+change(net,
+'''                        online: false,
+                        last_ping: Instant::now(),''',
+'''                        online: false,
+                        unmatched: false,
+                        last_ping: Instant::now(),''',
+"initialize negative lookup state")
+change(net,
+'''                                        if cached.id == 0 {
+                                            game.online = true;
+                                        }''',
+'''                                        if cached.id == 0 {
+                                            game.online = true;
+                                            game.unmatched = true;
+                                        }''',
+"skip RA session ping for cached unsupported ROMs")
+change(net,
+'''                        game.online = true;
+                        game.ready = true;
+                    } else {''',
+'''                        game.online = true;
+                        game.ready = true;
+                        game.unmatched = true;
+                    } else {''',
+"do not ping unsupported ROMs")
+change(net,
+'''                !game.online || (game.ready && game.last_ping.elapsed() >= Duration::from_secs(120))''',
+'''                !game.online || (game.ready && !game.unmatched && game.last_ping.elapsed() >= Duration::from_secs(120))''',
+"skip scheduled ping for negative ROM match")
+change(net,
+'''                } else if game.ready && game.last_ping.elapsed() >= Duration::from_secs(120) {''',
+'''                } else if game.ready && !game.unmatched && game.last_ping.elapsed() >= Duration::from_secs(120) {''',
+"skip network request for unmatched cached game")
