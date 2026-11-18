@@ -9,7 +9,7 @@ PORT="$WORK/slot-miyoo"
 STAGE="$PORT/release/stage"
 PORT_COMMIT="d096bdb87f25f3aba62de6b40ef859b61d841e43"
 SLOT_VERSION="1.8.1"
-CUSTOM_VERSION="1"
+CUSTOM_VERSION="2"
 ZIP="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo.zip"
 ZIP_ONION="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo-onion-autoboot.zip"
 ZIP_STOCK="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo-stock-autoboot.zip"
@@ -127,6 +127,19 @@ check_patch '+                    self.menu_shutdown_onion = true;'
 check_patch '+        if self.shutting_down() {'
 check_patch '+                    && root.join(".tmp_update/onionVersion/version.txt").is_file()'
 echo "Verified menu scaling persistence, quick shutdown, and input lock"
+# The original GBA uses the SP bezel's exact static-surround geometry,
+# with its own saved menu value and independently loaded alternate texture.
+check_patch '+    Agb001,'
+check_patch '+            BezelPick::Agb001 => "agb-001".to_string(),'
+check_patch '+            BezelPick::Agb001 => "Original GBA".to_string(),'
+check_patch '+                choices.push(BezelPick::Agb001);'
+check_patch '+    gba_strip: Option<TexId>,'
+check_patch '+    pub fn set_gba_strip(&mut self, tex: Option<TexId>) {'
+check_patch '+            self.gba_strip.or(self.sp_strip)'
+check_patch '+            BezelPick::None | BezelPick::Ags102 | BezelPick::Agb001 => None,'
+check_patch '+        let gba_path = self.session.app().root()'
+echo "Verified original GBA / SP bottom-strip selector without new render backend"
+
 
 
 (
@@ -143,6 +156,36 @@ test -s "$STAGE/System/licenses/gambatte-src.tar.gz"
 test -s "$STAGE/System/licenses/build-info.txt"
 test -s "$STAGE/System/launch_frontend.sh"
 file "$STAGE/System/slot" | grep -q 'ELF 32-bit LSB .*ARM'
+
+# Derive the new bottom logo from the *same* upstream CC BY-SA bezel PNG:
+# no layout/alpha/geometry changes, no installed image editing dependencies.
+# Keep the original SP file in place for existing users and settings.
+test -s "$STAGE/System/bezels/640x480.png"
+test ! -e "$STAGE/System/bezels/gba-original.png"
+python3 "$ROOT/miyoo/make_gba_bezel.py" \
+  "$STAGE/System/bezels/640x480.png" \
+  "$STAGE/System/bezels/gba-original.png"
+test -s "$STAGE/System/bezels/gba-original.png"
+test -s "$STAGE/System/licenses/bezel-CC-BY-SA-4.0.txt"
+# Decode both to prove the entire game opening is pixel-identical.
+python3 - "$ROOT/miyoo" "$STAGE/System/bezels" <<'PY'
+from pathlib import Path
+import sys
+sys.path.insert(0, sys.argv[1])
+from make_gba_bezel import decode_png, WIDTH, HEIGHT, TOP, BOTTOM
+folder = Path(sys.argv[2])
+sp = decode_png(folder / "640x480.png")
+gba = decode_png(folder / "gba-original.png")
+stride = WIDTH * 4
+assert len(sp) == len(gba) == WIDTH * HEIGHT * 4
+assert sp[:TOP * stride] == gba[:TOP * stride]
+assert sp[BOTTOM * stride:] == gba[BOTTOM * stride:]
+assert sp != gba, "the second logo must actually differ"
+assert all(sp[i + 3] == gba[i + 3] for i in range(3, len(sp), 4)), \
+    "bezel alpha, screen opening and silhouette must be identical"
+print("Verified original GBA bottom logo: exact SP silhouette, RGBA transparency and dimensions")
+PY
+
 
 # Brand the launcher without renaming its directories or any runtime binary.
 # That preserves the install paths expected by the proven Miyoo port.
@@ -188,11 +231,12 @@ echo 'Verified legacy brightness 0–9 and compatibility migration'
 cp "$ROOT/miyoo/onion-autoboot.sh" "$STAGE/System/autoboot/onion-startup.sh"
 cp "$ROOT/miyoo/INSTALL.md" "$STAGE/System/select-slot-install.md"
 cat > "$STAGE/System/select-slot-version.txt" <<EOF
-select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - per-system scaling; shaders off; offline Miyoo build
+select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - Original GBA and SP lower bezels; offline Miyoo build
 Base: https://github.com/deanmarano/slot-miyoo
 Pinned original: $PORT_COMMIT
 GB/GBC: Miyoo-native mGBA default; Gambatte optional; GBA: gpSP default (mGBA alternative)
 Scaling: Original, Integer, Aspect Fit, Fill/Crop, Full Stretch; separate persisted defaults in Screen > GB/GBC/GBA plus in-game per-ROM overrides
+GBA Bezel: None, AGS-102 (unchanged default), Original GBA; same bottom size and pixel positions
 Resume On Power / Insert: independent
 Framebuffer: original unfiltered Miyoo CPU renderer; no effects, orientation and launcher unchanged
 Shaders: disabled globally for GB/GBC/GBA; menu controls hidden and shortcuts inert; pre-existing shader settings ignored
@@ -234,6 +278,8 @@ rm "$STAGE/.tmp_update/runtime.sh"
 for z in "$ZIP" "$ZIP_ONION" "$ZIP_STOCK"; do
   unzip -t "$z" | tail -1 | grep -q 'No errors detected'
   unzip -Z1 "$z" | grep -qx 'System/slot'
+  unzip -Z1 "$z" | grep -qx 'System/bezels/640x480.png'
+  unzip -Z1 "$z" | grep -qx 'System/bezels/gba-original.png'
   unzip -Z1 "$z" | grep -qx 'App/Slot/launch.sh'
   unzip -Z1 "$z" | grep -qx 'Apps/slot.pak/launch.sh'
   sha256sum "$z" > "$z.sha256"
