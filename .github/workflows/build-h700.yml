@@ -170,6 +170,9 @@ jobs:
           # Separate image with original alpha and SP placement. No shader edits.
           python3 ../.github/scripts/add-h700-original-gba-bezel.py
           python3 ../.github/scripts/verify-h700-original-gba-bezel.py
+          # Preserve the connection when pulling a cart and present branded
+          # versions in OTA without changing archive names or checksum logic.
+          python3 ../.github/scripts/fix-ota-label-wifi-eject.py
 
       - name: Capture merged source for integration review
         uses: actions/upload-artifact@v4
@@ -231,6 +234,8 @@ jobs:
           cargo test -p slot --no-default-features --features device --lib menu_idle::tests -- --nocapture
           cargo test -p slot --no-default-features --features device --test boot -- --nocapture
           cargo test -p slot --no-default-features --features device --test bezel -- --nocapture
+          cargo test -p slot --no-default-features --features device --test update_ui -- --nocapture
+          cargo test -p slot --no-default-features --features device --test wifi_ui -- --nocapture
 
       - name: Build the H700 device tree
         working-directory: upstream
