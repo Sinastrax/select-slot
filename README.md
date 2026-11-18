@@ -122,6 +122,12 @@ These are the **custom changes in the H700 build**, on top of upstream Slot and 
 - **Light-mode clock and battery percentage (Ver. 22).** Status text at the top of quick menus, including in-game menus, uses independent bright HUD text textures so both the **time** and **battery percentage** remain visible against the dark menu background. The existing shelf footer and wallpaper-specific colors remain untouched.
 - **Corrected Resume on Power On.** **On** starts the last game and loads its resume state; **Off** boots to the shelf with that game selected but not running. **Resume on Insert** stays independent for manual launches.
 
+### Ver. 32: safer in-game Achievements browsing
+
+- **Repeated X sorting and scrolling** now reuse a fixed pool of six visible achievement rows instead of accumulating GPU textures for all badges and labels. Descriptions and temporarily unavailable badges also keep reusable texture handles.
+- **Repeated Y Refresh presses** are coalesced to avoid unnecessary repeated ROM hashing and network session requests. This does not alter save data or manufacture RetroAchievements unlocks.
+- Large achievement sets are checked by a 500-entry viewport regression. Existing softcore tracking, session status, shaders, cores and the System updater remain unchanged.
+
 ### Ver. 31: menu scrolling and current-game RetroAchievements refresh
 
 - **Hardware-correct default link-play nicknames:** use the BaseOS device identifier (e.g. `rg35xxh`) to distinguish RG35XX H from RG35XX SP. Any custom nickname remains unchanged.
