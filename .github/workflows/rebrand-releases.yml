@@ -49,7 +49,7 @@ jobs:
           assert len(by_tag) == len(releases), "Duplicate release tags"
           assert set(keep).issubset(by_tag), "A required checkpoint is missing"
           assert gh("api", f"repos/{repo}/releases/latest", "--jq", ".tag_name") == "v1.16.0-rgsp.24", "H700 latest release changed"
-          allowed = re.compile(r"(?:v1\\.(?:15\\.3|16\\.0)-rgsp\\.\\d+|miyoo-v1\\.8\\.1-ver\\d+)\\Z")
+          allowed = re.compile(r"(?:v1[.](?:15[.]3|16[.]0)-rgsp[.][0-9]+|miyoo-v1[.]8[.]1-ver[0-9]+)$")
           for r in releases:
               assert allowed.fullmatch(r["tag_name"]), f"Unknown release: {r['tag_name']}"
               if r["tag_name"] in keep:
