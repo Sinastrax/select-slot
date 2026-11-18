@@ -264,7 +264,7 @@ jobs:
           source, old, dest = map(Path, sys.argv[1:])
           with Image.open(source) as im:
               assert im.size == (1024, 768), im.size
-              gba = im.convert("RGBA").resize((640, 480), Image.Resampling.LANCZOS)
+              gba = im.convert("RGBA").resize((640, 480), getattr(Image, "Resampling", Image).LANCZOS)
           with Image.open(old) as im:
               sp = im.convert("RGBA")
           assert sp.size == gba.size == (640, 480), "Incorrect bezel size"
@@ -277,6 +277,7 @@ jobs:
               assert im.convert("RGBA").tobytes() == gba.tobytes()
           print("Verified existing Original GBA 640x480 alpha and picture position")
           PY
+          mkdir -p select-slot-h700/System/licenses
           cp ../.github/assets/H700-GBA-BEZEL-CREDITS.txt \
             select-slot-h700/System/licenses/gba-original-bezel-credits.txt
 
