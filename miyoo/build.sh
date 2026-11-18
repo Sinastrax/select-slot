@@ -157,35 +157,49 @@ test -s "$STAGE/System/licenses/build-info.txt"
 test -s "$STAGE/System/launch_frontend.sh"
 file "$STAGE/System/slot" | grep -q 'ELF 32-bit LSB .*ARM'
 
-# Derive the new bottom logo from the *same* upstream CC BY-SA bezel PNG:
-# no layout/alpha/geometry changes, no installed image editing dependencies.
-# Keep the original SP file in place for existing users and settings.
+# Use the EXISTING Perfect GBA (no grid) bezel by mugwomp93 from KNULLI,
+# not generated or redrawn artwork. Original source is a 1024x768 PNG.
+# Resizing it to 640x480 with Pillow LANCZOS preserves EXACTLY the same
+# alpha mask as Slot's current SP bezel (checked pixel-for-pixel).
+# Original Slot SP asset is preserved byte-for-byte.
+ORIGINAL_GBA_COMMIT="75aa66c41548ebaa95f31d260d47eea2baab9d8a"
+ORIGINAL_GBA_URL="https://raw.githubusercontent.com/chrizzo-hb/knulli-bezels/$ORIGINAL_GBA_COMMIT/default-knulli/systems/gba-4_3.png"
+ORIGINAL_GBA_SOURCE_SHA256="1d25c249c08580c6082656d353d001158e8378653b9a3d90c80e85700990ca93"
+command -v curl >/dev/null || { echo 'Missing build dependency: curl' >&2; exit 1; }
+if ! python3 -c 'from PIL import Image' >/dev/null 2>&1; then
+  echo "Installing Pillow for asset resizing (host build dependency, NOT shipped to Miyoo)"
+  python3 -m pip -q install pillow
+fi
 test -s "$STAGE/System/bezels/640x480.png"
 test ! -e "$STAGE/System/bezels/gba-original.png"
-python3 "$ROOT/miyoo/make_gba_bezel.py" \
-  "$STAGE/System/bezels/640x480.png" \
-  "$STAGE/System/bezels/gba-original.png"
-test -s "$STAGE/System/bezels/gba-original.png"
-test -s "$STAGE/System/licenses/bezel-CC-BY-SA-4.0.txt"
-# Decode both to prove the entire game opening is pixel-identical.
-python3 - "$ROOT/miyoo" "$STAGE/System/bezels" <<'PY'
+curl --fail --location --silent --show-error --retry 3 "$ORIGINAL_GBA_URL" -o "$WORK/gba-original-source.png"
+echo "$ORIGINAL_GBA_SOURCE_SHA256  $WORK/gba-original-source.png" | sha256sum -c -
+python3 - "$WORK/gba-original-source.png" "$STAGE/System/bezels/640x480.png" "$STAGE/System/bezels/gba-original.png" <<'PY'
 from pathlib import Path
 import sys
-sys.path.insert(0, sys.argv[1])
-from make_gba_bezel import decode_png, WIDTH, HEIGHT, TOP, BOTTOM
-folder = Path(sys.argv[2])
-sp = decode_png(folder / "640x480.png")
-gba = decode_png(folder / "gba-original.png")
-stride = WIDTH * 4
-assert len(sp) == len(gba) == WIDTH * HEIGHT * 4
-assert sp[:TOP * stride] == gba[:TOP * stride]
-assert sp[BOTTOM * stride:] == gba[BOTTOM * stride:]
-assert sp != gba, "the second logo must actually differ"
-assert all(sp[i + 3] == gba[i + 3] for i in range(3, len(sp), 4)), \
-    "bezel alpha, screen opening and silhouette must be identical"
-print("Verified original GBA bottom logo: exact SP silhouette, RGBA transparency and dimensions")
+from PIL import Image, ImageChops
+original_path, sp_path, out_path = map(Path, sys.argv[1:])
+with Image.open(original_path) as inp:
+    if inp.size != (1024, 768):
+        raise SystemExit(f"Unexpected source dimensions: {inp.size}")
+    original = inp.convert("RGBA").resize((640, 480), Image.Resampling.LANCZOS)
+with Image.open(sp_path) as inp:
+    sp = inp.convert("RGBA")
+if original.size != sp.size or original.size != (640, 480):
+    raise SystemExit("The original GBA bezel and existing SP strip have different dimensions")
+if ImageChops.difference(original.getchannel("A"), sp.getchannel("A")).getbbox():
+    raise SystemExit("Refusing package: original GBA does not match SP opening and lower-strip shape")
+if not ImageChops.difference(original, sp).getbbox():
+    raise SystemExit("Original GBA logo is identical to SP; expected different artwork")
+original.save(out_path, optimize=True)
+with Image.open(out_path) as check:
+    if check.convert("RGBA").tobytes() != original.tobytes():
+        raise SystemExit("Original GBA PNG verification failed")
+print("Existing KNULLI Perfect GBA bezel: same 640x480 mask and lower strip as Slot SP")
 PY
-
+test -s "$STAGE/System/bezels/gba-original.png"
+test -s "$STAGE/System/licenses/bezel-CC-BY-SA-4.0.txt"
+cp "$ROOT/miyoo/GBA-BEZEL-CREDITS.txt" "$STAGE/System/licenses/gba-original-bezel-credits.txt"
 
 # Brand the launcher without renaming its directories or any runtime binary.
 # That preserves the install paths expected by the proven Miyoo port.
