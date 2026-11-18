@@ -1288,7 +1288,6 @@ allowed = {
     "crates/slot-store/src/core.rs",
     "crates/slot-store/src/slot_state.rs",
     "crates/slot-store/src/gb_palette.rs",
-    "crates/slot/src/core.rs",
     "crates/slot/src/session.rs",
     "crates/slot/src/video_mode.rs",
     "crates/slot/src/session.rs",
