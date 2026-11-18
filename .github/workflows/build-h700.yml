@@ -200,6 +200,10 @@ jobs:
           python3 ../.github/scripts/ra-tools-ver29.py
           python3 ../.github/scripts/ra-badges-ver29.py
           python3 ../.github/scripts/ra-tests-ver29.py
+          # Ver.30: direct restart, active-game achievement viewer and protected cleanup.
+          python3 ../.github/scripts/ver30-menu.py
+          python3 ../.github/scripts/ver30-achievements.py
+          python3 ../.github/scripts/ver30-cleanup.py
 
       - name: Capture merged source for integration review
         uses: actions/upload-artifact@v4
@@ -274,6 +278,7 @@ jobs:
           cargo test -p slot-gfx --test placement -- --nocapture
           # Full RetroAchievements regression suite and launch-status label test.
           cargo test -p slot-achievements -- --nocapture
+          cargo test -p slot --no-default-features --features device --lib cleanup::tests -- --nocapture
           cargo test -p slot-ui --lib secret_input_test -- --nocapture
           cargo test -p slot-ui --lib select_ra_menu_tests -- --nocapture
           cargo test -p slot --no-default-features --features device --lib launch_status_distinguishes_real_ra_online_from_wifi_only -- --nocapture
@@ -343,8 +348,25 @@ jobs:
         run: |
           set -euo pipefail
           bash ../.github/scripts/build-stable-mgba.sh select-slot-h700
+          # MPL-2.0 allows corresponding source separately. Ship it alongside the binary
+          # as an independently downloadable release asset; do not install source on SD2.
+          mkdir -p source-release
+          mv select-slot-h700/System/licenses/mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz source-release/
+          cat > select-slot-h700/System/licenses/mgba-source-notice.txt <<'NOTICE'
+          mGBA core: Mozilla Public License 2.0 (MPL-2.0).
+          Copyright mGBA contributors. Source revision:
+          https://github.com/libretro/mgba/tree/c758314a639aa0066e7b65a8341448181b73c804
+          The complete corresponding source, including our build-time adjustments, is
+          distributed alongside each select. slot. H700 firmware binary release at
+          https://github.com/Sinastrax/select-slot/releases
+          Asset: mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz
+          Build script: .github/scripts/build-stable-mgba.sh in the corresponding tag.
+          MPL-2.0 license: https://www.mozilla.org/en-US/MPL/2.0/
+          NOTICE
           test -s select-slot-h700/System/licenses/mgba-stable.sha256
-          test -s select-slot-h700/System/licenses/mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz
+          test -s source-release/mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz
+          test ! -e select-slot-h700/System/licenses/mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz
+          test -s select-slot-h700/System/licenses/mgba-source-notice.txt
 
       - name: Verify the complete firmware tree
         working-directory: upstream
@@ -397,6 +419,7 @@ jobs:
           path: |
             slot-v*-h700.zip
             versions.json
+            upstream/source-release/mgba-*-source.tar.gz
           if-no-files-found: error
 
   release-h700:
@@ -460,7 +483,9 @@ jobs:
             echo "Release $RELEASE_TAG already published; leaving it unchanged."
             exit 0
           fi
+          test -s release/upstream/source-release/mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz
           gh release create "$RELEASE_TAG" "$zip" release/versions.json \
+            release/upstream/source-release/mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --title "select. slot. $DISPLAY_VERSION" \
