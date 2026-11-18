@@ -38,7 +38,7 @@ The Miyoo version is based on [deanmarano/slot-miyoo](https://github.com/deanmar
 
 It includes GB/GBC/GBA emulation (mGBA/Gambatte for GB/GBC; gpSP/mGBA for GBA), **independent persisted scaling defaults for GB, GBC and GBA**, optional per-game scaling overrides, Original/Integer/Aspect Fit/Fill-Crop/Full Stretch modes, resume settings and independent menu Screen Off/Power Off timers. Display shaders are deliberately **disabled**.
 
-Under **Screen → GBA → Bezel**, choose **Original GBA**, the existing **AGS-102** bezel, or **None**. The Original GBA option uses mugwomp93's existing CC BY-SA *Perfect GBA* artwork, resized to exactly the same 640×480 bottom-strip opening as Slot's SP bezel. It does not change shader settings, display size or scaling.
+Under **Screen → GBA → Bezel**, choose **GBA**, the existing **GBA SP** bezel, or **None**. The GBA option uses mugwomp93's existing CC BY-SA *Perfect GBA* artwork, resized to exactly the same 640×480 bottom-strip opening as Slot's SP bezel. It does not change shader settings, display size or scaling.
 
 Choose **one** complete ZIP; back up the SD card, then extract the contents at its root, including hidden folders:
 
