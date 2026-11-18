@@ -35,8 +35,8 @@ repl("crates/slot-ui/src/quick_menu.rs",[
         QuickRow::RetroAchievements,
     ];""","row array entry"),
 ("""            | QuickRow::Nickname => &QuickRow::SYSTEM,""",
-"""            | QuickRow::Nickname
-            | QuickRow::RetroAchievements => &QuickRow::SYSTEM,""","menu group"),
+"""            | QuickRow::Nickname => &QuickRow::SYSTEM,
+            QuickRow::RetroAchievements => &QuickRow::NETWORK,""","menu group"),
 ("""            QuickRow::Nickname => "Nickname",""",
 """            QuickRow::Nickname => "Nickname",
             QuickRow::RetroAchievements => "RetroAchievements",""","row label"),
@@ -47,14 +47,18 @@ repl("crates/slot-ui/src/quick_menu.rs",[
                 | QuickRow::RommServer""","row opens"),
 ])
 
-# The System page already includes custom firmware rows in earlier patches.
+# Add the row to Tools (QuickRow::NETWORK), alongside Gamebit and RomM.
+# Do not touch the separate System or Wi-Fi menus.
 q=Path("crates/slot-ui/src/quick_menu.rs")
 s=q.read_text()
-pat=r'(pub const SYSTEM: \[QuickRow; )(\d+)(\] = \[\n        QuickRow::Wifi,)'
-m=re.search(pat,s)
-if m is None:
-    raise SystemExit("Cannot locate System menu row capacity")
-s=s[:m.start()] + m.group(1) + str(int(m.group(2))+1) + m.group(3) + "\n        QuickRow::RetroAchievements," + s[m.end():]
+pat=r'(    pub const NETWORK: \[QuickRow; )(\d+)( \+ cfg!\(feature = "nds"\) as usize\] = \[)(.*?)(\n    \];)'
+m=re.search(pat,s,re.DOTALL)
+if m is None or "QuickRow::Server" not in m.group(4):
+    raise SystemExit("Cannot locate Tools menu row array")
+new_menu=(m.group(1) + str(int(m.group(2))+1) + m.group(3)
+          + m.group(4) + "\n        QuickRow::RetroAchievements,"
+          + m.group(5))
+s=s[:m.start()] + new_menu + s[m.end():]
 q.write_text(s)
 
 # Keep all upstream and custom rows; earlier patches may already grow ALL.
@@ -328,4 +332,4 @@ repl("crates/slot/src/app.rs", [
                 "Check the SD card and try again.".into(),
             ),""","restart warning screen"),
 ])
-print("RetroAchievements login staged in System menu; no live account switching")
+print("RetroAchievements login staged in Tools menu; no live account switching")
