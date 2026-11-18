@@ -195,6 +195,10 @@ jobs:
           python3 ../.github/scripts/ra-login-save-ver26.py
           # Ver.27: migrate pre-existing RA config on first boot; preserve account data.
           python3 ../.github/scripts/ra-config-migration-ver27.py
+          # Ver.29: opt-in RA indexing, reliable negative caching and actionable Tools UI.
+          python3 ../.github/scripts/ra-library-ver29.py
+          python3 ../.github/scripts/ra-tools-ver29.py
+          python3 ../.github/scripts/ra-tests-ver29.py
 
       - name: Capture merged source for integration review
         uses: actions/upload-artifact@v4
