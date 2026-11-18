@@ -284,6 +284,7 @@ new_prefix='''pub(crate) struct Tracked {
     generation: u64,
     ram: Vec<u8>,
     reported_tracking: bool,
+    reported_missing_ram: bool,
 }
 
 impl Tracked {
@@ -299,6 +300,7 @@ impl Tracked {
             generation: 0,
             ram: vec![0; RAM_SIZE],
             reported_tracking: false,
+            reported_missing_ram: false,
         }
     }
 
@@ -312,9 +314,9 @@ impl Tracked {
         let Some(game) = playing.as_mut().filter(|g| g.generation == self.generation)
             else { return };
         if valid.regions().is_empty() {
-            if !self.reported_tracking {
+            if !self.reported_missing_ram {
                 eprintln!("slot: RetroAchievements: no emulated RAM regions available to evaluate");
-                self.reported_tracking = true;
+                self.reported_missing_ram = true;
             }
             return;
         }
@@ -386,6 +388,7 @@ change(core,
 change(core,
 '''        self.current.store(self.generation, Ordering::Release);''',
 '''        self.reported_tracking = false;
+        self.reported_missing_ram = false;
         self.current.store(self.generation, Ordering::Release);''',
 "fresh log state for each ROM")
 
