@@ -1,11 +1,11 @@
-# select. slot. 1.16.0 Ver. 18
+# select. slot. 1.16.0 Ver. 19
 
-## Changes since select. slot. 1.16.0 Ver. 17
+## Changes since select. slot. 1.16.0 Ver. 18
 
-- **Improve GBA Authentic specifically at fractional Fit on the RG35XX H.** A 240×160 GBA game displayed at 640×427 uses ~2.67 output pixels per source pixel. The existing nearest-integer-reference LCD band and antialiasing remain; now overlapping vertical and horizontal GBA pixel gaps are combined by physical area union at noninteger scaling, instead of `max()`. This prevents partly covered intersections from losing their grid strength.
-- **Match the GBA brightness compensation to the integrated mask.** The corrected RGB cell average is updated only under fractional GBA Authentic Fit; original GBA measured color response, pale blue-white panel, source palette, reflective glass and ghosting remain unchanged. With Color Correction Off, source RGB remains unboosted and the pixel effect stays active.
-- **Preserve every integer-scaled Authentic frame.** The new fractional blend is zero at exact integer 2×/3×/4×. This also leaves the standard GBA Dot, Grid and LCD effects unchanged: their existing RG35XX H fractional-scale improvements already apply to GBA, not just GB/GBC.
-- **Lock the user-confirmed Ver. 17 Pocket Color and Pocket SGB rendering.** CI checks that their complete Authentic Look implementation is byte-for-byte identical and that the merged fragment shader has precisely two GBA-only optical edits from Ver. 17. No palette/core changes, saved-setting changes or modifications to Miyoo firmware.
+- **Original GBA is now a selectable GBA bezel** alongside the existing **AGS-102 (GBA SP)** and **None**. Its bottom text reads **GAME BOY ADVANCE**, not **GAME BOY ADVANCE SP**. The existing 640×480 SP artwork provides the exact same transparent screen opening, bottom bar geometry and on/off slide animation.
+- **Only the 3.5-inch 640×480 Anbernic framed layout offers this new option**, including the RG35XX H. The RG SP and RG34XXSP's 720×480 fullscreen GBA layout is unchanged and does not expose it. Selecting it does not alter display scaling, image cropping or shader properties.
+- **Saved per-platform selection.** Original GBA persists as `bezel_gba=agb-001`; the existing AGS-102 remains the default for existing and new configurations. Any custom GBA bezel files still work.
+- **Licensed image derived from upstream Slot's original SP bezel** by recentering the existing GAME BOY ADVANCE lettering and removing SP. Preserves all alpha values, gameplay-opening pixels, and top/bottom screen artwork outside the bottom 32-pixel text band. The image is generated inside `System/bezels` during each H700 firmware build, with upstream CC BY-SA 4.0 attribution retained.
+- **No changes to shaders, palettes, core options, frame timings or Miyoo firmware.** CI hash-locks the complete Ver. 18 shader and the hardware-confirmed Pocket/SGB profiles. Only the H700 menu, bezel drawing, and generated image differ.
 
-**Tests:** CPU coverage verification for GBA 640×427 Fit and original integer scale, shader-diff isolation, OpenGL ES 2.0 shader compilation/linking, full H700 build and OTA integrity verification. These checks cannot substitute for an actual RG35XX H display test. Like any noninteger scaling, slight uneven pixel widths are unavoidable.
-
+**Verification:** CI builds the menu code, validates the 640×480-only selection, verifies the generated PNG retains the original alpha mask and screen opening, checks updater compatibility, and produces the complete H700 OTA. Actual bezel appearance still requires a 3.5-inch Anbernic device test.
