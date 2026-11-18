@@ -422,3 +422,19 @@ change(net,
 '''                } else if game.ready && game.last_ping.elapsed() >= Duration::from_secs(120) {''',
 '''                } else if game.ready && !game.unmatched && game.last_ping.elapsed() >= Duration::from_secs(120) {''',
 "skip network request for unmatched cached game")
+
+# No-achievement games should display a definitive launch status.
+
+change(net,
+'''                            &(empty, BTreeSet::<u32>::new()),
+                        ).map_err(|_| Failure::Invalid)?;''',
+'''                            &(empty.clone(), BTreeSet::<u32>::new()),
+                        ).map_err(|_| Failure::Invalid)?;
+                        let _ = prepared.send(Prepared {
+                            generation: game.generation,
+                            hash: game.hash.clone(),
+                            game: empty,
+                            unlocked: BTreeSet::new(),
+                            cached: false,
+                        });''',
+"report unsupported ROMs through standard game-ready status");
