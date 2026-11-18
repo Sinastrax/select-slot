@@ -215,13 +215,13 @@ change(lib,
 change(lib,
 '''        match frames.recv_timeout(Duration::from_millis(5)) {
             Ok(frame) => {
-                evaluate(frame, &mut playing, &store, &notices, &mut unsaved);
+                evaluate(frame, &mut playing, &store, &notices, &mut unsaved, &status);
             }''',
 '''        drop(playing);
         match frames.recv_timeout(Duration::from_millis(5)) {
             Ok(frame) => {
                 let mut playing = shared_playing.lock().unwrap();
-                evaluate(frame, &mut playing, &store, &notices, &mut unsaved);
+                evaluate(frame, &mut playing, &store, &notices, &mut unsaved, &status);
             }''',
 "release core runtime before any blocking worker wait")
 
