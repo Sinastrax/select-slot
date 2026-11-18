@@ -328,10 +328,26 @@ impl AchievementPage<'_> {
 }
 
 /// The Cheats page over the game: a row per cheat with its On or Off, laid out, lit and scrolled''',"achievement renderer")
+replace(ui,
+'''/// Read-only achievement list rendered within the existing paused game menu.''',
+'''/// Read a full multi-line achievement requirement at a legible size.
+pub fn achievement_detail_face(detail: &str) -> UndoFace {
+    let Some(font) = text::label_font() else {
+        return quick_description_face(&[detail]);
+    };
+    let w = (OUT_W as u32).saturating_sub(80);
+    let h = 130u32;
+    let layout = text::fit(font, detail, w as f32 - 8.0, 4, 20.0, 15.0);
+    let mut rgba = vec![0u8; (w * h * 4) as usize];
+    text::draw_centred(&mut rgba, w, h, &layout, DIM_INK);
+    UndoFace { rgba, w, h }
+}
+
+/// Read-only achievement list rendered within the existing paused game menu.''',"wrapped achievement descriptions")
 ui_lib="crates/slot-ui/src/lib.rs"
 replace(ui_lib,
 '''visible_rows, CheatPage, MenuGround, QuickMenu, QuickMenuFaces, QuickRow, QuickScroll,''',
-'''visible_rows, AchievementPage, CheatPage, MenuGround, QuickMenu, QuickMenuFaces, QuickRow, QuickScroll,''',"export viewer")
+'''visible_rows, achievement_detail_face, AchievementPage, CheatPage, MenuGround, QuickMenu, QuickMenuFaces, QuickRow, QuickScroll,''',"export viewer")
 
 front="crates/slot/src/frontend.rs"
 replace(front,
@@ -384,8 +400,10 @@ replace(front,
             }
         }
         let title=match app.achievement_view_ref() {
-            Some(v) => format!("{} — {}/{} · {}/{} points",
-                v.title,earned,v.entries.len(),received,total),
+            Some(v) => format!("{} — {}/{} ({}%) · {}/{} pts",
+                v.title,earned,v.entries.len(),
+                if v.entries.is_empty() {0} else {earned*100/v.entries.len()},
+                received,total),
             None => "Achievements — connecting or no offline cache".into(),
         };
         let f=quick_description_face(&[&title]);
@@ -394,7 +412,7 @@ replace(front,
     }
     if !app.achievement_description_ready() {
         let description=app.achievement_selected_description().unwrap_or_default();
-        let f=quick_description_face(&[&description]);
+        let f=slot_ui::achievement_detail_face(&description);
         if f.w>0 && f.h>0 {
             app.set_achievement_description(Some(
                 (compositor.create_texture(f.w,f.h,&f.rgba),f.w,f.h)));
