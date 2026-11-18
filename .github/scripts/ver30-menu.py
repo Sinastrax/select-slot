@@ -128,5 +128,14 @@ p=Path(app);s=p.read_text()
 old="            | QuickRow::CheatList\n            | QuickRow::Guide"
 new="            | QuickRow::CheatList\n            | QuickRow::Achievements\n            | QuickRow::AchievementList\n            | QuickRow::Guide"
 assert s.count(old)>=1,"exhaustive in-game not found"
-p.write_text(s.replace(old,new))
+p.write_text(s.replace(old,new,1))
+change(app,
+'''            | QuickRow::About
+            | QuickRow::Screen''',
+'''            | QuickRow::About
+            | QuickRow::Restart
+            | QuickRow::Cleanup
+            | QuickRow::CleanupScan
+            | QuickRow::CleanupDelete
+            | QuickRow::Screen''',"quick_value no-value actions")
 print("Ver.30 menu rows installed")
