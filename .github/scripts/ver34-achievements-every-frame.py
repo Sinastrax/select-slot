@@ -465,3 +465,40 @@ fn fast_forward_evaluates_each_emulated_frame_including_unrendered_frames() {
 }
 ''')
 print("Ver34: fast-forward per-frame runtime regression installed")
+
+with Path(tests).open("a") as f:
+    f.write(r'''
+
+#[test]
+fn a_one_frame_unlock_survives_six_times_fast_forward_without_racing_the_worker() {
+    let root = configured();
+    let rom = root.path().join("Games/GBA/OneFrame.gba");
+    std::fs::write(&rom, b"one-frame-fixture").unwrap();
+    let store = Store::open(root.path(), "Player").unwrap();
+    let hash = library::hash(&store.dir, &rom).unwrap();
+    storage::write(
+        &store.dir.join("auth.json"),
+        &Auth { username: "Player".into(), token: "fixture-token".into() },
+    ).unwrap();
+    storage::write(
+        &store.dir.join(format!("{hash}.json")),
+        &(game(), std::collections::BTreeSet::<u32>::new()),
+    ).unwrap();
+    let service = Service::start_with(root.path().into(), Offline);
+    let mut core = service.wrap(Box::new(TestCore { console: 5, ..Default::default() }));
+    core.load(&rom).unwrap();
+    wait_for(|| service.take_notice().is_some_and(|n|
+        n.title.starts_with("Achievements ready")));
+    // 360 core frames, one qualifying event. None is necessarily displayed.
+    // A lossy eight-frame queue could drop this event during a burst.
+    for frame in 0..360 {
+        core.run_frame(if frame == 271 { ButtonMask(1) } else { ButtonMask(0) });
+    }
+    drop(core);
+    wait_for(|| service.take_notice().is_some_and(|n| n.kind == NoticeKind::Earned));
+    let saved = Store::open(root.path(), "Player").unwrap();
+    assert_eq!(saved.unlocks.get(&7).map(|u| u.hash.as_str()), Some(hash.as_str()));
+}
+''')
+print("Ver34: full core-to-ledger fast-forward burst regression installed")
+
