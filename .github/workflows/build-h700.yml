@@ -245,7 +245,11 @@ jobs:
           cargo test -p slot --no-default-features --features device --test bezel -- --nocapture
           cargo test -p slot --no-default-features --features device --test update_ui -- --nocapture
           cargo test -p slot --no-default-features --features device --test wifi_ui -- --nocapture
-          cargo test -p slot --no-default-features --features device --test link_ui -- --nocapture
+          # link_ui exercises radio hardware; device mode executes the actual
+          # /mnt/sdcard/System/slotlink.sh, unavailable in GitHub CI.
+          # Run its 58 behavioral tests with the host radio backend while the
+          # real device-feature Wi-Fi tests above remain enabled.
+          cargo test -p slot --no-default-features --test link_ui -- --nocapture
           cargo test -p slot --no-default-features --features device --test theme_clock -- --nocapture
           cargo test -p slot --no-default-features --features device --lib eject_wifi_policy_regression -- --nocapture
           cargo test -p slot --no-default-features --features device --test menu_status -- --nocapture
