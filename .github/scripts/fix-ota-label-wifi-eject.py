@@ -45,6 +45,65 @@ pub fn newer(release: &str, running: &str) -> bool {''',
 
 edit("crates/slot/src/app.rs", [
     (
+'''    wifi_held: bool,
+    wifi_boot_blocked: bool,''',
+'''    wifi_held: bool,
+    /// Sticky during a single Wi-Fi session: allows a previously connected
+    /// game to recover from DHCP/association loss without killing the daemon.
+    wifi_was_up: bool,
+    wifi_boot_blocked: bool,''',
+    "track whether Wi-Fi has successfully connected"
+    ),
+    (
+'''            wifi_held: false,
+            wifi_boot_blocked: false,''',
+'''            wifi_held: false,
+            wifi_was_up: false,
+            wifi_boot_blocked: false,''',
+    "initialize the connected marker"
+    ),
+    (
+'''        self.wifi_held = false;
+        self.wifi_scanning = false;
+        self.wifi_boot_blocked = false;''',
+'''        self.wifi_held = false;
+        self.wifi_was_up = false;
+        self.wifi_scanning = false;
+        self.wifi_boot_blocked = false;''',
+    "reset marker on new Wi-Fi worker"
+    ),
+    (
+'''        w.poll(*at + std::time::Duration::from_millis(now.saturating_sub(*from)));
+        if self.wifi_held && !w.busy() && !w.snapshot().held {''',
+'''        w.poll(*at + std::time::Duration::from_millis(now.saturating_sub(*from)));
+        if w.snapshot().held
+            && w.snapshot().status.state == crate::wifi::State::Completed
+            && w.snapshot().status.ip.is_some()
+        {
+            self.wifi_was_up = true;
+        }
+        if self.wifi_held && !w.busy() && !w.snapshot().held {''',
+    "mark a previously successful connection"
+    ),
+    (
+'''    pub fn release_radio(&mut self) {
+        self.wifi_wanted_at = None;''',
+'''    pub fn release_radio(&mut self) {
+        self.wifi_was_up = false;
+        self.wifi_wanted_at = None;''',
+    "clear marker on intentional release"
+    ),
+    (
+'''        if off {
+            self.wifi_wanted_at = None;
+            self.wifi_held = false;''',
+'''        if off {
+            self.wifi_wanted_at = None;
+            self.wifi_held = false;
+            self.wifi_was_up = false;''',
+    "clear marker when Wi-Fi is switched off"
+    ),
+    (
 '''            UpdateState::UpToDate => (
                 "slot is up to date".into(),
                 format!("{running} is the latest version."),
@@ -76,12 +135,13 @@ edit("crates/slot/src/app.rs", [
 '''            return self.wifi_held
                 && self.wifi_up()
                 && !matches!(self.phase, Phase::Doze { .. })''',
-'''            // Keep an already-started Wi-Fi daemon alive even during
-            // temporary association/DHCP loss. A game does not initiate Wi-Fi,
-            // but it must not kill a connection that is recovering.
+'''            // Keep an already-connected Wi-Fi service alive during a brief
+            // DHCP/association outage; do not keep an offline, never-connected
+            // radio running just because gameplay began.
             return self.wifi_held
+                && (self.wifi_up() || self.wifi_was_up)
                 && !matches!(self.phase, Phase::Doze { .. })''',
-    "keep already held Wi-Fi across brief disconnections in games"
+    "retain a previously connected radio, not an offline startup"
     ),
     (
 '''            Phase::Shelf
