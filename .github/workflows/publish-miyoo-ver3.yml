@@ -1,0 +1,115 @@
+name: Publish select. slot. Miyoo 1.8.1 Ver. 3
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publish-miyoo-ver3.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: miyoo-official-release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release-miyoo:
+    if: github.repository == 'Sinastrax/select-slot' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout current main source
+        uses: actions/checkout@v4
+
+      - name: Install Task
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL https://taskfile.dev/install.sh | sh -s -- -b "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Build complete ARMv7 Miyoo Ver. 3 release
+        shell: bash
+        run: bash miyoo/build.sh
+
+      - name: Verify Ver. 3 packaging, model-specific hooks and checksums
+        shell: bash
+        run: |
+          set -euo pipefail
+          d=.build/miyoo
+          archive="$d/select-slot-1.8.1-ver3-miyoo.zip"
+          onion="$d/select-slot-1.8.1-ver3-miyoo-onion-autoboot.zip"
+          stock="$d/select-slot-1.8.1-ver3-miyoo-stock-autoboot.zip"
+          for z in "$archive" "$onion" "$stock"; do
+            test -s "$z" && test -s "$z.sha256"
+            sha256sum -c "$z.sha256"
+            unzip -t "$z" | tail -n 1 | grep -q 'No errors detected'
+            unzip -Z1 "$z" | grep -qx 'System/slot'
+            unzip -Z1 "$z" | grep -qx 'System/mgba_libretro.so'
+            unzip -Z1 "$z" | grep -qx 'System/gpsp_libretro.so'
+            ! unzip -Z1 "$z" | grep -Eiq 'gambatte'
+            unzip -Z1 "$z" | grep -qx 'System/select-slot-version.txt'
+            unzip -Z1 "$z" | grep -qx 'System/bezels/640x480.png'
+            unzip -Z1 "$z" | grep -qx 'System/bezels/gba-original.png'
+            unzip -Z1 "$z" | grep -qx 'System/licenses/gba-original-bezel-credits.txt'
+            info="$(unzip -p "$z" System/select-slot-version.txt | head -n 1)"
+            [[ "$info" == 'select. slot. 1.8.1 Ver. 3 - '* ]]
+            ! unzip -p "$z" System/select-slot-version.txt | grep -Fq 'Ver. 1'
+            unzip -Z1 "$z" | grep -qx 'App/Slot/config.json'
+            unzip -Z1 "$z" | grep -qx 'Apps/slot.pak/config.json'
+          done
+          ! unzip -Z1 "$archive" | grep -q '^.tmp_update/'
+          unzip -Z1 "$onion" | grep -qx '.tmp_update/startup/select-slot.sh'
+          ! unzip -Z1 "$onion" | grep -qx '.tmp_update/runtime.sh'
+          unzip -Z1 "$stock" | grep -qx '.tmp_update/runtime.sh'
+          ! unzip -Z1 "$stock" | grep -qx '.tmp_update/startup/select-slot.sh'
+          test ! -e "$d/slot-miyoo/cores/gambatte"
+          grep -Fq '"gambatte" => Some(Core::Mgba),' "$d/slot-miyoo/patches/0028-select-miyoo-config.patch"
+          echo 'Verified all three Version 3 packages and OS-safe hooks'
+
+      - name: Publish verified Miyoo Ver. 3 while preserving prior releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          repo="$GITHUB_REPOSITORY"
+          stable="miyoo-v1.8.1-ver3"
+          d=".build/miyoo"
+          latest_before="$(gh api "repos/$repo/releases/latest" --jq '.tag_name')"
+          [[ "$latest_before" == v*-rgsp.* ]]
+
+          if ! gh release view "$stable" --repo "$repo" >/dev/null 2>&1; then
+            gh release create "$stable" \
+              "$d/select-slot-1.8.1-ver3-miyoo.zip" \
+              "$d/select-slot-1.8.1-ver3-miyoo.zip.sha256" \
+              "$d/select-slot-1.8.1-ver3-miyoo-onion-autoboot.zip" \
+              "$d/select-slot-1.8.1-ver3-miyoo-onion-autoboot.zip.sha256" \
+              "$d/select-slot-1.8.1-ver3-miyoo-stock-autoboot.zip" \
+              "$d/select-slot-1.8.1-ver3-miyoo-stock-autoboot.zip.sha256" \
+              --repo "$repo" \
+              --target "$GITHUB_SHA" \
+              --title "select. slot. 1.8.1 Ver. 3 — Miyoo" \
+              --notes-file ".github/release-notes/miyoo-ver3.md" \
+              --latest=false
+          else
+            echo "Ver. 3 already exists; not replacing verified assets."
+          fi
+
+          # Never clean Ver. 3 or any other historical release from this path.
+          test "$(gh api "repos/$repo/releases/tags/$stable" --jq '.draft')" = false
+          test "$(gh api "repos/$repo/releases/tags/$stable" --jq '.assets | length')" -eq 6
+          for name in \
+            select-slot-1.8.1-ver3-miyoo.zip \
+            select-slot-1.8.1-ver3-miyoo-onion-autoboot.zip \
+            select-slot-1.8.1-ver3-miyoo-stock-autoboot.zip; do
+            gh api "repos/$repo/releases/tags/$stable" --jq '.assets[].name' | grep -Fxq "$name"
+          done
+          gh release view miyoo-v1.8.1-ver3 --repo "$repo" >/dev/null
+          latest_after="$(gh api "repos/$repo/releases/latest" --jq '.tag_name')"
+          [[ "$latest_after" == v*-rgsp.* ]]
+          echo "Miyoo Ver. 3 published; previous Miyoo and H700 releases retained."
