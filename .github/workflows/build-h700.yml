@@ -431,7 +431,7 @@ jobs:
               assert ref == "refs/heads/main", ref
           # The verified manifest is the single source of truth for this release.
           with open(os.environ["GITHUB_ENV"], "a") as env:
-              env.write("RELEASE_TAG=" + d["tag"] + "\\n")
+              env.write("RELEASE_TAG=" + d["tag"] + "\n")
           archive = root / d["zip"]
           assert archive.is_file(), d["zip"]
           assert archive.stat().st_size == d["size"]
@@ -444,7 +444,6 @@ jobs:
       - name: Publish update assets on GitHub Releases
         env:
           GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ github.ref_name }}
         shell: bash
         run: |
           set -euo pipefail
