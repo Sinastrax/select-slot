@@ -20,6 +20,9 @@ jobs:
           curl -fLsS --retry 3 "$base/default-knulli-sp/systems/gba-4_3.png" -o candidate/sp-default.png
           curl -fLsS --retry 3 "$base/mugwomp93-noninteger-nogrids/systems/gba-4_3.png" -o candidate/original-mugwomp.png
           curl -fLsS --retry 3 "$base/mugwomp93-noninteger-nogrids/systems/gba-4_3_sp.png" -o candidate/sp-mugwomp.png
+          curl -fLsS --retry 3 "$base/mugwomp93-noninteger-grids/systems/gba-640x480.png" -o candidate/original-640.png
+          curl -fLsS --retry 3 "$base/mugwomp93-noninteger-grids-sp/systems/gba-640x480.png" -o candidate/sp-640.png
+          curl -fLsS --retry 3 "https://raw.githubusercontent.com/drkhrse/drkhrse_miyoo_bezels/main/drkhrse_miyoo_bezels/GBA.png" -o candidate/drk-gba.png
           curl -fLsS --retry 3 "https://raw.githubusercontent.com/slot-cfw/slot/91499a9e09424fd92066b7a97ab3fe0caaf76e24/card/System/bezels/640x480.png" -o candidate/slot-sp.png
           python3 -m pip -q install pillow
           python3 - <<'PY'
