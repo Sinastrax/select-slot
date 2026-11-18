@@ -65,7 +65,10 @@ fn walk(
 ) {
     if level>MAX_DEPTH || *visited>=MAX_ENTRIES ||
        protected.iter().any(|p| rel.starts_with(p)) { return; }
-    let Ok(read)=fs::read_dir(root.join(rel)) else {return};
+    let directory=root.join(rel);
+    let Ok(directory_meta)=fs::symlink_metadata(&directory) else {return};
+    if !directory_meta.is_dir() || directory_meta.file_type().is_symlink() {return}
+    let Ok(read)=fs::read_dir(&directory) else {return};
     for item in read.flatten() {
         *visited+=1;
         if *visited>MAX_ENTRIES {break}
@@ -130,6 +133,17 @@ mod tests {
             fs::write(root.path().join(name),"safe").unwrap();
         }
         assert_eq!(scan(root.path()).files.len(),0);
+    }
+    #[cfg(unix)]
+    #[test]
+    fn symlinked_cache_root_is_not_traversed() {
+        use std::os::unix::fs::symlink;
+        let root=tempfile::tempdir().unwrap();
+        let outside=tempfile::tempdir().unwrap();
+        fs::write(outside.path().join("old.tmp"),"private").unwrap();
+        symlink(outside.path(),root.path().join("Cache")).unwrap();
+        assert!(scan(root.path()).files.is_empty());
+        assert!(outside.path().join("old.tmp").exists());
     }
     #[test]
     fn exclusions_prevent_cleanup() {
