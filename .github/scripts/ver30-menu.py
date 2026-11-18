@@ -171,6 +171,8 @@ fn direct_restart_is_below_system_and_reuses_shutdown() {
     let (mut s, _) = common::session_with_platform(d.path());
     s.app_mut().apply(Action::QuickMenu);
     s.app_mut().apply(Action::GbaDown(Btn::Up));
+    s.app_mut().apply(Action::GbaUp(Btn::Up));
+    assert_eq!(s.app().quick_menu(), Some(QuickRow::Restart));
     s.app_mut().apply(Action::GbaDown(Btn::A));
     assert!(s.app().restarting());
 }
