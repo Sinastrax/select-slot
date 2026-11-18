@@ -6,7 +6,8 @@
 - **In-game Achievements → Y Refresh:** force-read the active ROM's true MD5, reconnect to its registered RetroAchievements game, refresh the achievement definitions and unlock state. Keeps the game running, preserves its achievement hit counters, existing save RAM and offline award records.
 - **Verified game connection:** show whether the exact ROM is unregistered, cached and offline, connecting, rejected, or has an accepted online session. A failed Rich Presence ping can no longer cancel an otherwise accepted achievement session; it retries separately.
 - **Measured achievements:** show actual partial progress from rcheevos for achievements that define measurable goals. Already-completed milestones from an old save are not retroactively awarded.
-- **Regression tests:** viewport safety for all pages, ROM rehash even against stale cached fingerprints, refresh save safety, and successful session reporting despite a failed presence ping.
+- **Accurate default multiplayer nicknames:** RG35XX H is now identified from BaseOS hardware target `rg35xxh` instead of being confused with the RG35XX SP by their shared 640 × 480 screen size. Manually set nicknames remain authoritative.
+- **Regression tests:** viewport safety for all pages, ROM rehash even against stale cached fingerprints, refresh save safety, and successful session reporting despite a failed presence ping. Hardware nickname identification tests also cover the H, SP, and other BaseOS models.
 
 **Unchanged:** existing manifest-based `System/` update cleanup, Wi-Fi behavior during play, mGBA performance governor, supported cores, shaders, color correction, scaling, bezels, credentials and existing save/RetroAchievements files.
 
