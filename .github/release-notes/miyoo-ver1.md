@@ -6,8 +6,7 @@ The **first official select. slot. release for the Miyoo Mini family**. This is 
 
 - GB/GBC/GBA support. Default cores: **mGBA** (GB/GBC) and **gpSP** (GBA); alternative Gambatte/mGBA options.
 - **Separate persistent Scaling** under **Screen → GB, GBC or GBA**: Original, Integer, Aspect Fit, Fill/Crop and Full Stretch. Saved per system, with optional per-game overrides.
-- Correct **B / Back** navigation from all three system Screen pages.
-- Original **1–9 brightness levels**, resume options, quick-menu timers and OnionOS-compatible sleep and shutdown handling.
+- Resume options, menu inactivity timers and OnionOS-compatible sleep and shutdown handling.
 - Unfiltered display: all shaders intentionally disabled.
 - **Offline only**; no network or in-app updater needed.
 
