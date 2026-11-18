@@ -189,7 +189,7 @@ if original.size != sp.size or original.size != (640, 480):
     raise SystemExit("The original GBA bezel and existing SP strip have different dimensions")
 if ImageChops.difference(original.getchannel("A"), sp.getchannel("A")).getbbox():
     raise SystemExit("Refusing package: original GBA does not match SP opening and lower-strip shape")
-if not ImageChops.difference(original, sp).getbbox():
+if not ImageChops.difference(original.convert("RGB"), sp.convert("RGB")).getbbox():
     raise SystemExit("Original GBA logo is identical to SP; expected different artwork")
 original.save(out_path, optimize=True)
 with Image.open(out_path) as check:
