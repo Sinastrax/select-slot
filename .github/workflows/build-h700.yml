@@ -409,6 +409,9 @@ jobs:
     permissions:
       contents: write
     steps:
+      # Checkout first: checkout's default clean mode deletes untracked artifacts.
+      - uses: actions/checkout@v4
+
       - uses: actions/download-artifact@v4
         with:
           name: select-slot-complete-h700
@@ -438,8 +441,6 @@ jobs:
           assert hashlib.sha256(archive.read_bytes()).hexdigest() == d["sha256"]
           print("Validated", archive.name, d["sha256"])
           PY
-
-      - uses: actions/checkout@v4
 
       - name: Publish update assets on GitHub Releases
         env:
