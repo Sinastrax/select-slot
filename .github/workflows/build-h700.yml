@@ -178,6 +178,10 @@ jobs:
           # handling, and GBA's missing visible 2x Scale choice on 720x480.
           # No color shader or optical raster changes.
           python3 ../.github/scripts/fix-menu-status-wifi-eject-gba-scale.py
+          # Root Wi-Fi fix: ordinary cartridge ejection must never emit a
+          # link radio Down job. Preserve enabled Wi-Fi during normal games,
+          # while giving it to direct-console link play only when requested.
+          python3 ../.github/scripts/fix-wifi-lifecycle-ver23.py
 
       - name: Capture merged source for integration review
         uses: actions/upload-artifact@v4
@@ -241,6 +245,7 @@ jobs:
           cargo test -p slot --no-default-features --features device --test bezel -- --nocapture
           cargo test -p slot --no-default-features --features device --test update_ui -- --nocapture
           cargo test -p slot --no-default-features --features device --test wifi_ui -- --nocapture
+          cargo test -p slot --no-default-features --features device --test link_ui -- --nocapture
           cargo test -p slot --no-default-features --features device --test theme_clock -- --nocapture
           cargo test -p slot --no-default-features --features device --lib eject_wifi_policy_regression -- --nocapture
           cargo test -p slot --no-default-features --features device --test menu_status -- --nocapture
