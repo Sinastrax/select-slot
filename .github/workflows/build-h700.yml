@@ -275,6 +275,7 @@ jobs:
           # Full RetroAchievements regression suite and launch-status label test.
           cargo test -p slot-achievements -- --nocapture
           cargo test -p slot-ui --lib secret_input_test -- --nocapture
+          cargo test -p slot-ui --lib select_ra_menu_tests -- --nocapture
           cargo test -p slot --no-default-features --features device --lib launch_status_distinguishes_real_ra_online_from_wifi_only -- --nocapture
 
       - name: Brand the boot image and update splash before compiling
