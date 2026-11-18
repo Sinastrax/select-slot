@@ -62,10 +62,10 @@ change("crates/slot-achievements/src/lib.rs",
                 self.status.scan_request.store(if enabled { 1 } else { 3 }, Ordering::Release);
             }''',
 "cancel existing index queue when switching off")
-change("crates/slot-achievements/src/network.rs",
+change("crates/slot-achievements/src/lib.rs",
 '''    scan_request: AtomicU8, // 0 none, 1 prepare, 2 retry failed''',
 '''    scan_request: AtomicU8, // 0 none, 1 prepare, 2 retry failed, 3 stop''',
-"update scan request documentation") if False else None
+"document stop-index request")
 change("crates/slot-achievements/src/network.rs",
 '''        } else if request == 2 {
             library = failed_roms.drain(..).collect();
