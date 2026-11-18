@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Install the original-style select. slot. boot wordmark and OTA splash.
+"""Brand the original slot. boot wordmark and OTA splash before compilation.
 
-The logo is stored as compact grayscale coverage data in the repository,
-preserving the approved design without depending on fonts or a remote URL.
-The device receives an ordinary, uncompressed 24-bit BMP.
+Run against upstream/card/System so the frontend's include_bytes! embeds the
+new asset and dist:device packages the same logo and updated launcher.
+The original-style mark is stored as grayscale coverage; the device receives
+an uncompressed 24-bit BMP. Custom Config/bootlogo.bmp remains untouched.
 """
 import base64
 from pathlib import Path
@@ -45,10 +46,10 @@ def apply(system: Path):
     if source.count(old) != 1:
         raise SystemExit("Unexpected upstream update splash; refusing silent replacement")
     launcher.write_text(source.replace(old, 'say "UPDATING SELECT. SLOT."', 1))
-    print("Branded H700 boot image (514x75 RGB BMP) and update splash")
+    print("Branded source boot image (514x75 RGB BMP) and update splash")
 
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        raise SystemExit("usage: brand-h700-boot.py <dist/System>")
+        raise SystemExit("usage: brand-h700-boot.py <upstream/card/System>")
     apply(Path(sys.argv[1]))
