@@ -44,9 +44,13 @@ replace(service,
 
     pub fn sync_progress(&self) -> Option<u8> {''',"read snapshot API")
 replace(service,
-'''                    playing = None;
+'''                Ok(Control::Load(load)) => {
+                    generation = load.generation;
+                    playing = None;
                     *status.presence.lock().unwrap() = None;''',
-'''                    playing = None;
+'''                Ok(Control::Load(load)) => {
+                    generation = load.generation;
+                    playing = None;
                     *status.presence.lock().unwrap() = None;
                     *status.viewer.lock().unwrap() = None;''',"clear viewer for new ROM")
 replace(service,
