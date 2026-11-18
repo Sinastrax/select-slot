@@ -55,7 +55,7 @@ repl("crates/slot-ui/src/quick_menu.rs",[
 # Keep all upstream and custom rows; earlier patches may already grow ALL.
 q=Path("crates/slot-ui/src/quick_menu.rs")
 s=q.read_text()
-pattern=r'pub const ALL: \\[QuickRow; (\\d+) \\+ cfg!\\(feature = "nds"\\) as usize\\]'
+pattern=r'pub const ALL: \[QuickRow; (\d+) \+ cfg!\(feature = "nds"\) as usize\]'
 match=re.search(pattern,s)
 if match is None:
     raise SystemExit("Cannot locate QuickRow::ALL capacity")
