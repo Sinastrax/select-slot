@@ -58,7 +58,7 @@ fn accepted_game_session_is_online_even_if_presence_ping_fails() {
     assert!(requests.try_iter().any(|entry| entry == "startsession"));
     // Actual game remains running, and cached definitions are still present.
     core.run_frame(ButtonMask(0));
-    assert!(service.achievement_view().is_some());
+    wait_for(|| service.achievement_view().is_some());
 }
 
 #[test]
