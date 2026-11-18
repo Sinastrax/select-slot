@@ -139,4 +139,9 @@ old="            | QuickRow::About\n            | QuickRow::Screen"
 new="            | QuickRow::About\n            | QuickRow::Restart\n            | QuickRow::Cleanup\n            | QuickRow::CleanupScan\n            | QuickRow::CleanupDelete\n            | QuickRow::Screen"
 assert s.count(old)>=1,"quick_value no-value actions absent"
 p.write_text(s.replace(old,new,1))
+change(app,
+'''            | QuickRow::MenuPowerOff => {}''',
+'''            | QuickRow::MenuPowerOff
+            | QuickRow::Achievements
+            | QuickRow::AchievementList => {}''',"open_quick_row exhaustive rows")
 print("Ver.30 menu rows installed")
