@@ -92,6 +92,11 @@ change(app,
     achievement_detail: bool,''',
 "track six-slot cache validity")
 change(app,
+'''    achievement_badges: Vec<Option<(TexId, u32, u32)>>,''',
+'''    achievement_badges: Vec<Option<(TexId, u32, u32)>>,
+    achievement_badge_slots: Vec<Option<TexId>>,''',
+"retain badge GPU slot even when current achievement has no image")
+change(app,
 '''    achievement_description: Option<(TexId, u32, u32)> ,''',
 '''    achievement_description: Option<(TexId, u32, u32)> ,
     achievement_description_slot: Option<TexId>,''',
@@ -104,6 +109,11 @@ change(app,
             achievement_visible_start: 0,
             achievement_detail: false,''',
 "initialize six-slot cache")
+change(app,
+'''            achievement_badges: Vec::new(),''',
+'''            achievement_badges: Vec::new(),
+            achievement_badge_slots: Vec::new(),''',
+"initialize persistent badge texture handles")
 change(app,
 '''            achievement_description: None,''',
 '''            achievement_description: None,
@@ -136,9 +146,9 @@ change(app,
     pub fn achievement_reuse_faces(&self) -> (
         &[[(TexId, u32, u32); 2]],
         &[[(TexId, u32, u32); 2]],
-        &[Option<(TexId, u32, u32)>],
+        &[Option<TexId>],
     ) {
-        (&self.achievement_names, &self.achievement_values, &self.achievement_badges)
+        (&self.achievement_names, &self.achievement_values, &self.achievement_badge_slots)
     }
 
     pub fn achievement_faces_ready(&self) -> bool {
@@ -166,6 +176,16 @@ change(app,
     ) {
         self.achievement_names = names;
         self.achievement_values = values;
+        // A row without a badge must not drop its GPU texture handle.
+        // Otherwise alternating missing/present badges would still leak.
+        if self.achievement_badge_slots.len() < badges.len() {
+            self.achievement_badge_slots.resize(badges.len(), None);
+        }
+        for (slot, badge) in badges.iter().enumerate() {
+            if let Some((tex, _, _)) = badge {
+                self.achievement_badge_slots[slot] = Some(*tex);
+            }
+        }
         self.achievement_badges = badges;
         self.achievement_header = Some(header);
         self.achievement_visible_start = visible_start;
@@ -279,7 +299,7 @@ fn sync_achievement_view(app: &mut App, compositor: &mut Compositor) {
                 let badge = a.badge.as_ref()
                     .and_then(|path| slot_achievements::load_badge(path))
                     .map(|pic| {
-                        let previous = old_badges.get(slot).and_then(|b| b.map(|(tex, _, _)| tex));
+                        let previous = old_badges.get(slot).copied().flatten();
                         let tex = achievement_upload(
                             compositor, previous, pic.width, pic.height, &pic.rgba
                         );
