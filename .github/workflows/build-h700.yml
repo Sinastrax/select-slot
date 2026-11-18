@@ -217,6 +217,8 @@ jobs:
           python3 ../.github/scripts/ver32-achievement-stability.py
           # Ver.33: invalid Rich Presence cannot cancel achievement unlocks.
           python3 ../.github/scripts/ver33-ra-tracking-reliability.py
+          # Ver.34: every emulated frame is evaluated, including fast-forward.
+          python3 ../.github/scripts/ver34-achievements-every-frame.py
 
       - name: Capture merged source for integration review
         uses: actions/upload-artifact@v4
