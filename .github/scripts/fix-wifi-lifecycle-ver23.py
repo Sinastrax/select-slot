@@ -70,28 +70,18 @@ edit("crates/slot/src/app.rs", [
     "avoid link radio teardown on ordinary cart ejection"
     ),
     (
-'''        if self.seated_cart().is_some() {
-            // Keep an already-connected Wi-Fi service alive during a brief
-            // DHCP/association outage; do not keep an offline, never-connected
-            // radio running just because gameplay began.
-            return self.wifi_held
-                && (self.wifi_up() || self.wifi_was_up)
-                && !matches!(self.phase, Phase::Doze { .. })
-                && !self.link_active()
+'''            return self.wifi_held
+                && (self.wifi_up() || self.wifi_was_up)''',
+'''            // Keep a configured/held Wi-Fi service alive through gameplay
+            // even while it is associating or waiting on DHCP.
+            return (self.wifi_held || self.has_saved())''',
+    "do not release home Wi-Fi mid-game when DHCP has not completed"
+    ),
+    (
+'''                && !self.link_active()
                 && !self.shutting_down()
-                && !self.state.wifi_off;
-        }''',
-'''        if self.seated_cart().is_some() {
-            // RetroAchievements uses Internet access during ordinary game
-            // play. The user-enabled Wi-Fi service must survive game launch
-            // and temporary association/DHCP loss. Checking wifi_up() here
-            // makes a connection still starting up get deliberately killed.
-            // Real link play is different: it borrows wlan0/wlan1 for a
-            // direct softAP/STA connection, so infrastructure Wi-Fi must be
-            // released until the link ends.
-            return (self.wifi_held || self.has_saved())
-                && !matches!(self.phase, Phase::Doze { .. })
-                && !self.link_active()
+                && !self.state.wifi_off;''',
+'''                && !self.link_active()
                 && self.starting.is_none()
                 && self.prejoin.is_none()
                 && self.reload.is_none()
@@ -99,9 +89,8 @@ edit("crates/slot/src/app.rs", [
                 && self.link_kind_once.is_none()
                 && self.join_later.is_none()
                 && !self.shutting_down()
-                && !self.state.wifi_off;
-        }''',
-    "retain Wi-Fi in ordinary gameplay including pending DHCP"
+                && !self.state.wifi_off;''',
+    "real link play must exclusively borrow wireless radio"
     ),
     (
 '''        if matches!(self.phase, Phase::Ejecting { .. }) {
