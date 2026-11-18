@@ -136,14 +136,19 @@ pub(crate) fn configure_login(root: &Path, username: &str, password: &str) -> Re
         return Err("Invalid RetroAchievements credentials");
     }
     let path = root.join("Config/retroachievements.toml");
-    let mut config = Config::read(&path).unwrap_or_default();
+    let mut config = if path.exists() {
+        Config::read(&path).map_err(|_| "Cannot read existing achievement config")?
+    } else {
+        Config::default()
+    };
     if !config.username.eq_ignore_ascii_case(username) {
         config.token.clear();
         config.password.clear();
     }
     let has_remembered = {
         let account = format!("{:x}", md5::compute(username.to_lowercase()));
-        root.join("Saves/RetroAchievements").join(account).join("auth.json").exists()
+        read::<Auth>(&root.join("Saves/RetroAchievements").join(account).join("auth.json"))
+            .is_ok_and(|auth| auth.username.eq_ignore_ascii_case(username) && !auth.token.is_empty())
     };
     if password.is_empty() && config.token.is_empty()
         && config.password.is_empty() && !has_remembered
