@@ -114,6 +114,7 @@ These are the **custom changes in the H700 build**, on top of upstream Slot and 
 - **Menu Power Off** under **Settings → System**: gracefully shuts down after menu inactivity, default **15 minutes**. Each timer is independently adjustable to **Off, 1, 3, 5, 10, 15 or 30 minutes**.
 - **Menu-only inactivity detection.** Active gameplay is excluded, and a button press wakes an idled, dark screen without accidentally launching a game. Active background operations are excluded.
 - **Keep connected Wi-Fi running when a cartridge is removed (Ver. 21).** Returning to the shelf does not stop an already-connected wireless session. Games still do not initiate a new Wi-Fi connection when offline, and Wi-Fi Off and lid sleep remain explicit shutdown conditions.
+- **Light-theme shelf clock contrast (Ver. 21).** On Slot's bundled dark default/blur wallpaper, the clock remains legible in the Light menu theme. Custom wallpapers keep their previous theme-driven text treatment.
 - **Corrected Resume on Power On.** **On** starts the last game and loads its resume state; **Off** boots to the shelf with that game selected but not running. **Resume on Insert** stays independent for manual launches.
 
 ### Online updates
