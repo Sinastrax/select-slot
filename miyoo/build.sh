@@ -188,20 +188,18 @@ echo 'Verified legacy brightness 0–9 and compatibility migration'
 cp "$ROOT/miyoo/onion-autoboot.sh" "$STAGE/System/autoboot/onion-startup.sh"
 cp "$ROOT/miyoo/INSTALL.md" "$STAGE/System/select-slot-install.md"
 cat > "$STAGE/System/select-slot-version.txt" <<EOF
-select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - correct system-screen B navigation; per-system scaling; shaders off; brightness 1-9
+select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - per-system scaling; shaders off; offline Miyoo build
 Base: https://github.com/deanmarano/slot-miyoo
 Pinned original: $PORT_COMMIT
 GB/GBC: Miyoo-native mGBA default; Gambatte optional; GBA: gpSP default (mGBA alternative)
 Scaling: Original, Integer, Aspect Fit, Fill/Crop, Full Stretch; separate persisted defaults in Screen > GB/GBC/GBA plus in-game per-ROM overrides
 Resume On Power / Insert: independent
-Brightness: original 0-9 PWM hardware levels (UI 1-9); previously saved 10-12 migrate to 9 without resetting other settings
 Framebuffer: original unfiltered Miyoo CPU renderer; no effects, orientation and launcher unchanged
 Shaders: disabled globally for GB/GBC/GBA; menu controls hidden and shortcuts inert; pre-existing shader settings ignored
 Menu Screen Off: Off/1/3/5/10/15/30 minutes; default 3; first press wakes without opening an item
 Menu Power Off: Off/1/3/5/10/15/30 minutes; default 15; instant input lock and OnionOS theme handoff
 Power hold: on OnionOS, quick hold uses native themed shutdown; short press stays native OnionOS standby
 OnionOS: theme-independent keymon POWER/suspend/shutdown handoff; retains whichever OnionOS theme is selected
-Onion PWM: original 0-9 brightness duty table; select physical PWM over unrelated legacy backlight interfaces
 Miyoo release; separate from H700 firmware and OTA
 EOF
 

@@ -34,9 +34,9 @@ Its name is **select. slot.**, not RGSP: the H700 build is intended for other co
 
 ### Miyoo Mini / Mini Plus / Mini Flip — Ver. 1
 
-The Miyoo version is based on [deanmarano/slot-miyoo](https://github.com/deanmarano/slot-miyoo) and **Slot 1.8.1**, not the H700 version's Slot 1.16.0/pvaibhav build. **Ver. 1** packages the user-confirmed working Miyoo feature set, including correct **B / Back** navigation from the individual GB, GBC and GBA Screen menus.
+The Miyoo version is based on [deanmarano/slot-miyoo](https://github.com/deanmarano/slot-miyoo) and **Slot 1.8.1**, not the H700 version's Slot 1.16.0/pvaibhav build. **Ver. 1** packages the user-confirmed working Miyoo configuration.
 
-It includes GB/GBC/GBA emulation (mGBA/Gambatte for GB/GBC; gpSP/mGBA for GBA), **independent persisted scaling defaults for GB, GBC and GBA**, optional per-game scaling overrides, Original/Integer/Aspect Fit/Fill-Crop/Full Stretch modes, original brightness **1–9**, resume settings and independent menu Screen Off/Power Off timers. Display shaders are deliberately **disabled**.
+It includes GB/GBC/GBA emulation (mGBA/Gambatte for GB/GBC; gpSP/mGBA for GBA), **independent persisted scaling defaults for GB, GBC and GBA**, optional per-game scaling overrides, Original/Integer/Aspect Fit/Fill-Crop/Full Stretch modes, resume settings and independent menu Screen Off/Power Off timers. Display shaders are deliberately **disabled**.
 
 Choose **one** complete ZIP; back up the SD card, then extract the contents at its root, including hidden folders:
 

@@ -2,7 +2,7 @@
 
 **Offline ARMv7 build for the Miyoo Mini family**, based on [deanmarano/slot-miyoo](https://github.com/deanmarano/slot-miyoo) and Slot **1.8.1**. This is a **different build from select. slot. for Anbernic H700**, which is based on Slot 1.16.0. Do not interchange their firmware files.
 
-This is the first official numbered Miyoo release of select. slot. It contains the user's verified working Miyoo feature set, including the fixed B-button navigation in GB/GBC/GBA Screen menus. Only the public release number and packaging metadata have been reset; emulator, display, input, power and settings behavior are unchanged.
+This is the first official numbered Miyoo release of select. slot. It packages the user-confirmed working Miyoo configuration. Emulator, display, input, power and settings behavior remain unchanged from the verified development build.
 
 ## Features
 
@@ -14,14 +14,13 @@ This is the first official numbered Miyoo release of select. slot. It contains t
 | Scaling | Original, Integer, Aspect Fit, Fill/Crop, Full Stretch |
 | Scaling persistence | Independent defaults at **Screen → GB/GBC/GBA → Scaling**, saved in `Config/video_mode.txt`. In-game per-ROM overrides take priority |
 | Screen / rendering | Original unfiltered software pixels; shader controls removed and previous shader choices ignored |
-| Brightness | 1–9 on the original Miyoo PWM curve. Former experimental brightness 10–12 is treated as 9 when loading older settings |
 | Menu Screen Off | Off, 1, 3, 5, 10, 15, 30 minutes; default 3; the first button press wakes without launching anything |
 | Menu Power Off | Off, 1, 3, 5, 10, 15, 30 minutes; default 15 |
 | Resume | Independent Resume on Power On and Resume on Insert settings |
 | Themes and power | On OnionOS, uses the operating system's own POWER, standby and shutdown handling with its currently selected theme |
 | Updates | **Manual SD-card installation only**; no Wi-Fi or in-app OTA updater |
 
-The system Screen submenus use normal hierarchical navigation: **B returns to Screen** from the GB/GBC/GBA pages, not directly to the shelf. Individual game scaling preferences and battery saves are kept independently of the global per-system defaults.
+Individual game scaling preferences and battery saves are kept independently of the global per-system defaults.
 
 ## Choose exactly one installation package
 
@@ -55,6 +54,6 @@ To disable OnionOS autoboot later, remove `.tmp_update/startup/select-slot.sh` o
 
 ## Source and reproducibility
 
-The [Miyoo sources and patch scripts](https://github.com/Sinastrax/select-slot/tree/main/miyoo) build the selected Slot 1.8.1 ARMv7 port and verify that disabled shaders, nine-step brightness, menu timers, navigation, scaling persistence and OS-specific startup packages remain correctly wired. Each release includes a SHA-256 checksum. Build/package verification does not substitute for testing on every hardware model.
+The [Miyoo sources and patch scripts](https://github.com/Sinastrax/select-slot/tree/main/miyoo) build the selected Slot 1.8.1 ARMv7 port and verify the renderer, menu timers, scaling persistence and OS-specific startup packages. Each release includes a SHA-256 checksum. Build/package verification does not substitute for testing on every hardware model.
 
 [select. slot. Miyoo release](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver1) · [Original Slot](https://github.com/slot-cfw/slot) · [Miyoo port](https://github.com/deanmarano/slot-miyoo)
