@@ -273,4 +273,9 @@ change(net,
                 }
                 status.set(if error == Failure::Network {''',
 "surface per-game reason, never log credentials")
+change(net,
+'''                .timeout_global(Some(Duration::from_secs(5)))''',
+'''                .timeout_global(Some(Duration::from_secs(20)))''',
+"allow larger achievement sets to complete on slower network links")
+
 print("Ver.31 active-game refresh and independent session/presence state installed")
