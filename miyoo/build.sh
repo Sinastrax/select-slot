@@ -131,7 +131,8 @@ echo "Verified menu scaling persistence, quick shutdown, and input lock"
 # with its own saved menu value and independently loaded alternate texture.
 check_patch '+    Agb001,'
 check_patch '+            BezelPick::Agb001 => "agb-001".to_string(),'
-check_patch '+            BezelPick::Agb001 => "Original GBA".to_string(),'
+check_patch '+            BezelPick::Agb001 => "GBA".to_string(),'
+check_patch '+            BezelPick::Ags102 => "GBA SP".to_string(),'
 check_patch '+                choices.push(BezelPick::Agb001);'
 check_patch '+    gba_strip: Option<TexId>,'
 check_patch '+    pub fn set_gba_strip(&mut self, tex: Option<TexId>) {'
@@ -245,12 +246,12 @@ echo 'Verified legacy brightness 0–9 and compatibility migration'
 cp "$ROOT/miyoo/onion-autoboot.sh" "$STAGE/System/autoboot/onion-startup.sh"
 cp "$ROOT/miyoo/INSTALL.md" "$STAGE/System/select-slot-install.md"
 cat > "$STAGE/System/select-slot-version.txt" <<EOF
-select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - Original GBA and SP lower bezels; offline Miyoo build
+select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - GBA and GBA SP lower bezels; offline Miyoo build
 Base: https://github.com/deanmarano/slot-miyoo
 Pinned original: $PORT_COMMIT
 GB/GBC: Miyoo-native mGBA default; Gambatte optional; GBA: gpSP default (mGBA alternative)
 Scaling: Original, Integer, Aspect Fit, Fill/Crop, Full Stretch; separate persisted defaults in Screen > GB/GBC/GBA plus in-game per-ROM overrides
-GBA Bezel: None, AGS-102 (unchanged default), Original GBA; same bottom size and pixel positions
+GBA Bezel: None, GBA SP (unchanged default), GBA; same bottom size and pixel positions
 Resume On Power / Insert: independent
 Framebuffer: original unfiltered Miyoo CPU renderer; no effects, orientation and launcher unchanged
 Shaders: disabled globally for GB/GBC/GBA; menu controls hidden and shortcuts inert; pre-existing shader settings ignored
