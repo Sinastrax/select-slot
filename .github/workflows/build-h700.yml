@@ -236,6 +236,7 @@ jobs:
           cargo test -p slot --no-default-features --features device --test bezel -- --nocapture
           cargo test -p slot --no-default-features --features device --test update_ui -- --nocapture
           cargo test -p slot --no-default-features --features device --test wifi_ui -- --nocapture
+          cargo test -p slot --no-default-features --features device --test theme_clock -- --nocapture
 
       - name: Build the H700 device tree
         working-directory: upstream
