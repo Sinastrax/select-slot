@@ -137,3 +137,25 @@ mod select_ra_menu_tests {
     }
 }
 """)
+
+# Old upstream test intentionally expected an orange Attention state on failed
+# *decorative badge art*. This release deliberately makes that failure quiet,
+# while still requiring durable awards and cache metadata.
+change("crates/slot-achievements/src/tests.rs",
+'''    let service = Service::start_with(root.path().into(), NoBadges(Server { calls }));
+    wait_for(|| service.sync_status() == SyncStatus::Attention);
+    let store = Store::open(root.path(), "Player").unwrap();
+    assert!(store.unlocks[&7].synced);
+    let hash = format!("{:x}", md5::compute(b"fixture"));
+    assert!(store.dir.join(format!("{hash}.json")).exists());''',
+'''    let service = Service::start_with(root.path().into(), NoBadges(Server { calls }));
+    let hash = format!("{:x}", md5::compute(b"fixture"));
+    wait_for(|| {
+        let store = Store::open(root.path(), "Player").unwrap();
+        store.unlocks[&7].synced
+            && store.dir.join(format!("{hash}.json")).exists()
+            && service.sync_status() == SyncStatus::Ready
+    });
+    let store = Store::open(root.path(), "Player").unwrap();
+    assert!(store.unlocks[&7].synced);''',
+"existing badge failure regression now expects quiet retry with completed awards")
