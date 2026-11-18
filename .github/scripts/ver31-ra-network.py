@@ -220,6 +220,14 @@ change(net,
                         crate::library::checked(&dir, &game.path, now());
                         game.last_ping = Instant::now();''',
 '''                        badges.enqueue(&data);
+                        // Publish the accepted connection and detail *before* sending
+                        // Prepared to the evaluator: either worker can report Online.
+                        // A separate Rich Presence ping must never prevent unlocking.
+                        game.ready = true;
+                        game.online = true;
+                        game.unmatched = false;
+                        status.set_game_detail(game.generation, "Online session accepted");
+                        status.set_game(game.generation, crate::GameConnection::Online);
                         let _ = prepared.send(Prepared {
                             generation: game.generation,
                             hash: game.hash.clone(),
@@ -227,13 +235,6 @@ change(net,
                             unlocked: ids,
                             cached: false,
                         });
-                        // A successful startsession is the definitive online signal.
-                        // A separate Rich Presence ping must never prevent unlocking.
-                        game.ready = true;
-                        game.online = true;
-                        game.unmatched = false;
-                        status.set_game_detail(game.generation, "Online session accepted");
-                        status.set_game(game.generation, crate::GameConnection::Online);
                         crate::library::checked(&dir, &game.path, now());
                         game.last_ping = Instant::now();
                         if let Err(error) = ping(&mut http, auth, &status, game, &data) {
