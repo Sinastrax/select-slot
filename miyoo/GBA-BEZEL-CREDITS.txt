@@ -1,0 +1,17 @@
+Original GBA bottom bezel attribution
+
+Design: "Perfect GBA (no grid)" by mugwomp93.
+Source: chrizzo-hb/knulli-bezels
+  https://github.com/chrizzo-hb/knulli-bezels/blob/75aa66c41548ebaa95f31d260d47eea2baab9d8a/default-knulli/systems/gba-4_3.png
+Source repository credits:
+  https://github.com/chrizzo-hb/knulli-bezels/blob/75aa66c41548ebaa95f31d260d47eea2baab9d8a/default-knulli.md
+License: Creative Commons Attribution-ShareAlike 4.0 International
+  https://creativecommons.org/licenses/by-sa/4.0/
+Modification for select. slot. Miyoo: image resized from 1024x768 to
+640x480 with Lanczos interpolation; the original artwork and design were
+not redrawn. The resulting transparency mask matches the included
+SP 640x480 bezel exactly, so both use the same screen cutout and geometry.
+See also: System/licenses/bezel-CC-BY-SA-4.0.txt
+
+This image is used exclusively as an optional GBA lower bezel. The
+existing AGS-102/SP strip is unchanged and remains the default.
