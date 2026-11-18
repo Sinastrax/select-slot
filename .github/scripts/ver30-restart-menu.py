@@ -34,6 +34,11 @@ replace(ui, "            QuickRow::DateTime\n                | QuickRow::FetchAr
     "            QuickRow::Restart\n                | QuickRow::DateTime\n                | QuickRow::FetchArt")
 replace(app, "            QuickRow::About => self.phase = Phase::About,",
     "            QuickRow::Restart => self.begin_restart(),\n            QuickRow::About => self.phase = Phase::About,")
-replace(app, "            | QuickRow::About\n            | QuickRow::Screen",
-    "            | QuickRow::About\n            | QuickRow::Restart\n            | QuickRow::Screen")
+p=Path(app)
+source=p.read_text()
+old="            | QuickRow::About\\n            | QuickRow::Screen"
+new="            | QuickRow::About\\n            | QuickRow::Restart\\n            | QuickRow::Screen"
+if source.count(old)!=2:
+    raise SystemExit(f"Expected two non-action matches for Restart, got {source.count(old)}")
+p.write_text(source.replace(old,new))
 print("Ver.30 Restart row added below System; restart implementation and About unchanged.")
