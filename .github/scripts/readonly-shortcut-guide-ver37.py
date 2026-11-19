@@ -180,10 +180,7 @@ def ui(src):
               "                    .map(|c| c[lit as usize]),\n"
               "                _ if row.binds() => self",
               "fixed shortcut right-hand values")
-    src = one(src, "        &QuickRow::SHORTCUTS,",
-              "        &QuickRow::SHORTCUTS,\n"
-              + "".join(f"        &QuickRow::{g.upper()},\n" for g, _ in GROUPS),
-              "scroll all long built-in pages")
+    # All pages already scroll via the verified common viewport renderer.
 
     src += """
 #[cfg(test)]
