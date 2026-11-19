@@ -68,6 +68,7 @@ assert "cargo test -p slot --no-default-features --features device --lib hardwar
 assert "check-gles2-shader.py" in build
 assert "verify-ota-publisher.py" in build
 assert "needs: build-h700" in build
+assert "if: github.ref == 'refs/heads/main' && github.event_name == 'push'" in build
 assert "sha256" in build and "versions.json" in build
 assert "mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz" in build
 assert "gh release create" in build and "--latest" in build
