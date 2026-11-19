@@ -6,7 +6,7 @@ There are two independent firmware lines: **Anbernic H700** (Slot 1.16.0) and **
 
 | Version | Status / milestone | Release |
 | --- | --- | --- |
-| **Ver. 40** | **Current, RG35XX H hardware-tested stable** — compact non-overlapping Hotkey Guide | [Ver. 40](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.40) |
+| **Ver. 40** | **Current, hardware-tested stable H700** — compact non-overlapping Hotkey Guide | [Ver. 40](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.40) |
 | Ver. 36 | Verified maintenance and reproducible OTA baseline | [Ver. 36](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.36) |
 | Ver. 35 | German Pokémon Smaragd RetroAchievements indirect RAM-read fix | [Ver. 35](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.35) |
 | Ver. 18 | GBA Authentic pixel-grid correction at fractional Fit | [Ver. 18](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.18) |
@@ -14,7 +14,7 @@ There are two independent firmware lines: **Anbernic H700** (Slot 1.16.0) and **
 | Ver. 4 | Early user-verified Authentic color baseline | [Ver. 4](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.4) |
 | 1.15.3 Ver. 3 | Legacy pre-1.16.0 release, corrected resume-on-power-on | [Legacy](https://github.com/Sinastrax/select-slot/releases/tag/v1.15.3-rgsp.3) |
 
-**Ver. 40:** Removes unnecessary entries from the read-only Hotkey Guide, keeps only harder-to-discover controls, and fits separate label/value columns inside narrow 640×480 screens. It changes no actual button bindings, emulator behavior, or configuration. This was confirmed on RG35XX H.
+**Ver. 40:** Removes unnecessary entries from the read-only Hotkey Guide, keeps only harder-to-discover controls, and fits separate label/value columns inside narrow 640×480 screens. It changes no actual button bindings, emulator behavior, or configuration. As with every H700 update, reported successful results apply to all compatible devices in the regular RG SP, RG34XXSP and RG35XX H test lineup unless the maintainer explicitly states an exception.
 
 **Ver. 36:** Extracted the exact ordered H700 patch pipeline, added early release-safety checks, removed unsafe duplicate publishers, retained the older mGBA core and its separately downloadable source, and introduced reproducible maintenance documentation.
 
