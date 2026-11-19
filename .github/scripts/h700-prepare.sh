@@ -198,3 +198,5 @@ python3 ../.github/scripts/compact-hotkey-guide-ver40.py
 python3 ../.github/scripts/keyboard-one-shot-caps-lock-ver41.py
 # Refresh keyboard key textures when one-shot Shift becomes Caps Lock.
 git apply ../patches/keyboard-caps-indicator.patch
+# Keep long names readable in the cheat and achievement lists.
+git apply ../patches/scroll-cheat-achievement-names.patch

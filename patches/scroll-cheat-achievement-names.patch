@@ -1,0 +1,300 @@
+diff --git a/crates/slot-ui/src/quick_menu.rs b/crates/slot-ui/src/quick_menu.rs
+index 186368d..83a10cc 100644
+--- a/crates/slot-ui/src/quick_menu.rs
++++ b/crates/slot-ui/src/quick_menu.rs
+@@ -2282,21 +2282,51 @@ impl QuickMenu<'_> {
+     }
+ }
+ 
+-/// A row's label, with the pointer before it when it is the selected row.
+-fn push_label(
++/// Draw a one-line name inside its own viewport, beside the row's status.
++#[allow(clippy::too_many_arguments)]
++fn push_scrolling_name(
+     out: &mut Vec<Draw>,
+     faces: &QuickMenuFaces,
+-    (tex, w, h): (TexId, u32, u32),
++    (tex, width, height): (TexId, u32, u32),
+     x: f32,
+     y: f32,
+-    lit: bool,
++    right: f32,
++    elapsed_ms: Option<u64>,
+ ) {
+-    push(out, tex, x, y, w, h);
+-    if lit {
+-        let (tex, pw, ph) = faces.pointer;
+-        let px = x + MENU_PAD as f32 - POINTER_GAP - pw as f32;
+-        push(out, tex, px, y - POINTER_BLEED as f32, pw, ph);
++    let room = (right - x).max(0.0).floor();
++    let width = width as f32;
++    if room > 0.0 && width > 0.0 {
++        let shown = width.min(room);
++        let offset = elapsed_ms.map_or(0.0, |ms| row_name_offset(width - shown, ms));
++        out.push(Draw::Part {
++            x: x.round(),
++            y: y.round(),
++            w: shown,
++            h: height as f32,
++            tex,
++            alpha: 1.0,
++            uv: [offset / width, 0.0, shown / width, 1.0],
++        });
++    }
++    if elapsed_ms.is_some() {
++        let (pointer, w, h) = faces.pointer;
++        let left = x + MENU_PAD as f32 - POINTER_GAP - w as f32;
++        push(out, pointer, left, y - POINTER_BLEED as f32, w, h);
++    }
++}
++
++/// Pause at each end before reversing so the first and last words can be read.
++fn row_name_offset(overflow: f32, elapsed_ms: u64) -> f32 {
++    const PAUSE_MS: f32 = 850.0;
++    const PIXELS_PER_MS: f32 = 0.050;
++    if overflow <= 0.0 {
++        return 0.0;
+     }
++    let travel_ms = overflow / PIXELS_PER_MS;
++    let leg_ms = travel_ms + PAUSE_MS;
++    let within = elapsed_ms as f32 % (2.0 * leg_ms);
++    let distance = ((within % leg_ms - PAUSE_MS) * PIXELS_PER_MS).clamp(0.0, overflow);
++    if within < leg_ms { distance } else { overflow - distance }
+ }
+ 
+ fn push_scroll(out: &mut Vec<Draw>, canvas: Canvas, bar: QuickScroll) {
+@@ -2320,37 +2350,18 @@ fn push_scroll(out: &mut Vec<Draw>, canvas: Canvas, bar: QuickScroll) {
+ }
+ 
+ /// The narrowest screen width, less room for the cheat's On/Off value.
+-const CHEAT_NAME_W: f32 = 360.0;
+-const CHEAT_NAME_MIN_PX: f32 = 22.0;
+-
+-/// A cheat's name in the menu rows' type, smaller when it is long, and ending in an ellipsis when
+-/// even that does not fit.
++/// Keep the full one-line name in the texture. The row clips and scrolls it.
+ pub fn cheat_name_face(name: &str, lit: bool) -> UndoFace {
+     let colour = if lit { MENU_INK } else { DIM_INK };
+     let Some(font) = text::label_font() else {
+         return quick_text_face(name, colour);
+     };
+-    let layout = text::fit(font, name, CHEAT_NAME_W, 1, MENU_PX, CHEAT_NAME_MIN_PX);
+-    let mut line = layout.lines.first().cloned().unwrap_or_default();
+-    let whole = name
+-        .to_uppercase()
+-        .split_whitespace()
+-        .collect::<Vec<_>>()
+-        .join(" ");
+-    if line != whole {
+-        let fits = |l: &str| text::line_width(font, l, layout.px, layout.tracking) <= CHEAT_NAME_W;
+-        while !line.is_empty() && !fits(&format!("{line}…")) {
+-            line.pop();
+-        }
+-        line = format!("{}…", line.trim_end());
+-    }
+-    let layout = text::Layout {
+-        lines: vec![line],
+-        ..layout
+-    };
+-    let ink = text::line_width(font, &layout.lines[0], layout.px, layout.tracking);
++    let line = name.to_uppercase().split_whitespace().collect::<Vec<_>>().join(" ");
++    let tracking = text::tracking_for(MENU_PX);
++    let ink = text::line_width(font, &line, MENU_PX, tracking);
++    let layout = text::Layout { lines: vec![line], px: MENU_PX, tracking };
+     let w = ink.ceil() as u32 + 2 * MENU_PAD;
+-    let mut rgba = vec![0u8; (w * MENU_H * 4) as usize];
++    let mut rgba = vec![0; (w * MENU_H * 4) as usize];
+     text::draw_centred(&mut rgba, w, MENU_H, &layout, colour);
+     UndoFace { rgba, w, h: MENU_H }
+ }
+@@ -2371,6 +2382,7 @@ pub fn achievement_detail_face(detail: &str) -> UndoFace {
+ /// Read-only achievement list rendered within the existing paused game menu.
+ pub struct AchievementPage<'a> {
+     pub selected: usize,
++    pub selected_elapsed_ms: u64,
+     pub total: usize,
+     pub names: &'a [[(TexId,u32,u32); 2]],
+     pub values: &'a [[(TexId,u32,u32); 2]],
+@@ -2408,10 +2420,14 @@ impl AchievementPage<'_> {
+             if let Some(Some((tex,_,_))) = self.badges.get(local) {
+                 push(out,*tex, QUICK_LABEL_X - 32.0, y+1.0,24,24);
+             }
+-            push_label(out,faces,names[lit as usize],
+-                QUICK_LABEL_X+8.0, y,lit);
+-            let (tex,w,h) = values[lit as usize];
+-            push(out,tex,right+MENU_PAD as f32-w as f32,y,w,h);
++            let (tex, w, h) = values[lit as usize];
++            let value_x = right + MENU_PAD as f32 - w as f32;
++            push_scrolling_name(
++                out, faces, names[lit as usize], QUICK_LABEL_X + 8.0, y,
++                value_x + MENU_PAD as f32 - QUICK_VALUE_GAP,
++                lit.then_some(if self.detail.is_some() { 0 } else { self.selected_elapsed_ms }),
++            );
++            push(out, tex, value_x, y, w, h);
+         }
+         if let Some(bar) = scroll_bar(top,len,count,self.selected) {
+             push_scroll(out,self.canvas,bar);
+@@ -2430,6 +2446,7 @@ impl AchievementPage<'_> {
+ /// like the settings pages.
+ pub struct CheatPage<'a> {
+     pub selected: usize,
++    pub selected_elapsed_ms: u64,
+     pub on: &'a [bool],
+     /// Each cheat's name, dim and lit.
+     pub names: &'a [[(TexId, u32, u32); 2]],
+@@ -2457,17 +2474,16 @@ impl CheatPage<'_> {
+         for i in start..start + len {
+             let y = top + QUICK_PITCH * (i - start) as f32 + TYPE_DROP;
+             let lit = i == self.selected;
+-            push_label(
+-                out,
+-                faces,
+-                self.names[i][lit as usize],
+-                QUICK_LABEL_X - MENU_PAD as f32,
+-                y,
+-                lit,
++            let value = faces.values.get(QuickValue::flag(self.on[i]).index())
++                .map(|pair| pair[lit as usize]);
++            let name_right = value.map_or(right, |(_, w, _)| {
++                right + 2.0 * MENU_PAD as f32 - w as f32 - QUICK_VALUE_GAP
++            });
++            push_scrolling_name(
++                out, faces, self.names[i][lit as usize], QUICK_LABEL_X - MENU_PAD as f32,
++                y, name_right, lit.then_some(self.selected_elapsed_ms),
+             );
+-            let value = QuickValue::flag(self.on[i]);
+-            if let Some(v) = faces.values.get(value.index()) {
+-                let (tex, w, h) = v[lit as usize];
++            if let Some((tex, w, h)) = value {
+                 push(out, tex, right + MENU_PAD as f32 - w as f32, y, w, h);
+             }
+         }
+@@ -2863,3 +2879,25 @@ mod compact_guide_layout_tests {
+         assert!(QuickRow::FixMuteSelectUp.fixed_keys().is_some());
+     }
+ }
++
++#[cfg(test)]
++mod scrolling_name_tests {
++    use super::*;
++
++    #[test]
++    fn full_name_is_rasterized_beyond_the_row_width() {
++        let face = cheat_name_face("A long cheat or achievement name with enough words to overflow", true);
++        assert!(face.w > 640);
++    }
++
++    #[test]
++    fn long_name_pauses_at_both_ends_and_short_names_stay_still() {
++        assert_eq!(row_name_offset(0.0, 5_000), 0.0);
++        assert_eq!(row_name_offset(100.0, 0), 0.0);
++        assert_eq!(row_name_offset(100.0, 850), 0.0);
++        assert_eq!(row_name_offset(100.0, 1_850), 50.0);
++        assert_eq!(row_name_offset(100.0, 3_100), 100.0);
++        assert_eq!(row_name_offset(100.0, 4_700), 50.0);
++        assert_eq!(row_name_offset(100.0, 5_700), 0.0);
++    }
++}
+diff --git a/crates/slot/src/app.rs b/crates/slot/src/app.rs
+index 7d2e4f1..52666c3 100644
+--- a/crates/slot/src/app.rs
++++ b/crates/slot/src/app.rs
+@@ -751,6 +751,7 @@ pub struct App {
+     /// run next, and the cheats' names as drawn.
+     cheats: Vec<Cheat>,
+     cheat_row: usize,
++    list_name_selected_at: Millis,
+     cheats_pending: Option<Vec<String>>,
+     cheat_faces: Vec<[(TexId, u32, u32); 2]>,
+     palette_live: bool,
+@@ -1321,6 +1322,7 @@ impl App {
+             colour_pending: None,
+             cheats: Vec::new(),
+             cheat_row: 0,
++            list_name_selected_at: 0,
+             cheats_pending: None,
+             cheat_faces: Vec::new(),
+             palette_live: false,
+@@ -2922,14 +2924,17 @@ impl App {
+         match action {
+             Action::GbaDown(Btn::Up) if count > 0 => {
+                 self.achievement_row = (self.achievement_row + count - 1) % count;
++                self.list_name_selected_at = self.now();
+                 self.achievement_description = None;
+             }
+             Action::GbaDown(Btn::Down) if count > 0 => {
+                 self.achievement_row = (self.achievement_row + 1) % count;
++                self.list_name_selected_at = self.now();
+                 self.achievement_description = None;
+             }
+             Action::GbaDown(Btn::A) => {
+                 self.achievement_detail = !self.achievement_detail;
++                self.list_name_selected_at = self.now();
+             }
+             Action::GbaDown(Btn::Y) if !self.achievement_detail => {
+                 self.achievement_refresh = true;
+@@ -2938,6 +2943,7 @@ impl App {
+             }
+             Action::GbaDown(Btn::X) => {
+                 self.achievement_sort = !self.achievement_sort;
++                self.list_name_selected_at = self.now();
+                 self.achievement_row = 0;
+                 self.achievement_detail = false;
+                 self.achievement_faces_dirty = true;
+@@ -2946,6 +2952,7 @@ impl App {
+             Action::GbaDown(Btn::B) => {
+                 if self.achievement_detail {
+                     self.achievement_detail = false;
++                    self.list_name_selected_at = self.now();
+                 } else {
+                     self.in_game_menu = Some(QuickRow::Achievements);
+                 }
+@@ -7257,6 +7264,7 @@ impl App {
+             QuickRow::States => self.open_states(),
+             QuickRow::Screenshots => self.open_shots(),
+             QuickRow::Achievements => {
++                self.list_name_selected_at = self.now();
+                 self.achievement_row = 0;
+                 self.achievement_detail = false;
+                 self.achievement_faces_dirty = true;
+@@ -7265,6 +7273,7 @@ impl App {
+                 self.in_game_menu = Some(QuickRow::AchievementList);
+             }
+             QuickRow::Cheats => {
++                self.list_name_selected_at = self.now();
+                 self.cheat_row = 0;
+                 self.in_game_menu = Some(QuickRow::CheatList);
+             }
+@@ -7286,8 +7295,14 @@ impl App {
+             return;
+         }
+         match action {
+-            Action::GbaDown(Btn::Up) => self.cheat_row = (self.cheat_row + count - 1) % count,
+-            Action::GbaDown(Btn::Down) => self.cheat_row = (self.cheat_row + 1) % count,
++            Action::GbaDown(Btn::Up) => {
++                self.cheat_row = (self.cheat_row + count - 1) % count;
++                self.list_name_selected_at = self.now();
++            }
++            Action::GbaDown(Btn::Down) => {
++                self.cheat_row = (self.cheat_row + 1) % count;
++                self.list_name_selected_at = self.now();
++            }
+             Action::GbaDown(Btn::A | Btn::Left | Btn::Right) => {
+                 let row = self.cheat_row.min(count - 1);
+                 self.cheats[row].on = !self.cheats[row].on;
+@@ -9905,6 +9920,7 @@ impl App {
+             if row == QuickRow::AchievementList {
+                 slot_ui::AchievementPage {
+                     selected: self.achievement_row,
++                    selected_elapsed_ms: self.now().saturating_sub(self.list_name_selected_at),
+                     total: self.achievement_view.as_ref().map_or(0, |v| v.entries.len()),
+                     names: &self.achievement_names,
+                     values: &self.achievement_values,
+@@ -9919,6 +9935,7 @@ impl App {
+                 let on: Vec<bool> = self.cheats.iter().map(|c| c.on).collect();
+                 slot_ui::CheatPage {
+                     selected: self.cheat_row,
++                    selected_elapsed_ms: self.now().saturating_sub(self.list_name_selected_at),
+                     on: &on,
+                     names: &self.cheat_faces,
+                     faces: self.quick_menu_faces.as_ref(),

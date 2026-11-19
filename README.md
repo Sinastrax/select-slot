@@ -28,7 +28,7 @@ This repository is not an official Slot release or currently a GitHub-linked for
 
 | | **Anbernic H700** | **Miyoo Mini family** |
 | --- | --- | --- |
-| Current build | **1.16.0 Ver. 45** | **1.8.1 Ver. 8** |
+| Current build | **1.16.0 Ver. 46** | **1.8.1 Ver. 8** |
 | Handhelds | RG SP / RG34XXSP / RG35XX H and other compatible H700 models | Miyoo Mini, Mini Plus and Mini Flip, subject to firmware support |
 | Rendering | GPU, including Authentic and custom LCD styles | Software rendering; no H700 LCD shaders |
 | Game cores | GB/GBC: Gambatte or mGBA; GBA: gpSP or mGBA | GB/GBC: mGBA; GBA: gpSP or mGBA |
@@ -156,6 +156,7 @@ These are the **custom changes in the H700 build**, on top of upstream Slot and 
 #### Important improvements
 
 - **RetroAchievements (Ver. 30–35):** reliable in-game tracking for German Pokémon Smaragd, safe indirect memory reads, progress and per-game refresh, offline caching, and achievement tracking during fast-forward. The achievement viewer reuses a fixed number of UI textures.
+- **Long list names (Ver. 46):** The selected cheat or achievement name scrolls horizontally when it exceeds its column.
 - **Better menus (Ver. 30–40):** universal menu scrolling, an in-game achievements viewer, safe storage cleanup, a standalone Restart menu entry, readable device names, and a hardware-tested, compact **Controls → Hotkey Guide** for less-obvious shortcuts.
 - **Independent shader and scale settings:** verified Pocket Color/SGB and GBA Authentic Fit optimizations with the intended color-correction options.
 - **Reliable distribution (Ver. 36):** pinned source patches, automated regression checks, and complete OTA builds with a separate mGBA source archive. Earlier public versions were curated to preserve meaningful rollback points.
@@ -296,7 +297,7 @@ H700 firmware updates use a **complete manifest-controlled System update** with 
 
 ## Release versions and update cadence
 
-- **Anbernic H700:** [1.16.0 Ver. 45](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.45) refines German UI wording and text layout. [Ver. 36](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.36) is a tested fallback; other retained milestone releases are catalogued in the [changelog](CHANGELOG.md).
+- **Anbernic H700:** [1.16.0 Ver. 46](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.46) adds horizontal scrolling for long cheat and achievement names. [Ver. 36](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.36) is a tested fallback; other retained milestone releases are catalogued in the [changelog](CHANGELOG.md).
 - **Miyoo:** [1.8.1 Ver. 8](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver8) is the separate current ARMv7 release, installed manually from SD.
 - **Technical version labels** (such as `v1.16.0-rgsp.40`) remain for compatibility with earlier H700 update installations. The public firmware name is **select. slot.**.
 - **Release cadence:** unlike pvaibhav's automated upstream sync, select. slot. does not claim a daily automatic upstream release schedule. New firmware versions are kept separate from documentation-only edits.
