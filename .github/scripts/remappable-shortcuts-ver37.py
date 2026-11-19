@@ -291,6 +291,21 @@ edit("crates/slot-store/src/bindings.rs", bindings)
 edit("crates/slot/src/input/bind.rs", bind)
 edit("crates/slot-ui/src/quick_menu.rs", ui)
 edit("crates/slot-input/src/gesture.rs", gesture)
+def app_exhaustive(s):
+    # The three central QuickRow matches treat shortcut rows as value-less
+    # settings (read, change, open). Keep the new entries in that category.
+    old = "            | QuickRow::ScGuide\\n"
+    if s.count(old) != 3:
+        raise SystemExit(f"app exhaustive shortcut arms: expected 3, got {s.count(old)}")
+    return s.replace(old, old + (
+        "            | QuickRow::ScMute\\n"
+        "            | QuickRow::ScMuteAlt\\n"
+        "            | QuickRow::ScMuteBoth\\n"
+        "            | QuickRow::ScLinkMenu\\n"
+    ))
+
+
+edit("crates/slot/src/app.rs", app_exhaustive)
 edit("crates/slot/src/input/table.rs", table)
 edit("crates/slot-input/tests/gesture.rs", regression)
 edit("crates/slot-store/tests/bindings.rs", persistence)
