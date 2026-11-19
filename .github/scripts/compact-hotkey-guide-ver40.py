@@ -92,7 +92,7 @@ def update_ui(text):
         text = once(text, lines[0], f'            QuickRow::{row} => "{label}",', row + " label")
 
     for row, value in KEYS.items():
-        start = f"            QuickRow::{row} => Some("
+        start = f'            QuickRow::{row} => Some("'
         lines = [line for line in text.splitlines() if line.startswith(start)]
         if len(lines) != 1:
             raise SystemExit(f"Cannot identify QuickRow fixed key {row}: {lines}")
