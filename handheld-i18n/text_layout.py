@@ -62,7 +62,6 @@ source = source[:start] + source[values:end] + fixed + carets + '''
                 draw_scaled_row_text(out, tex, w, h, x, y, scale);''' + tail + '''
             }
 ''' + source[after:]
-source = source.replace('pub(crate) const VALUE_MIN_SCALE: f32 = 0.6;\n', '')
 draw_helper = '''
 fn menu_row_scale(label: f32, value: f32, room: f32, limit: f32) -> f32 {
     // A fixed gap and, on Miyoo, both carets have already been reserved.
@@ -152,8 +151,13 @@ if h700:
     let mut lines: Vec<_> = instruction.lines().map(|text| Line {
         text: text.into(),
         px: if wrapped { 14.0 } else { 18.0 },
-        gap: if wrapped { 14 } else { 24 },
+        gap: if wrapped { 18 } else { 24 },
     }).collect();""")
+    after_instruction = source.index("    if let Some(host)", source.index("    let wrapped"))
+    stop = source.index('    lines.push(Line {\n        text: format!("PIN', after_instruction)
+    source = source[:after_instruction] + source[after_instruction:stop].replace(
+        "gap: 28,", "gap: if wrapped { 22 } else { 28 },"
+    ) + source[stop:]
     receipt.write_text(source)
 
     studio = root / 'crates/slot/src/studio_view.rs'

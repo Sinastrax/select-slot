@@ -20,7 +20,7 @@ for entry in Path(__file__).with_name('de.tsv').read_text().splitlines():
 
 modules = {
     'slot-ui': 'quick_menu keyboard toast guide shot_viewer clock receipt polaroids power_menu plate edit_text shelf slot_chrome hud sticker',
-    'slot': 'app frontend network_faces networks invite_card achievement_ui studio_view link_start link_screen wifi/attempt romm/install romm/jobs update',
+    'slot': 'app frontend network_faces networks invite_card achievement_ui studio_view link_start link_screen server/session wifi/attempt romm/install romm/jobs update',
     'slot-store': 'bindings slot_state',
     'slot-achievements': 'network lib',
 }
