@@ -126,53 +126,14 @@ These are the **custom changes in the H700 build**, on top of upstream Slot and 
 - **Light-mode clock and battery percentage (Ver. 22).** Status text at the top of quick menus, including in-game menus, uses independent bright HUD text textures so both the **time** and **battery percentage** remain visible against the dark menu background. The existing shelf footer and wallpaper-specific colors remain untouched.
 - **Corrected Resume on Power On.** **On** starts the last game and loads its resume state; **Off** boots to the shelf with that game selected but not running. **Resume on Insert** stays independent for manual launches.
 
-### Ver. 36: maintenance, unchanged game behavior
+### Important improvements
 
-- **Build cleanup:** moved the pinned H700 upstream merge and exact historical patch sequence into a dedicated script; added strict patch-order and release-safety validation.
-- **Release safety:** retired duplicate/stale OTA publishers, including an unsafe force-tag/draft-replacement path and a historical release-deletion workflow. Existing GitHub releases and tags are preserved.
-- **No gameplay changes:** the user-confirmed Ver. 35 RetroAchievements fix, shaders, device recognition, GB/GBC/GBA scaling, emulators, saves and WLAN remain intact. [Maintenance and hardware-testing guide](H700_MAINTENANCE.md); Ver. 36 is the confirmed device-tested fallback.
+- **RetroAchievements (Ver. 30–35):** reliable in-game tracking for German Pokémon Smaragd, safe indirect memory reads, progress and per-game refresh, offline caching, and achievement tracking during fast-forward. The achievement viewer reuses a fixed number of UI textures.
+- **Better menus (Ver. 30–40):** universal menu scrolling, an in-game achievements viewer, safe storage cleanup, a standalone Restart menu entry, readable device names, and a hardware-tested, compact **Controls → Hotkey Guide** for less-obvious shortcuts.
+- **Independent shader and scale settings:** verified Pocket Color/SGB and GBA Authentic Fit optimizations with the intended color-correction options.
+- **Reliable distribution (Ver. 36):** pinned source patches, automated regression checks, and complete OTA builds with a separate mGBA source archive. Earlier public versions were curated to preserve meaningful rollback points.
 
-### Ver. 35: rcheevos-compatible indirect memory handling
-
-- Fixed the **unavailable indirect RAM read** found in the German Pokémon Smaragd device log. The old wrapper reset *all* achievements when any dynamic pointer briefly pointed outside available memory; official `rc_client` treats this as a zero-valued pointer read without resetting unrelated achievements.
-- Direct memory-address validation remains strict: invalid static achievement addresses and reads crossing unmapped boundaries are rejected. Real achievement tracking still runs for every emulated frame, including fast-forward.
-- Added regression tests for invalid pointers, independent awards, and direct unmapped reads; routine injected server warnings no longer flood logs.
-- Existing game saves, core selection, color modes, device naming, and original System manifest updater are unchanged. The Pokémon Smaragd unlock popup was subsequently **confirmed working on real H700 hardware**.
-
-### Ver. 34: reliable achievements during fast-forward
-
-- **Evaluate every emulated frame**, including fast-forward steps not displayed on the LCD. The evaluator now runs immediately after the emulator frame instead of using an eight-frame RAM snapshot queue that could drop momentary achievement conditions.
-- **Offline achievements still synchronize asynchronously.** The background worker handles unlock records and network requests, while live gameplay evaluates local achievement conditions. No ROM, saved game, account, or previous achievement history is reset.
-- **Ignore zero-point server compatibility warning entries**, including the injected "Warning: Unknown Emulator", when counting the real achievement list.
-- Regression-tested against a 360-frame burst with one qualifying frame; actual H700 hardware behavior and performance must still be checked. Previously missed milestones cannot be backdated automatically.
-
-### Ver. 33: RetroAchievements tracking reliability
-
-- Optional **Rich Presence memory errors** cannot erase legitimate achievement triggers or reset the game evaluator. Invalid gameplay memory still fails closed to prevent false awards.
-- If tracking still misses an unlock, `Logs/slot.log` reports the first relevant issue per game: an unexposed memory address, an invalid Rich Presence read, or evaluator queue saturation. This separates server connection from actual RAM evaluation.
-- Existing save data, offline awards, emulator and shader settings, online update manifest, and device nicknames are unchanged.
-
-### Ver. 32: safer in-game Achievements browsing
-
-- **Repeated X sorting and scrolling** now reuse a fixed pool of six visible achievement rows instead of accumulating GPU textures for all badges and labels. Descriptions and temporarily unavailable badges also keep reusable texture handles.
-- **Repeated Y Refresh presses** are coalesced to avoid unnecessary repeated ROM hashing and network session requests. This does not alter save data or manufacture RetroAchievements unlocks.
-- Large achievement sets are checked by a 500-entry viewport regression. Existing softcore tracking, session status, shaders, cores and the System updater remain unchanged.
-
-### Ver. 31: menu scrolling and current-game RetroAchievements refresh
-
-- **Hardware-correct default link-play nicknames:** use the BaseOS device identifier (e.g. `rg35xxh`) to distinguish RG35XX H from RG35XX SP. Any custom nickname remains unchanged.
-- **Every long quick-menu page** now scrolls within the available rows rather than colliding with the footer, including the main settings list, GBA/GB/GBC display options and paused game menus.
-- **In-game Achievements → Y Refresh** verifies the running ROM's MD5, requests a fresh online game session, updates cached definitions/unlocks and reports the actual connection stage. Saved progress and offline awards are never deleted.
-- **Measured achievement progress** is read from the local rcheevos runtime where supported. Previously completed conditions are not auto-awarded from a save file.
-- An accepted RetroAchievements game session is **not undone by a failing Rich Presence ping**. Wi-Fi behavior, the mGBA governor and the original `System/` update manifest are unchanged.
-
-### In-game RetroAchievements and storage cleanup (Ver. 30)
-
-- **In-game only:** open the existing paused game menu and select **Achievements**. Browse the current game's cached badges, descriptions, unlocked/locked state and point totals. A opens details; X changes between original and locked-first ordering; B goes back. No shelf achievement menu and no extra pause system.
-- **Restart:** a selectable item immediately **below System** in the main settings list. The original About restart remains available.
-- **Tools → Storage Cleanup:** Scan Storage reports optional old rotated logs and temporary cache files; Clean Detected Files requires a second explicit confirmation. No ROMs, saves, screenshots, settings, RetroAchievements history or unknown files are deleted. The `System/` updater continues to use the **original manifest-based cleanup**, unchanged.
-- **Extra exclusions:** create `Config/cleanup-protected.txt`, one relative folder per line, to exclude additional paths such as `Cache/my-folder`. The scanner never follows symlinks.
-- **Smaller firmware ZIP:** the exact modified MPL-2.0 mGBA source archive is published beside the firmware as a separate release asset. Installed devices retain the compiled mGBA core and a source/license notice; the firmware ZIP does not install the source archive. Previous on-card source bundles are removed by the existing `System/` update manifest.
+For the detailed per-version history and links to confirmed milestones, see the [changelog](CHANGELOG.md). The current stable H700 build is **Ver. 40**, tested on RG35XX H.
 
 ### Online updates
 
@@ -204,7 +165,7 @@ Release titles use **select. slot. [upstream version] Ver. [revision]**. The lat
 
 Release notes list **only the additions and fixes since the previous release**, rather than repeating the complete feature list. This README is the permanent place for the full feature overview.
 
-The [H700 build workflow](.github/workflows/build-h700.yml) invokes the [pinned, order-preserving source preparation script](.github/scripts/h700-prepare.sh), runs shader/RetroAchievements/OTA tests and publishes verified full releases. The [H700 maintenance guide](H700_MAINTENANCE.md) documents the cleanup, source checks and device-testing boundaries. **Ver. 36 remains the confirmed device-tested stable fallback**, and the Ver. 37 update installation has been confirmed on RG35XX H. Ver. 39 updated successfully but its guide labels were reported to overlap on RG35XX H; Ver. 40 corrects the layout and still needs a real-device appearance check.
+The [H700 build workflow](.github/workflows/build-h700.yml) reproduces the pinned [source preparation sequence](.github/scripts/h700-prepare.sh), runs shader/RetroAchievements/OTA regression tests, and publishes complete verified releases. **Ver. 40 is the latest RG35XX H hardware-tested stable release; Ver. 36 is a separate, earlier verified fallback.** See the [maintenance guide](H700_MAINTENANCE.md) and [changelog](CHANGELOG.md) for build and version history.
 
 ---
 
@@ -257,7 +218,7 @@ This is **not an RGSP-exclusive firmware**. Device-specific controls such as L3/
 - **select. slot.:** the patches, build scripts and other changes maintained in this repository. Source modifications were developed with AI assistance and reviewed through automated builds and device testing.
 - **Emulator and third-party assets:** mGBA, gpSP, Gambatte, shader sources, bezels and other third-party parts keep their own copyright and license conditions. The device build includes the applicable files in `System/licenses/`.
 
-The Slot-derived frontend is distributed under the **GPL-3.0** terms in [LICENSE](LICENSE). This is a **noncommercial customization**; no proprietary game ROMs or BIOS dumps are distributed.
+The Slot-derived frontend is distributed under the **GPL-3.0** terms in [LICENSE](LICENSE). select. slot. is a **noncommercial customization**; no proprietary game ROMs or BIOS dumps are distributed.
 
 ---
 
