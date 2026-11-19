@@ -35,7 +35,7 @@ This repository is not an official Slot release or currently a GitHub-linked for
 | Updates | Wi-Fi / in-app OTA updates | Manual SD-card installation only |
 | Download | [**Latest H700 release**](https://github.com/Sinastrax/select-slot/releases/latest) | [**Miyoo Ver. 6 release**](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver6) |
 
-**Regular hardware testing:** Development and testing use four devices: **Anbernic RG SP, RG34XXSP, RG35XX H, and the original Miyoo Mini**. H700 Ver. 40's compact Hotkey Guide was specifically confirmed on the RG35XX H. Testing a firmware on these devices does not mean every feature has been individually verified on every model or OS. Miyoo Mini Plus, Mini Flip, and other unlisted hardware/firmware combinations are not routinely tested.
+**Hardware testing:** Every update and reported successful result is tested on **each compatible device in the regular test lineup**, unless explicitly stated otherwise. For the H700 build, those devices are **Anbernic RG SP, RG34XXSP and RG35XX H**; for the separate Miyoo build, it is the **original Miyoo Mini**. Device-specific features are tested on the devices that support them. Other models, including Miyoo Mini Plus and Mini Flip, are not part of this confirmation.
 
 ## What it adds
 
