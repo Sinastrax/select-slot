@@ -186,3 +186,5 @@ python3 ../.github/scripts/ver34-achievements-every-frame.py
 python3 ../.github/scripts/ver34-ra-server-warning-filter.py
 # Ver.35: use official rcheevos indirect-pointer invalid-read behavior.
 python3 ../.github/scripts/ver35-indirect-memory-compat.py
+# UI-only reference to built-in controls; no input or shortcut remapping.
+python3 ../.github/scripts/readonly-shortcut-guide-ver37.py
