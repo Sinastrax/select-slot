@@ -1,8 +1,8 @@
-# select. slot. 1.8.1 Ver. 4 — Miyoo
+# select. slot. 1.8.1 Ver. 5 — Miyoo
 
 **Offline ARMv7 build for the Miyoo Mini family**, based on [deanmarano/slot-miyoo](https://github.com/deanmarano/slot-miyoo) and Slot **1.8.1**. This is a **different build from select. slot. for Anbernic H700**, which is based on Slot 1.16.0. Do not interchange their firmware files.
 
-Ver. 4 adds a direct Restart entry, bounded scrolling on every long quick-menu page (including Gameplay), a brighter clock/battery readout in settings menus, and a visible Ver. 4 About label. It retains Ver. 3's mGBA/gpSP-only cores, screen geometry, scaling, original GBA and GBA SP bezels, inputs, PWM brightness (0–9), OnionOS theme and power handling.
+Ver. 5 fixes **Restart powering off the original Miyoo Mini**: it relaunches select. slot. through the existing ARMv7 loader instead of issuing a hardware reboot. Ver. 4's Restart menu entry, universal scrolling, high-contrast clock/battery text and About version remain. The established mGBA/gpSP cores, display, PWM brightness (0–9), OnionOS themes and power handling are unchanged.
 
 ## Features
 
@@ -15,10 +15,10 @@ Ver. 4 adds a direct Restart entry, bounded scrolling on every long quick-menu p
 | Scaling persistence | Independent defaults at **Screen → GB/GBC/GBA → Scaling**, saved in `Config/video_mode.txt`. In-game per-ROM overrides take priority |
 | Screen / rendering | Original unfiltered software pixels; shader controls removed and previous shader choices ignored |
 | GBA lower bezel | **Screen → GBA → Bezel**: None, **GBA SP** (existing style and retained default), or **GBA**. The new style uses existing original-GBA artwork with the same 640×480 transparency mask, display opening and position as SP |
-| Restart | **Settings → Restart**, immediately after About on Miyoo's main menu (Miyoo has no separate System page); original About X shortcut retained |
+| Restart | **Settings → Restart**, immediately after About. Relaunches Slot without rebooting or powering off Miyoo hardware; the About-screen X shortcut follows the same route. Save writes are settled first |
 | Scrolling | All long menu pages, including Gameplay settings, stay within a visible six-row viewport; the in-game Screen panel retains its three-row viewport |
 | Menu readability | High-contrast clock and battery percentage in both main settings and in-game quick menus; normal shelf colors unchanged |
-| About | Shows **Version 1.8.1 Ver. 4** in the existing sticker layout |
+| About | Shows **Version 1.8.1 Ver. 5** in the existing sticker layout |
 | Menu Screen Off | Off, 1, 3, 5, 10, 15, 30 minutes; default 3; the first button press wakes without launching anything |
 | Menu Power Off | Off, 1, 3, 5, 10, 15, 30 minutes; default 15 |
 | Resume | Independent Resume on Power On and Resume on Insert settings |
@@ -33,9 +33,9 @@ An older `System/gambatte_libretro.so` and `System/licenses/gambatte-src.tar.gz`
 
 | ZIP | Installed system | Result |
 | --- | --- | --- |
-| `select-slot-1.8.1-ver4-miyoo-onion-autoboot.zip` | **OnionOS 4.3+** on compatible Mini or Mini Plus | Starts select. slot. at boot through `.tmp_update/startup/select-slot.sh`, without replacing the OnionOS runtime or theme |
-| `select-slot-1.8.1-ver4-miyoo-stock-autoboot.zip` | **Genuine stock Miyoo firmware only** | Starts select. slot. at boot using `.tmp_update/runtime.sh` |
-| `select-slot-1.8.1-ver4-miyoo.zip` | App-only on compatible firmware | Adds Slot to the regular apps menu, without changing the startup sequence |
+| `select-slot-1.8.1-ver5-miyoo-onion-autoboot.zip` | **OnionOS 4.3+** on compatible Mini or Mini Plus | Starts select. slot. at boot through `.tmp_update/startup/select-slot.sh`, without replacing the OnionOS runtime or theme |
+| `select-slot-1.8.1-ver5-miyoo-stock-autoboot.zip` | **Genuine stock Miyoo firmware only** | Starts select. slot. at boot using `.tmp_update/runtime.sh` |
+| `select-slot-1.8.1-ver5-miyoo.zip` | App-only on compatible firmware | Adds Slot to the regular apps menu, without changing the startup sequence |
 
 **Never extract the stock autoboot ZIP over OnionOS, Allium or another third-party SD-card operating system.** It contains a replacement `.tmp_update/runtime.sh`; overwriting another OS's existing boot script can stop the OS from starting. On an unknown or modified SD card use the **app-only** package instead.
 
@@ -65,4 +65,4 @@ The **GBA** bezel uses the existing [*Perfect GBA (no grid)* artwork by mugwomp9
 
 The [Miyoo sources and patch scripts](https://github.com/Sinastrax/select-slot/tree/main/miyoo) build the selected Slot 1.8.1 ARMv7 port and verify the renderer, menu timers, scaling persistence and OS-specific startup packages. Each release includes a SHA-256 checksum. Build/package verification does not substitute for testing on every hardware model.
 
-[select. slot. Miyoo Ver. 3 release](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver4) · [Original Slot](https://github.com/slot-cfw/slot) · [Miyoo port](https://github.com/deanmarano/slot-miyoo)
+[select. slot. Miyoo Ver. 3 release](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver5) · [Original Slot](https://github.com/slot-cfw/slot) · [Miyoo port](https://github.com/deanmarano/slot-miyoo)
