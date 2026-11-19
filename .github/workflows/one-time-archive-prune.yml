@@ -38,7 +38,8 @@ jobs:
                   raw=resp.read()
                   return json.loads(raw.decode()) if raw else None
           def git(*args, data=None):
-              p=subprocess.run(["git",*args],input=data,text=True,capture_output=True,check=True)
+              p=subprocess.run(["git",*args],input=data,text=True,capture_output=True)
+              if p.returncode: raise RuntimeError(f"git {args[:2]} failed: {p.stderr[:1200]}")
               return p.stdout.strip()
           def branches():
               return api("GET",f"/repos/{REPO}/branches?per_page=100")
@@ -59,6 +60,8 @@ jobs:
           # Keep *all* retired commit trees reachable, even if an experiment was never merged.
           # This is a single synthetic octopus commit: main tree + 49 parents.
           # No source changes from old branches are merged into the working main branch.
+          git("config","user.name","github-actions[bot]")
+          git("config","user.email","41898282+github-actions[bot]@users.noreply.github.com")
           heads=sorted(set(x["sha"] for x in EXPECTED))
           for sha in heads:
               git("cat-file","-e",sha+"^{commit}")
