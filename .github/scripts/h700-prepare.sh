@@ -192,3 +192,5 @@ python3 ../.github/scripts/readonly-shortcut-guide-ver37.py
 python3 ../.github/scripts/clarify-fixed-shortcuts-ver38.py
 # Ver.39: verified, read-only instructions for contextual and remappable gestures.
 python3 ../.github/scripts/source-verified-hotkey-guide-ver39.py
+# Ver.40: only obscure shortcuts shown; guide-only text layout cannot collide.
+python3 ../.github/scripts/compact-hotkey-guide-ver40.py
