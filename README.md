@@ -129,7 +129,7 @@ These are the **custom changes in the H700 build**, on top of upstream Slot and 
 - Fixed the **unavailable indirect RAM read** found in the German Pokémon Smaragd device log. The old wrapper reset *all* achievements when any dynamic pointer briefly pointed outside available memory; official `rc_client` treats this as a zero-valued pointer read without resetting unrelated achievements.
 - Direct memory-address validation remains strict: invalid static achievement addresses and reads crossing unmapped boundaries are rejected. Real achievement tracking still runs for every emulated frame, including fast-forward.
 - Added regression tests for invalid pointers, independent awards, and direct unmapped reads; routine injected server warnings no longer flood logs.
-- Existing game saves, core selection, color modes, device naming, and original System manifest updater are unchanged. Hardware confirmation remains necessary.
+- Existing game saves, core selection, color modes, device naming, and original System manifest updater are unchanged. The Pokémon Smaragd unlock popup was subsequently **confirmed working on real H700 hardware**.
 
 ### Ver. 34: reliable achievements during fast-forward
 
@@ -187,16 +187,16 @@ Do not interchange save states made by different emulator cores; in-game battery
 
 ## Versions and release notes
 
-The H700 and Miyoo versions are independent. The **[Miyoo Ver. 3 official release](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver3)** is deliberately not marked as the H700 `latest` release and is not part of H700 OTA. The full Miyoo requirements and limitations are above.
+The H700 and Miyoo versions are independent. The **[Miyoo Ver. 6 release](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver6)** is deliberately separate from the H700 `latest` release and its OTA channel. The full Miyoo requirements and limitations are above.
 
 
-Release titles follow **select. slot. 1.16.0 Ver. 9**: the upstream Slot version appears immediately after the project name, followed by the custom revision number. For compatibility with existing OTA installations, Ver. 9 retains the technical version `1.16.0-rgsp.9` and tag `v1.16.0-rgsp.9`. Future functional versions increment the revision and include complete firmware updates; renaming alone does not generate a new release.
+Release titles use **select. slot. [upstream version] Ver. [revision]**. The current maintenance version is **1.16.0 Ver. 36**, with the OTA-compatible technical identifier `1.16.0-rgsp.36` and tag `v1.16.0-rgsp.36`. Each new version is a complete firmware build. Documentation-only changes do not require an OTA version bump.
 
 **[Latest release](https://github.com/Sinastrax/select-slot/releases/latest)** · **[Changes in the latest version](RELEASE_NOTES.md)**
 
 Release notes list **only the additions and fixes since the previous release**, rather than repeating the complete feature list. This README is the permanent place for the full feature overview.
 
-The [build workflow](.github/workflows/build-h700.yml) pins the pvaibhav base, applies our patches and builds a reproducible H700 device package. The firmware may run on other H700 devices, but not every feature or device has been physically tested.
+The [H700 build workflow](.github/workflows/build-h700.yml) invokes the [pinned, order-preserving source preparation script](.github/scripts/h700-prepare.sh), runs shader/RetroAchievements/OTA tests and publishes verified full releases. The [H700 maintenance guide](H700_MAINTENANCE.md) documents the cleanup, source checks and device-testing boundaries. **Ver. 35 remains the confirmed fallback** until Ver. 36 is checked on real hardware.
 
 ---
 
