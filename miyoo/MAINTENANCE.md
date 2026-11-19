@@ -29,4 +29,4 @@ Some modules modify the same Rust source. Do not reorder them casually: the gene
 
 ## Hardware checks that CI cannot prove
 
-On physical hardware verify: normal Game Boy and Game Boy Advance playback with sound; save/load after shutting down; GB/GBC/GBA scaling persistence; the original GBA bezel; menu scrolling, About B/Menu navigation and the **absence of Restart**; screen brightness through all 0–9 levels; OnionOS active-theme standby/wake and shutdown; and the two firmware boot layouts. Test the original Mini separately from a Mini Plus and a Mini Flip whenever those devices are available.
+**The original Miyoo Mini is the regular physical test device.** Verify: normal Game Boy and Game Boy Advance playback with sound; save/load after shutting down; GB/GBC/GBA scaling persistence; the original GBA bezel; menu scrolling, About B/Menu navigation and the **absence of Restart**; screen brightness through all 0–9 levels; OnionOS active-theme standby/wake and shutdown; and applicable firmware boot layouts. The Mini Plus, Mini Flip and other firmware variants need separate hardware confirmation; testing the original Mini does not establish compatibility for them.
