@@ -163,6 +163,13 @@ def gesture(s):
                     .or_else(|| self.shortcut(Some(Mod::Button(b)), *h))
                     .map(|action| (*h, action))
             })""", "timed mute combo")
+    s = one(s,
+            """        if self.context == Context::Game {
+            if let Some(action) = self.shortcut(None, b) {""",
+            """        if self.context == Context::Game && b != Btn::Menu {
+            // Physical MENU stays an always-available escape route.
+            if let Some(action) = self.shortcut(None, b) {""",
+            "reserve standalone MENU even for hand-edited shortcut files")
     s = one(s, """        if self.chording(now) {
             self.mark_chorded();
             self.menu_down_at = None;
@@ -225,6 +232,17 @@ def regression(s):
         (Chord { modifier: Some(Mod::Button(VolUp)), button: VolDown }, MuteToggle),
         (select(Menu), GameMenu),
     ]""", "gesture test fixture")
+    s += """
+#[test]
+fn standalone_menu_stays_accessible_if_config_assigns_it_to_mute() {
+    let mut g = gestures();
+    let mut bindings = today();
+    bindings.push((Chord { modifier: None, button: Menu }, MuteToggle));
+    g.set_shortcuts(bindings);
+    assert!(g.feed(Down(Menu), 0).is_empty());
+    assert_eq!(g.feed(Up(Menu), 70), vec![QuickMenu]);
+}
+"""
     s += """
 #[test]
 fn mute_is_not_a_hidden_firmware_shortcut_when_unbound() {
@@ -294,6 +312,23 @@ edit("crates/slot-store/src/bindings.rs", bindings)
 edit("crates/slot/src/input/bind.rs", bind)
 edit("crates/slot-ui/src/quick_menu.rs", ui)
 edit("crates/slot-input/src/gesture.rs", gesture)
+def protect_game_input_capture(s):
+    # Standalone volume keys always adjust hardware audio; accepting those
+    # as game-button mappings would display an assignment that cannot work.
+    return one(s,
+        """                if let Some(button) = crate::input::btn_device(b) {
+                    let binding = match (c.menu, c.first) {""",
+        """                if let Some(button) = crate::input::btn_device(b) {
+                    if c.row.game_button().is_some()
+                        && matches!(b, Btn::VolUp | Btn::VolDown)
+                    {
+                        self.capture = Some(c);
+                        return;
+                    }
+                    let binding = match (c.menu, c.first) {""",
+        "reserve volume keys from raw game-button capture")
+
+
 def app_exhaustive(s):
     # The three central QuickRow matches treat shortcut rows as value-less
     # settings (read, change, open). Keep the new entries in that category.
@@ -309,6 +344,7 @@ def app_exhaustive(s):
 
 
 edit("crates/slot/src/app.rs", app_exhaustive)
+edit("crates/slot/src/app.rs", protect_game_input_capture)
 edit("crates/slot/src/input/table.rs", table)
 edit("crates/slot-input/tests/gesture.rs", regression)
 edit("crates/slot-store/tests/bindings.rs", persistence)
