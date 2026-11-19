@@ -89,7 +89,7 @@ def ui(src):
         "".join(f"    {r},\n" for r in ALL_NEW) + "}", "enum QuickRow")
 
     def all_rows(m):
-        old_count = int(m[2])
+        old_count = int(m[1])
         old = m[0]
         insert = "".join(f"        QuickRow::{r},\n" for r in ALL_NEW)
         return old[:old.rfind("    ];")] + insert + old[old.rfind("    ];"):].replace(
