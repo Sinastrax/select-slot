@@ -4,7 +4,7 @@ This page keeps the detailed H700 feature list out of the main [README](../READM
 
 For how the game-focused frontend works in general, use the [official Slot guide](https://slot-cfw.fyi/). For original pvaibhav behavior and screenshots, see the [pvaibhav wiki](https://github.com/pvaibhav/slot/wiki). For the current supported version and release milestones, see the [changelog](../CHANGELOG.md).
 
-The build deliberately preserves upstream behavior while making extra configuration and visual changes. Hardware-dependent features, such as higher panel refresh rates and analogue button mappings, are **not universal**. Current user-tested H700 stable release: [Ver. 40](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.40).
+The build deliberately preserves upstream behavior while making extra configuration and visual changes. Hardware-dependent features, such as higher panel refresh rates and analogue button mappings, are **not universal**. **Regular H700 test hardware:** Anbernic RG SP, RG34XXSP and RG35XX H; the original Miyoo Mini is tested separately for the ARMv7 build. Individual features are checked on applicable devices, rather than implying every hardware/feature combination was exhaustively tested. Current stable H700 release: [Ver. 40](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.40).
 
 ---
 
