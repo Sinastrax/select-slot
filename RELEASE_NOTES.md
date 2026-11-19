@@ -1,3 +1,3 @@
-# select. slot. 1.16.0 Ver. 46
+# select. slot. 1.16.0 Ver. 47
 
-Long names now scroll horizontally in the selected row of the in-game Cheats and RetroAchievements lists. The animation pauses at both ends and starts from the beginning when you select a different row. Cheat toggles, achievement badges, points and progress stay visible.
+The in-game RetroAchievements list reserves space for the wrapped title and status below the clock and battery indicator. The list adjusts row spacing when the header needs more room.

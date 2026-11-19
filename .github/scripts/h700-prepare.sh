@@ -200,3 +200,5 @@ python3 ../.github/scripts/keyboard-one-shot-caps-lock-ver41.py
 git apply ../patches/keyboard-caps-indicator.patch
 # Keep long names readable in the cheat and achievement lists.
 git apply ../patches/scroll-cheat-achievement-names.patch
+# Reserve top chrome and header space in the in-game achievement list.
+git apply ../patches/achievement-header-viewport.patch

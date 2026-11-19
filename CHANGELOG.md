@@ -6,7 +6,8 @@ There are two independent firmware lines: **Anbernic H700** (Slot 1.16.0) and **
 
 | Version | Status / milestone | Release |
 | --- | --- | --- |
-| **Ver. 46** | Horizontal scrolling for long cheat and achievement names | [Ver. 46](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.46) |
+| **Ver. 47** | Keep the wrapped RetroAchievements header in view | [Ver. 47](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.47) |
+| Ver. 46 | Horizontal scrolling for long cheat and achievement names | [Ver. 46](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.46) |
 | Ver. 45 | German wording and text layout polish | [Ver. 45](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.45) |
 | Ver. 44 | German handheld interface | [Ver. 44](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.44) |
 | **Ver. 43** | White Shift key for one-character uppercase entry | [Ver. 43](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.43) |

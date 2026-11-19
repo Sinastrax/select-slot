@@ -1,0 +1,98 @@
+diff --git a/crates/slot-ui/src/quick_menu.rs b/crates/slot-ui/src/quick_menu.rs
+index a77adc5..24e42f4 100644
+--- a/crates/slot-ui/src/quick_menu.rs
++++ b/crates/slot-ui/src/quick_menu.rs
+@@ -2423,20 +2423,21 @@ impl AchievementPage<'_> {
+         });
+         let count = self.total;
+         let (start, len) = achievement_page_window(self.selected, count);
+-        let top = ((LEGEND_Y - QUICK_PITCH * len as f32)/2.0).max(76.0);
+-        if let Some((tex,w,h)) = self.header {
+-            push(out, tex, self.canvas.centred(w as f32), top - h as f32 - 17.0, w,h);
++        let header_height = self.header.map_or(0, |(_, _, h)| h);
++        let (heading_y, top, pitch) = achievement_page_positions(self.canvas, header_height, len);
++        if let Some((tex, w, h)) = self.header {
++            push(out, tex, self.canvas.centred(w as f32), heading_y, w, h);
+         }
+         let Some(faces) = self.faces else { return };
+         let right = self.canvas.w - QUICK_EDGE;
+         for i in start..start + len {
+             let local = i - start;
+             // The frontend uploads exactly the visible window; never index an
+-            // off-screen achievement through a finite six-slot texture cache.
++            // off-screen achievement through a bounded texture cache.
+             let (Some(names), Some(values)) = (self.names.get(local), self.values.get(local)) else {
+                 break;
+             };
+-            let y = top + QUICK_PITCH * local as f32 + TYPE_DROP;
++            let y = top + pitch * local as f32 + TYPE_DROP;
+             let lit = i == self.selected;
+             if let Some(Some((tex,_,_))) = self.badges.get(local) {
+                 push(out,*tex, QUICK_LABEL_X - 32.0, y+1.0,24,24);
+@@ -2450,7 +2451,7 @@ impl AchievementPage<'_> {
+             );
+             push(out, tex, value_x, y, w, h);
+         }
+-        if let Some(bar) = scroll_bar(top,len,count,self.selected) {
++        if let Some(bar) = scroll_bar_with_pitch(top, len, count, self.selected, pitch) {
+             push_scroll(out,self.canvas,bar);
+         }
+         if let Some((tex,w,h)) = self.detail {
+@@ -2563,6 +2564,18 @@ pub fn draw_menu_ground(canvas: Canvas, ground: Option<MenuGround>, out: &mut Ve
+ 
+ pub const QUICK_VISIBLE: usize = 6;
+ 
++/// Keep the wrapped title and status below the clock and battery indicator.
++fn achievement_page_positions(canvas: Canvas, header_height: u32, rows: usize) -> (f32, f32, f32) {
++    const HEADER_GAP: f32 = 12.0;
++    let header_top = crate::hud::PLATE_H + 6.0;
++    let centred_top = ((legend_y(canvas) - QUICK_PITCH * rows as f32) / 2.0).max(76.0);
++    let top = centred_top.max(header_top + header_height as f32 + HEADER_GAP);
++    let body_room = (canvas.h - MOUTH_H - top).max(0.0);
++    // Give the header more room by tightening the gaps in a full list.
++    let pitch = (body_room / rows.max(1) as f32).min(QUICK_PITCH);
++    (top - HEADER_GAP - header_height as f32, top, pitch)
++}
++
+ /// Visible achievement rows; selected and total refer to the complete list.
+ pub fn achievement_page_window(selected: usize, total: usize) -> (usize, usize) {
+     if total == 0 {
+@@ -2666,10 +2679,14 @@ fn window(at: usize, count: usize, fits: usize) -> (usize, usize) {
+ }
+ 
+ fn scroll_bar(y: f32, len: usize, count: usize, at: usize) -> Option<QuickScroll> {
++    scroll_bar_with_pitch(y, len, count, at, QUICK_PITCH)
++}
++
++fn scroll_bar_with_pitch(y: f32, len: usize, count: usize, at: usize, pitch: f32) -> Option<QuickScroll> {
+     if len >= count {
+         return None;
+     }
+-    let h = QUICK_PITCH * len as f32;
++    let h = pitch * len as f32;
+     let thumb_h = h / count as f32;
+     let along = at as f32 / (count - 1) as f32;
+     Some(QuickScroll {
+@@ -2757,6 +2774,22 @@ mod menu_viewport_tests {
+ #[cfg(test)]
+ mod achievement_viewport_burst_tests {
+     use super::*;
++
++    #[test]
++    fn wrapped_header_and_rows_fit_between_hud_and_footer() {
++        let height = 4 * (DESCRIPTION_PX * 1.4).ceil() as u32;
++        for panel in [(640, 480), (720, 480), (800, 600)] {
++            let canvas = Canvas::of(panel);
++            for rows in 0..=QUICK_VISIBLE {
++                let (header_y, list_y, pitch) = achievement_page_positions(canvas, height, rows);
++                assert!(header_y >= crate::hud::PLATE_H);
++                assert!(header_y + height as f32 + 12.0 <= list_y);
++                assert!(pitch >= MENU_H as f32 + TYPE_DROP);
++                assert!(list_y + rows as f32 * pitch <= canvas.h - MOUTH_H + 0.01);
++            }
++        }
++    }
++
+     #[test]
+     fn very_large_achievement_lists_stay_in_six_visible_rows() {
+         for total in [0, 1, 5, 6, 7, 50, 200, 500] {
