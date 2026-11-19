@@ -18,4 +18,4 @@ Every actual button mapping, gesture/timing, shortcut editor, input handling, po
 
 Full H700 CI passed source preparation, shader and OTA checks, Rust regression suite (including synthetic 640-, 720- and 800-pixel guide column checks), device compilation, core restoration, firmware packaging and archive validation. This does **not** establish visual fidelity on hardware; inspect the on-device guide after updating.
 
-**Compatibility:** Anbernic H700 devices including RG35XX H, RG35XXSP and RG34XXSP; not Miyoo Mini. **Ver. 39 remains available** as the previous release, and Ver. 36 is the confirmed pre-guide stable fallback.
+**Compatibility:** Anbernic H700 devices including RG35XX H, RG35XXSP and RG34XXSP; not Miyoo Mini. **Ver. 39's Git tag remains in history**, but its superseded download entry was removed during release cleanup. [Ver. 36](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.36) remains a retained, hardware-tested fallback.
