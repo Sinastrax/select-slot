@@ -162,6 +162,7 @@ jobs:
           task dist:device OUT=select-slot-h700
           python3 ../handheld-i18n/german.py .
           cargo test -p slot-ui --lib localized_layout_tests
+          cargo test -p slot-ui --lib scrolling_name_tests
           task build:device
           install -m 755 target-device/device/slot select-slot-h700/System/slot-de
           python3 ../handheld-i18n/launcher.py select-slot-h700/System/launch_frontend.sh
