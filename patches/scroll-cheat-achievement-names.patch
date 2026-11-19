@@ -1,32 +1,27 @@
 diff --git a/crates/slot-ui/src/quick_menu.rs b/crates/slot-ui/src/quick_menu.rs
-index 186368d..83a10cc 100644
+index 186368d..a77adc5 100644
 --- a/crates/slot-ui/src/quick_menu.rs
 +++ b/crates/slot-ui/src/quick_menu.rs
-@@ -2282,21 +2282,51 @@ impl QuickMenu<'_> {
+@@ -2299,6 +2299,57 @@ fn push_label(
      }
  }
  
--/// A row's label, with the pointer before it when it is the selected row.
--fn push_label(
 +/// Draw a one-line name inside its own viewport, beside the row's status.
 +#[allow(clippy::too_many_arguments)]
 +fn push_scrolling_name(
-     out: &mut Vec<Draw>,
-     faces: &QuickMenuFaces,
--    (tex, w, h): (TexId, u32, u32),
++    out: &mut Vec<Draw>,
++    faces: &QuickMenuFaces,
 +    (tex, width, height): (TexId, u32, u32),
-     x: f32,
-     y: f32,
--    lit: bool,
++    x: f32,
++    y: f32,
 +    right: f32,
 +    elapsed_ms: Option<u64>,
- ) {
--    push(out, tex, x, y, w, h);
--    if lit {
--        let (tex, pw, ph) = faces.pointer;
--        let px = x + MENU_PAD as f32 - POINTER_GAP - pw as f32;
--        push(out, tex, px, y - POINTER_BLEED as f32, pw, ph);
++) {
 +    let room = (right - x).max(0.0).floor();
++    if width as f32 <= room {
++        push_label(out, faces, (tex, width, height), x, y, elapsed_ms.is_some());
++        return;
++    }
 +    let width = width as f32;
 +    if room > 0.0 && width > 0.0 {
 +        let shown = width.min(room);
@@ -54,16 +49,18 @@ index 186368d..83a10cc 100644
 +    const PIXELS_PER_MS: f32 = 0.050;
 +    if overflow <= 0.0 {
 +        return 0.0;
-     }
++    }
 +    let travel_ms = overflow / PIXELS_PER_MS;
 +    let leg_ms = travel_ms + PAUSE_MS;
 +    let within = elapsed_ms as f32 % (2.0 * leg_ms);
 +    let distance = ((within % leg_ms - PAUSE_MS) * PIXELS_PER_MS).clamp(0.0, overflow);
 +    if within < leg_ms { distance } else { overflow - distance }
- }
- 
++}
++
  fn push_scroll(out: &mut Vec<Draw>, canvas: Canvas, bar: QuickScroll) {
-@@ -2320,37 +2350,18 @@ fn push_scroll(out: &mut Vec<Draw>, canvas: Canvas, bar: QuickScroll) {
+     let x = canvas.w - SCROLL_INSET - SCROLL_W;
+     let ink = DIM_INK.map(|c| f32::from(c) / 255.0);
+@@ -2320,37 +2371,18 @@ fn push_scroll(out: &mut Vec<Draw>, canvas: Canvas, bar: QuickScroll) {
  }
  
  /// The narrowest screen width, less room for the cheat's On/Off value.
@@ -107,7 +104,7 @@ index 186368d..83a10cc 100644
      text::draw_centred(&mut rgba, w, MENU_H, &layout, colour);
      UndoFace { rgba, w, h: MENU_H }
  }
-@@ -2371,6 +2382,7 @@ pub fn achievement_detail_face(detail: &str) -> UndoFace {
+@@ -2371,6 +2403,7 @@ pub fn achievement_detail_face(detail: &str) -> UndoFace {
  /// Read-only achievement list rendered within the existing paused game menu.
  pub struct AchievementPage<'a> {
      pub selected: usize,
@@ -115,7 +112,7 @@ index 186368d..83a10cc 100644
      pub total: usize,
      pub names: &'a [[(TexId,u32,u32); 2]],
      pub values: &'a [[(TexId,u32,u32); 2]],
-@@ -2408,10 +2420,14 @@ impl AchievementPage<'_> {
+@@ -2408,10 +2441,14 @@ impl AchievementPage<'_> {
              if let Some(Some((tex,_,_))) = self.badges.get(local) {
                  push(out,*tex, QUICK_LABEL_X - 32.0, y+1.0,24,24);
              }
@@ -134,7 +131,7 @@ index 186368d..83a10cc 100644
          }
          if let Some(bar) = scroll_bar(top,len,count,self.selected) {
              push_scroll(out,self.canvas,bar);
-@@ -2430,6 +2446,7 @@ impl AchievementPage<'_> {
+@@ -2430,6 +2467,7 @@ impl AchievementPage<'_> {
  /// like the settings pages.
  pub struct CheatPage<'a> {
      pub selected: usize,
@@ -142,7 +139,7 @@ index 186368d..83a10cc 100644
      pub on: &'a [bool],
      /// Each cheat's name, dim and lit.
      pub names: &'a [[(TexId, u32, u32); 2]],
-@@ -2457,17 +2474,16 @@ impl CheatPage<'_> {
+@@ -2457,17 +2495,16 @@ impl CheatPage<'_> {
          for i in start..start + len {
              let y = top + QUICK_PITCH * (i - start) as f32 + TYPE_DROP;
              let lit = i == self.selected;
@@ -169,7 +166,7 @@ index 186368d..83a10cc 100644
                  push(out, tex, right + MENU_PAD as f32 - w as f32, y, w, h);
              }
          }
-@@ -2863,3 +2879,25 @@ mod compact_guide_layout_tests {
+@@ -2863,3 +2900,25 @@ mod compact_guide_layout_tests {
          assert!(QuickRow::FixMuteSelectUp.fixed_keys().is_some());
      }
  }
