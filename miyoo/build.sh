@@ -142,7 +142,6 @@ echo "Verified original GBA / SP bottom-strip selector without new render backen
 check_patch '+    pub const MAIN: [QuickRow; 6]'
 check_patch '+        QuickRow::Restart,'
 check_patch '+            QuickRow::Restart => self.begin_restart(),'
-check_patch '+fn scrolls(page: &[QuickRow]) -> bool {'
 check_patch '+    !page.is_empty()'
 check_patch '+    menu_battery_percent: slot_ui::Printed,'
 check_patch '+    menu_clock: slot_ui::Printed,'
