@@ -34,3 +34,7 @@ The old manual `publish-ota-from-run.yml`, post-build `publish-ota-from-build.ym
 ## Hardware acceptance checks
 
 Automated tests cannot prove GPU display fidelity or real-world radio/power behavior. On RG35XX H, RG35XXSP and RG34XXSP (when available), test: GB Pocket Color and actual SGB modes and palette changes; Authentic GBA at Fit and Integer; independent per-system scaling after restart; overlay/restart/update branding; GB/GBC/GBA save/load; WLAN and link behavior; RetroAchievements progress and unlock popup; correct device nickname; and a complete OTA update. **Ver. 36 remains the confirmed user-tested fallback until a newer release has been device-tested.**
+
+## Hotkey guide validation (Ver. 39)
+
+Controls → Hotkey Guide is presentation-only. Verify that double MENU is labeled Save States rather than Screenshots; that Game Boy/Color L1/R1 scaling is conditional on unassigned game buttons and Kid Mode; that Fast-Forward hold, double-tap latch, and separate FF Toggle are distinguished; that Shelf Favorite and Remove Recent buttons reflect current binding values; and that SELECT+START repairs only when offered or restarts from About. The boot Kid Mode unlock chord requires START+SELECT+L2+R2 held at startup. These cases must never modify the input gesture engine, user binding files, save data or editable Shortcuts page.

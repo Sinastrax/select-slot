@@ -18,7 +18,7 @@
 
 The **H700 build** uses **`v1.16.0-pvaibhav.1`** and adds independent GB/GBC shaders, Pocket Color and Super Game Boy modes, per-core color correction, custom input mappings, performance/audio changes, online updates, and menu power management.
 
-The H700 **Controls → Fixed Shortcuts** menu provides an on-device, read-only guide to non-configurable button gestures (including mute, Link Play, power, shelf, and save-state operations). The existing editable Shortcuts menu and all physical button behavior remain unchanged. From **Ver. 38**, these reference labels use full button names rather than unexplained abbreviations, and Fast-Forward shows the user's currently assigned button. This changes text only.
+The H700 **Controls → Hotkey Guide** is an on-device, read-only reference for built-in, context-dependent and configurable hotkey gestures. **Ver. 39** adds the missing Shelf and Recovery/Kid Mode explanations, distinguishes Fast-Forward hold, double-tap latch and independent toggle bindings, and shows the current Favorite/Remove Recent button for collection gestures. Conditional shortcuts are marked as such. The existing editable **Controls → Shortcuts** page and all physical input behavior remain unchanged.
 
 Its name is **select. slot.**, not RGSP: the H700 build is intended for other compatible handhelds as well. Both builds support **Game Boy, Game Boy Color and Game Boy Advance**, not NES, SNES, PS1 or N64. Their emulators, display paths and available extras differ; the features below labeled H700 must **not** be assumed to exist in the Miyoo version.
 
@@ -198,13 +198,13 @@ Do not interchange save states made by different emulator cores; in-game battery
 The H700 and Miyoo versions are independent. The **[Miyoo Ver. 6 release](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver6)** is deliberately separate from the H700 `latest` release and its OTA channel. The full Miyoo requirements and limitations are above.
 
 
-Release titles use **select. slot. [upstream version] Ver. [revision]**. The latest H700 version is **1.16.0 Ver. 38**, with OTA-compatible technical identifier `1.16.0-rgsp.38` and tag `v1.16.0-rgsp.38`. Each new version is a complete firmware build. Documentation-only changes do not require an OTA version bump.
+Release titles use **select. slot. [upstream version] Ver. [revision]**. The latest H700 version is **1.16.0 Ver. 39**, with OTA-compatible technical identifier `1.16.0-rgsp.39` and tag `v1.16.0-rgsp.39`. Each new version is a complete firmware build. Documentation-only changes do not require an OTA version bump.
 
 **[Latest release](https://github.com/Sinastrax/select-slot/releases/latest)** · **[Changes in the latest version](RELEASE_NOTES.md)**
 
 Release notes list **only the additions and fixes since the previous release**, rather than repeating the complete feature list. This README is the permanent place for the full feature overview.
 
-The [H700 build workflow](.github/workflows/build-h700.yml) invokes the [pinned, order-preserving source preparation script](.github/scripts/h700-prepare.sh), runs shader/RetroAchievements/OTA tests and publishes verified full releases. The [H700 maintenance guide](H700_MAINTENANCE.md) documents the cleanup, source checks and device-testing boundaries. **Ver. 36 remains the confirmed stable fallback**; the Ver. 37 updater has been confirmed working, while the new Ver. 38 UI labels still require device review.
+The [H700 build workflow](.github/workflows/build-h700.yml) invokes the [pinned, order-preserving source preparation script](.github/scripts/h700-prepare.sh), runs shader/RetroAchievements/OTA tests and publishes verified full releases. The [H700 maintenance guide](H700_MAINTENANCE.md) documents the cleanup, source checks and device-testing boundaries. **Ver. 36 remains the confirmed device-tested stable fallback**, and the Ver. 37 update installation has been confirmed on RG35XX H. The Ver. 39 on-device guide still requires a visual check on actual hardware.
 
 ---
 

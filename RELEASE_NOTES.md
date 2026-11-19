@@ -1,22 +1,25 @@
-# select. slot. 1.16.0 Ver. 38 — Clearer built-in shortcut guide
+# select. slot. 1.16.0 Ver. 39 — Source-verified Hotkey Guide
 
-An **interface-text-only** refinement of Ver. 37 for Anbernic H700 devices. The user confirmed that the Ver. 37 update mechanism works on RG35XX H, but some short labels were difficult to interpret.
+This H700 release corrects and expands the on-device reference for button shortcuts. It builds on Ver. 38 without changing a single physical shortcut or how inputs are processed.
 
-## What changed
+## Improved read-only controls reference
 
-- Read-only **Controls → Fixed Shortcuts** entries now spell out button names: **SELECT + VOLUME UP**, **PRESS BOTH VOLUME BUTTONS**, **PRESS MENU TWICE**, **HOLD SELECT**, etc., rather than shorthand such as SEL, VOL, FF KEY, and 2x.
-- The Fast-Forward rows now **show the actual configured shortcut button**, such as **R2 TWICE** to lock or **R2** to stop. If the user has rebound it, the displayed key follows that setting. An unassigned key explicitly reads **NOT ASSIGNED**.
-- The double-MENU action is labeled **Screenshots / States** to reflect its context-sensitive behavior. Game Boy and Game Boy Color references no longer use the unclear GB/C abbreviation.
-- The reference remains **read-only**. The pre-existing editable Shortcuts page has not changed.
+Open **Controls → Hotkey Guide** (previously Fixed Shortcuts). The guide contains Global, In-Game, Shelf, Collections, Save States, and a new Recovery / Kid Mode category.
 
-## Explicitly unchanged
+- **MENU twice** correctly identifies the **save-state viewer** (when saved states are available), rather than implying it opens the screenshot gallery. Holding MENU is identified as a multi-game exit gesture.
+- **Fast-Forward** distinguishes holding the assigned key, tapping it twice to latch, pressing it again to exit a latch, and the **separately configurable FF Toggle** action. The displayed key always follows each current assignment. Unbound actions show NOT ASSIGNED.
+- **Shelf and collections** display the current Favorite / Remove Recent button for holding, adding/removing games and moving collection entries. Hold-only actions require an ordinary single-button mapping; if rebound to a chord, the guide explains SINGLE KEY ONLY rather than falsely suggesting the chord can be held.
+- **Game Boy / Game Boy Color** stretch/normal display shortcuts are qualified as available only when their shoulder buttons are free. Kid Mode restrictions still apply.
+- **Link Play** is labeled as compatibility-dependent. Basic power actions continue to use their existing definitions.
+- **Shelf** also lists tapping SELECT for Cart Studio and START for the emulator picker.
+- **Recovery / Kid Mode** documents SELECT+START for conditional SD-card repair or About-screen restart, the START+SELECT+L2+R2 boot-held Kid Mode unlock, and MENU for leaving a game while Kid Mode is locked.
 
-- Every physical shortcut, volume/mute timing, POWER/MENU input handling, fast-forward operation, gameplay mapping, Link Play controls, save states, and emulator behavior.
-- Existing configuration files, user mappings, achievements, saved games, Wi-Fi, shaders, OTA updates and installed ROMs. No migration.
-- Miyoo firmware and releases.
+## Unchanged behavior
+
+The guide is **read-only**. No modifications were made to the gesture state machine, evdev mappings, key timings, input bindings, default combinations, gameplay, UI shortcut editor, emulator cores, shaders, WLAN / Link Play operations, save data, RetroAchievements progress, OTA updater, or Miyoo Mini firmware. This is a full H700 firmware package, not a standalone documentation file.
 
 ## Verification
 
-H700 CI runs the full Rust regression suite, plain-label and dynamic-binding tests, shader checks, source/OTA safety validation, firmware build, archive checksums, and release publication checks. These automated tests cannot prove text readability or appearance on a physical device.
+The H700 CI pipeline completed source transformation and formatting, Rust regression and navigation tests, OTA safety tests, GPU shader checks, cross-build, complete firmware packaging and archive checks. Physical readability and button behavior on RG35XX H / SP / RG34XXSP still require device testing. **Ver. 36 is the confirmed hardware-tested fallback**, and the Ver. 37 updater was confirmed working; Ver. 38 remains available as the previous released version.
 
-**Platforms:** compatible Anbernic H700 handhelds (including RG35XX H, RG35XXSP and RG34XXSP). **Not for Miyoo Mini**. Ver. 36 remains a confirmed working fallback; Ver. 37 has a confirmed working update path. Ver. 38 still requires checking the labels on actual hardware.
+**Supported:** compatible Anbernic H700 devices. **Not for Miyoo Mini.** No ROMs or proprietary BIOS files included.
