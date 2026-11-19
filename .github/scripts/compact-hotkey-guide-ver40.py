@@ -136,7 +136,7 @@ def update_ui(text):
     new = """            // Only on the read-only reference: never enforce the normal
             // 60% minimum when it would cause the two columns to collide.
             let s = if row.fixed_keys().is_some() {
-                (room.max(0.0) / (w as f32 - 2.0 * pad).max(1.0))
+                (room.max(0.0) / (w as f32 - pad).max(1.0))
                     .clamp(0.0, 0.8)
             } else {
                 (room / (w as f32 - 2.0 * pad)).clamp(VALUE_MIN_SCALE, 1.0)
@@ -163,7 +163,7 @@ mod compact_guide_layout_tests {
                 let scale = ((canvas_width * 0.35).min(240.0) / label_ink).min(0.8);
                 let label_end = x + (label_texture - pad) * scale;
                 let room = (right - label_end - QUICK_VALUE_GAP).max(0.0);
-                let value_scale = (room / value_ink).min(0.8);
+                let value_scale = (room / (value_ink + pad)).min(0.8);
                 let value_left = right - (value_ink + pad) * value_scale;
                 assert!(label_end + QUICK_VALUE_GAP <= value_left + 1.0,
                     "reference columns touch on {canvas_width}px");
