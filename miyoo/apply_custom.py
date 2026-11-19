@@ -1496,6 +1496,48 @@ edit("crates/slot/src/frontend.rs", [
      '''        clocks.shown = shown.clone();'''),
 ])
 
+# Miyoo Ver. 5: restart the *Slot frontend*, not the hardware. On the
+# original Miyoo Mini, a Linux "reboot" request can power the device off.
+# Re-exec through the proven armhf loader instead. This replaces the running
+# Slot process (no second instance, no lingering audio owner), retains the
+# launcher-configured environment and logs, and leaves the OnionOS power and
+# sleep paths untouched. The app has already settled its saves at this point.
+edit("crates/slot-power/src/device.rs", [
+    ('''    fn restart(&mut self) -> ! {
+        self.breadcrumb("restart: reached slot, syncing before the WiFi driver unloads");
+        let _ = Command::new("sync").status();
+        unload_wifi();
+        self.breadcrumb("restart: WiFi driver unloaded or given up on, about to sync");
+        let _ = Command::new("sync").status();
+        self.breadcrumb("restart: sync returned, about to signal init");
+        release_logs();
+        let _ = Command::new("reboot").status();
+        std::thread::sleep(Duration::from_secs(10));
+        std::process::exit(0)
+    }''',
+     '''    fn restart(&mut self) -> ! {
+        use std::os::unix::process::CommandExt;
+
+        // The original Miyoo Mini's kernel can interpret "reboot" as a
+        // power-off. Here "Restart" means restart select. slot. itself.
+        // This runs after App::restart settled its saves. Keep the launcher
+        // environment, stdout/stderr log redirection, and OnionOS keymon.
+        self.breadcrumb("restart: safely re-executing select. slot. (no hardware reboot)");
+        let _ = Command::new("sync").status();
+        let slot = self.root.join("System/slot");
+        // Do not pass open device/audio/core descriptors to the new frontend.
+        close_on_exec();
+        let err = Command::new("/lib/ld-linux-armhf.so.3")
+            .arg(&slot)
+            .env("SLOT_ROOT", &self.root)
+            .exec();
+        // Failing to start must never turn the handheld off. Returning a
+        // nonzero exit hands control back to the original launcher/OnionOS.
+        eprintln!("slot: restart: could not relaunch {}: {err}", slot.display());
+        std::process::exit(1)
+    }'''),
+])
+
 # Invariants: keep PWM brightness untouched. The only power-layer addition is
 # menu-only backlight blank/restore, preserving the stored brightness level.
 # Never patch the frame-buffer, keymon, theme files or OnionOS runtime.
