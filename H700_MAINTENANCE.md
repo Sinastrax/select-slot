@@ -33,7 +33,7 @@ The old manual `publish-ota-from-run.yml`, post-build `publish-ota-from-build.ym
 
 ## Hardware acceptance checks
 
-Automated tests cannot prove GPU display fidelity or real-world radio/power behavior. On RG35XX H, RG35XXSP and RG34XXSP (when available), test: GB Pocket Color and actual SGB modes and palette changes; Authentic GBA at Fit and Integer; independent per-system scaling after restart; overlay/restart/update branding; GB/GBC/GBA save/load; WLAN and link behavior; RetroAchievements progress and unlock popup; correct device nickname; and a complete OTA update. **Ver. 40 is confirmed working on RG35XX H, including the compact Hotkey Guide. Ver. 36 remains available as an older verified fallback.**
+Automated tests cannot prove GPU display fidelity or real-world radio/power behavior. The **regular H700 test devices are Anbernic RG SP, RG34XXSP and RG35XX H** (with the original Miyoo Mini tested separately for the Miyoo build). Across relevant devices, check: GB Pocket Color and actual SGB modes and palette changes; Authentic GBA at Fit and Integer; independent per-system scaling after restart; overlay/restart/update branding; GB/GBC/GBA save/load; WLAN and link behavior; RetroAchievements progress and unlock popup; correct device nickname; and a complete OTA update. **Ver. 40's compact Hotkey Guide was specifically confirmed working on RG35XX H.** Regular device coverage should not be taken to mean every test case or firmware version was independently exercised on all three devices. Ver. 36 remains available as an older verified fallback.
 
 ## Hotkey guide validation (Ver. 40)
 
