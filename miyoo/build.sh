@@ -19,9 +19,22 @@ for command in git task docker zip unzip python3 file; do
 done
 
 mkdir -p "$WORK"
+# A repeated local build must not silently destroy an edited source checkout.
+# --clean is an explicit, scoped opt-in and affects only this build's clone.
+if [ "${1:-}" = "--clean" ] && [ "$#" -eq 1 ]; then
+  if [ -e "$PORT" ]; then
+    test "$PORT" = "$ROOT/.build/miyoo/slot-miyoo" || {
+      echo "Unsafe clean path; refusing" >&2
+      exit 1
+    }
+    rm -rf -- "$PORT"
+  fi
+elif [ "$#" -gt 0 ]; then
+  echo "Usage: bash miyoo/build.sh [--clean]" >&2
+  exit 2
+fi
 if [ -e "$PORT" ]; then
-  echo "Refusing to replace existing source checkout: $PORT" >&2
-  echo "Remove that directory if you want a fresh build." >&2
+  echo "Existing local clone at $PORT; use --clean to explicitly rebuild it" >&2
   exit 1
 fi
 
