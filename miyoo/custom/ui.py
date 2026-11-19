@@ -170,7 +170,7 @@ edit("crates/slot/src/app.rs", [
             true => faces.legend_light[0],
             false => faces.legend[0],
         };'''),
-    ('''        self.draw_side_legend(restart, true, LINK_LEGEND_Y, out);
+    ('''        self.draw_side_legend(restart, true, link_legend_y(), out);
 ''',
      ''''''),
 ])
