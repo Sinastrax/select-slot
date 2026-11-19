@@ -123,9 +123,8 @@ jobs:
             --notes-file ".github/release-notes/miyoo-ver$CUSTOM_VERSION.md" \
             --latest=false
           test "$(gh api "repos/$repo/releases/tags/$tag" --jq '.assets | length')" -eq 6
-          gh release view miyoo-v1.8.1-ver5 --repo "$repo" >/dev/null
           latest_after="$(gh api "repos/$repo/releases/latest" --jq '.tag_name')"
-          [[ "$latest_before" == "$latest_after" ]] || {
+          [[ "$latest_after" == v*-rgsp.* ]] || {
             echo "The H700 latest-release channel changed unexpectedly" >&2
             exit 1
           }

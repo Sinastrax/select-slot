@@ -6,6 +6,7 @@ on:
     branches:
       - main
     paths:
+      - "handheld-i18n/**"
       - "patches/**"
       - ".github/workflows/build-h700.yml"
       - ".github/scripts/**"
@@ -18,6 +19,7 @@ on:
       - "v*-custom.*"
       - "v*-rgsp.*"
     paths:
+      - "handheld-i18n/**"
       - "patches/**"
       - ".github/workflows/build-h700.yml"
       - ".github/ota-version.txt"
@@ -154,7 +156,14 @@ jobs:
         run: |
           set -euo pipefail
           export SLOT_VERSION="$(cat ../.github/ota-version.txt)"
+          python3 ../handheld-i18n/language_menu.py .
           task dist:device OUT=select-slot-h700
+          python3 ../handheld-i18n/german.py .
+          task build:device
+          install -m 755 target-device/device/slot select-slot-h700/System/slot-de
+          python3 ../handheld-i18n/launcher.py select-slot-h700/System/launch_frontend.sh
+          sh -n select-slot-h700/System/launch_frontend.sh
+          ! cmp -s select-slot-h700/System/slot select-slot-h700/System/slot-de
 
       - name: Add the existing original-GBA bezel to the 640x480 H700 package
         working-directory: upstream

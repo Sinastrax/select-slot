@@ -1,0 +1,594 @@
+Language (restart)	Sprache (Neustart)
+About	Über Slot
+Accept Self-Signed	Eigene Zertifikate zulassen
+Account	Konto
+Achievements	Erfolge
+Achievements — connecting or no offline cache	Erfolge – Verbindung läuft oder Offline-Daten fehlen
+Add	Hinzufügen
+Add to collection	Zur Sammlung
+Add to which collection?	Zu welcher Sammlung hinzufügen?
+Add {n}	{n} hinzufügen
+Added	Hinzugefügt
+Added to {name}	Zu {name} hinzugefügt
+Added {n} to {name}	{n} zu {name} hinzugefügt
+All	Alle
+All Done	Fertig
+All Games	Alle Spiele
+An update is available	Update verfügbar
+Apply	Anwenden
+Applying Labels	Etiketten werden übernommen
+Aspect Fit	Proportional
+Authenticating	Anmeldung läuft
+Auto-Join	Automatisch verbinden
+Automatic	Automatisch
+BIOS does not match	BIOS passt nicht
+Back	Zurück
+Background Index	Hintergrundindex
+BaseOS refused the update	BaseOS hat das Update abgelehnt
+Battery Display	Akkuanzeige
+Battery is low	Akku fast leer
+Bezel	Rahmen
+Blue Light	Blaulicht
+Both	Beides
+Brightness	Helligkeit
+Bringing the radio up	Funk wird aktiviert
+Cached; not yet connected	Daten gespeichert, noch offline
+Caching New Labels	Neue Etiketten werden gespeichert
+Can't reach	Nicht erreichbar
+Can't write to SD card	Schreiben auf SD-Karte fehlgeschlagen
+Cancel	Abbrechen
+Cancelled	Abgebrochen
+Cannot read achievement config	Erfolgseinstellungen nicht lesbar
+Card is full	Karte voll
+Card repair failed	Reparatur fehlgeschlagen
+Cart Studio	Modulstudio
+Change	Ändern
+Changes apply after restart	Änderungen gelten nach dem Neustart
+Charge the battery to repair	Akku vor der Reparatur laden
+Check Config/retroachievements.toml.	Config/retroachievements.toml prüfen.
+Check Wi-Fi in the System menu.	WLAN im Systemmenü prüfen.
+Check for Updates	Nach Updates suchen
+Check logs	Protokoll prüfen
+Check the network has internet access.	Internetverbindung prüfen.
+Check the username and password length.	Länge von Benutzername und Passwort prüfen.
+Checking achievement session	Erfolgsanmeldung wird geprüft
+Checking for updates	Updates werden gesucht
+Checking service	Dienst wird geprüft
+Checks pending games while idle with the lid open.	Prüft ausstehende Spiele bei offenem Deckel im Leerlauf.
+Choose	Wählen
+Choose emulator	Emulator wählen
+City	Stadt
+Classic	Klassisch
+Clean Detected Files	Gefundene Dateien löschen
+Cleanup complete	Bereinigung abgeschlossen
+Cleanup failed	Bereinigung fehlgeschlagen
+Cleanup scan complete	Suche abgeschlossen
+Clear	Leeren
+Clock	Uhr
+Clock Not Set	Uhr nicht gestellt
+Close	Schließen
+Collection	Sammlung
+Collections	Sammlungen
+Color Correction	Farbkorrektur
+Config folder may be read-only. Check Logs/slot.log.	Schreibschutz im Config-Ordner prüfen. Siehe Logs/slot.log.
+Configure your account and restart first.	Erst Konto einrichten und Slot neu starten.
+Confirm cleanup	Bereinigung bestätigen
+Connect	Verbinden
+Connected	Verbunden
+Connecting	Verbindung läuft
+Connecting to Wi-Fi	WLAN-Verbindung wird aufgebaut
+Contrast	Kontrast
+Controls	Steuerung
+Correction Off	Farbkorrektur aus
+Correction On	Farbkorrektur ein
+Could Not Connect	Verbindung fehlgeschlagen
+Could not check for updates	Update-Suche fehlgeschlagen
+Could not connect	Verbindung fehlgeschlagen
+Could not fetch update info	Update-Infos nicht abrufbar
+Could not join Wi-Fi	WLAN-Verbindung fehlgeschlagen
+Could not read RA login	RA-Anmeldung nicht lesbar
+Could not save the game	Spiel konnte nicht gespeichert werden
+Could not write login	Anmeldung konnte nicht gespeichert werden
+Custom	Eigenes
+Custom Label	Eigenes Etikett
+Custom Shell	Eigenes Gehäuse
+Dark	Dunkel
+Date	Datum
+Date & Time	Datum und Uhrzeit
+Decrease Volume	Leiser
+Delete	Löschen
+Delete State	Spielstand löschen
+Delete this save state?	Diesen Spielstand löschen?
+Delete this screenshot?	Dieses Bildschirmfoto löschen?
+Delete {n} screenshots?	{n} Bildschirmfotos löschen?
+Disconnect	Trennen
+Done	Fertig
+Dot	Punkte
+Download failed	Download fehlgeschlagen
+Download kept failing	Download wiederholt fehlgeschlagen
+Drop	Ablegen
+End Link	Verbindung beenden
+Enter Password	Passwort eingeben
+Enter a password	Passwort eingeben
+Enter a server first	Zuerst Server eingeben
+Enter a username	Benutzernamen eingeben
+Every button goes back to its default.	Alle Tasten erhalten ihre Standardbelegung.
+Every shelf key goes back to its default.	Alle Regaltasten erhalten ihre Standardbelegung.
+Every shortcut goes back to its default.	Alle Kürzel erhalten ihre Standardbelegung.
+Existing	Vorhanden
+Exit (multi-cart)	Beenden (mehrere Module)
+Exit Game	Spiel beenden
+FAST-FORWARD TWICE	2× VORSPULEN
+FF KEY	VORSPULTASTE
+FF double-tap lock	Vorspulen einrasten
+Fast Forward	Vorspulen
+Fast Forward Sound	Ton beim Vorspulen
+Fast-Forward Toggle	Vorspulen umschalten
+Favorites	Favoriten
+Fetch Box Art	Cover laden
+Fetch Missing Art	Fehlende Cover laden
+Fetching Art	Bilder werden geladen
+Fetching Box Art	Cover werden geladen
+Fill / Crop	Füllen / beschneiden
+Finish	Abschließen
+Fit	Einpassen
+Forget	Entfernen
+Forget {ssid}?	Netzwerk {ssid} entfernen?
+Frame Blending	Bildmischung
+Free some space, then try again.	Speicherplatz freigeben und erneut versuchen.
+Full Screen	Vollbild
+Full Stretch	Strecken
+Game Boy Pocket SGB (restart)	Game Boy Pocket SGB (Neustart)
+Game Boy resize	GB-Bildgröße
+Game Menu	Spielmenü
+Game Reset	Spiel zurückgesetzt
+Game Titles	Spieltitel
+Game is gone from the server	Spiel auf dem Server nicht mehr vorhanden
+Gamebit failed	Gamebit fehlgeschlagen
+Gamebit has stopped.	Gamebit wurde beendet.
+Gameplay	Spieloptionen
+General	Allgemein
+Getting IP	IP-Adresse wird bezogen
+Ghosting	Nachzieheffekt
+Glitter	Glitzer
+Grid	Raster
+Guide	Anleitung
+Guide Help	Hilfe zur Anleitung
+HOLD A	A HALTEN
+HOLD FAST-FORWARD	VORSPULEN HALTEN
+HOLD FAVORITE KEY	FAVORITENTASTE HALTEN
+HOLD MENU	MENU HALTEN
+HOLD POWER	POWER HALTEN
+HOLD REMOVE RECENT	ENTFERNEN HALTEN
+HOLD SEL	SELECT HALTEN
+HOLD SELECT	SELECT HALTEN
+Handwritten	Handschrift
+Help	Hilfe
+Hide	Ausblenden
+Hold Fast-Forward	Vorspulen halten
+Host	Host
+Hotkey Guide	Tastenübersicht
+IP Address	IP-Adresse
+Icon	Symbol
+In-Game	Im Spiel
+Increase Volume	Lauter
+Install	Installieren
+Installs off on server	Installation auf dem Server deaktiviert
+Integer	Ganzzahlig
+Invalid Password	Falsches Passwort
+Invalid Port	Ungültiger Port
+Invalid RA configuration	Ungültige RA-Konfiguration
+Invalid RetroAchievements credentials	RA-Zugangsdaten ungültig
+Invalid achievement config	Erfolgseinstellungen ungültig
+Invalid login entry	Anmeldedaten ungültig
+It cannot be brought back.	Das lässt sich nicht rückgängig machen.
+Join	Beitreten
+Join a Wi-Fi network first.	Zuerst mit WLAN verbinden.
+Keep	Behalten
+Keyboard Help	Tastaturhilfe
+Kid Mode	Kindermodus
+Kid Mode is off until restart	Kindermodus bis zum Neustart aus
+Kid Mode: Exit Game	Kindermodus: Spiel beenden
+Kid Shelf	Kinderregal
+Kid unlock (boot)	Kindersperre lösen (Start)
+L1 / R1 (IF FREE)	L1 / R1 (FALLS FREI)
+LEFT	LINKS
+Label Color	Etikettfarbe
+Label Hex	Etikettfarbe (Hex)
+Label Printer	Etikettendrucker
+Leave blank for a saved account	Für gespeichertes Konto leer lassen
+Leave it empty for an open network	Für ein offenes Netzwerk leer lassen
+Left Stick as D-Pad	Linker Stick als Steuerkreuz
+Lid Power Off	Ausschalten bei geschlossenem Deckel
+Light	Hell
+Link ended	Verbindung beendet
+Link was ended	Verbindung beendet
+Linked	Verbunden
+Load	Laden
+Load State	Spielstand laden
+Locked	Gesperrt
+Logo Only	Nur Logo
+Looking for the other player	Mitspieler wird gesucht
+Lost the connection	Verbindung verloren
+MENU TWICE	2× MENU
+Menu Power Off	Im Menü ausschalten
+Menu Screen Off	Display im Menü aus
+Missing SD card	SD-Karte fehlt
+Mix	Mischen
+Mode	Modus
+Model	Modell
+Move	Verschieben
+Move {}	{} verschieben
+Multi	Mehrfach
+Multi-file ROMs are not supported	Mehrteilige ROMs werden nicht unterstützt
+Multi-select	Mehrfachauswahl
+Mute	Stumm
+Mute (both)	Stumm (beide)
+NOT ASSIGNED	NICHT BELEGT
+Name already exists, use a different name	Name schon vergeben. Anderen Namen wählen.
+Name not allowed, use a different name	Name unzulässig. Anderen Namen wählen.
+Needs attention	Prüfung nötig
+Network	Netzwerk
+Network Name	Netzwerkname
+Network forgotten	Netzwerk entfernt
+New Collection	Neue Sammlung
+Next State	Nächster Spielstand
+Nickname	Spitzname
+No Art Found	Keine Bilder gefunden
+No Connection	Keine Verbindung
+No IP Address	Keine IP-Adresse
+No New Labels	Keine neuen Etiketten
+No Other Labels	Keine weiteren Etiketten
+No card root	SD-Karte nicht gefunden
+No eligible old temporary or rotated log files.	Keine veralteten temporären Dateien oder Protokolle gefunden.
+No failed games	Keine fehlgeschlagenen Spiele
+No link support	Keine Link-Unterstützung
+No one joined, try again	Niemand beigetreten. Erneut versuchen.
+No saved login token exists for this account.	Für dieses Konto ist keine Anmeldung gespeichert.
+No scan	Keine Suche
+No unsafe files were intentionally removed.	Dateien mit unklarem Status wurden ausgelassen.
+Nobody arrived	Niemand beigetreten
+None	Keine
+Normal Game Boy/Color	Normaler Game Boy/Color
+Not Connected	Nicht verbunden
+Not Found	Nicht gefunden
+Not Set	Nicht festgelegt
+Not configured	Nicht eingerichtet
+Not connected	Nicht verbunden
+Not enough space on the card	Zu wenig Platz auf der Karte
+Not now	Später
+Not registered	Nicht registriert
+Notched	Mit Kerbe
+Nothing is currently marked for retry.	Keine Spiele für einen neuen Versuch vorgemerkt.
+Nothing to clean	Nichts zu bereinigen
+Nothing was changed. Try again later.	Keine Änderung. Später erneut versuchen.
+Off	Aus
+Offline / retrying	Offline / neuer Versuch
+On	Ein
+One Shelf	Ein Regal
+Open	Öffnen
+Or enter	Oder eingeben
+Other Network	Anderes Netzwerk
+PAN	VERSCHIEBEN
+Page	Seite
+Pair	Koppeln
+Paired	Gekoppelt
+Pairing	Kopplung läuft
+Pairing lacks permissions	Berechtigung für die Kopplung fehlt
+Pan	Verschieben
+Password	Passwort
+Password needed for this account	Passwort für dieses Konto erforderlich
+Pending failed ROMs have been queued again.	Fehlgeschlagene ROMs werden erneut geprüft.
+Percentage	Prozent
+Pick	Auswählen
+Player 1	Spieler 1
+Please switch to gpSP	Bitte zu gpSP wechseln
+Please switch to mGBA	Bitte zu mGBA wechseln
+Plug in before updating BaseOS. A installs anyway.	Für das BaseOS-Update Netzteil anschließen. A installiert trotzdem.
+Powering Down	Wird ausgeschaltet
+Prepare Library	Bibliothek vorbereiten
+Preparing library	Bibliothek wird vorbereitet
+Press SELECT + START to repair	Zur Reparatur SELECT + START drücken
+Previous State	Voriger Spielstand
+Progress is not being saved	Fortschritt wird nicht gespeichert
+Protocol	Protokoll
+R1 (IF FREE)	R1 (FALLS FREI)
+REMOVE RECENT KEY	ENTFERNEN-TASTE
+RIGHT	RECHTS
+Ready	Bereit
+Real Label	Originaletikett
+Recents	Zuletzt gespielt
+Recording	Aufnahme läuft
+Recovery / Kid Mode	Wiederherstellung / Kindermodus
+Reflection	Spiegelung
+Refreshing ROM and achievements	ROM und Erfolge werden aktualisiert
+Remove	Entfernen
+Remove from {name}?	Aus {name} entfernen?
+Remove game	Spiel entfernen
+Remove last game from {name}?	Letztes Spiel aus {name} entfernen?
+Removed from {name}	Aus {name} entfernt
+Reorder Collection	Sammlung sortieren
+Reorder game	Spiel verschieben
+Repair	Reparieren
+Repair the SD card?	SD-Karte reparieren?
+Repairing SD Card	SD-Karte wird repariert
+Reset	Zurücksetzen
+Reset All	Alles zurücksetzen
+Reset all controls?	Alle Tasten zurücksetzen?
+Reset all shelf keys?	Alle Regaltasten zurücksetzen?
+Reset all shortcuts?	Alle Kürzel zurücksetzen?
+Restart	Neustart
+Restart (About only)	Neustart (unter Info)
+Restart Slot for the login to take effect.	Slot neu starten, um die Anmeldung zu übernehmen.
+Restarting	Neustart läuft
+Resume	Fortsetzen
+Resume on Insert	Beim Einlegen fortsetzen
+Resume on Power On	Beim Einschalten fortsetzen
+RetroAchievements Password	RetroAchievements-Passwort
+RetroAchievements Username	RetroAchievements-Benutzername
+RetroAchievements disabled	RetroAchievements deaktiviert
+RetroAchievements saved	RA-Anmeldung gespeichert
+RetroAchievements: Cached; connecting	RetroAchievements: Daten vorhanden, Verbindung läuft
+RetroAchievements: Connected	RetroAchievements: Verbunden
+RetroAchievements: Connecting...	RetroAchievements: Verbindung läuft …
+RetroAchievements: No achievements	RetroAchievements: Keine Erfolge
+RetroAchievements: No offline cache yet	RetroAchievements: Noch keine Offline-Daten
+RetroAchievements: Off	RetroAchievements: Aus
+RetroAchievements: Offline ready	RetroAchievements: Offline bereit
+Retry	Erneut versuchen
+Retry Failed Games	Spiele erneut prüfen
+Retrying failed games	Spiele werden erneut geprüft
+Review Config/retroachievements.toml.	Config/retroachievements.toml prüfen.
+Rewind	Zurückspulen
+RomM refused the request ({n})	RomM hat die Anfrage abgelehnt ({n})
+Rounded	Abgerundet
+Rumble	Vibration
+SCAN OR GO TO	SCANNEN ODER ÖFFNEN
+SD card repaired	SD-Karte repariert
+SD repair (if offered)	SD-Reparatur (falls verfügbar)
+SINGLE KEY ONLY	NUR EINE TASTE
+SP Screen	SP-Bildschirm
+Same as Console {}	Wie am Gerät: {}
+Same as {}	Wie {}
+Saturation	Sättigung
+Save State on Eject	Beim Auswerfen speichern
+Save States	Spielstände
+Save states	Spielstände
+Scale	Skalierung
+Scaling	Skalierung
+Scan	Suchen
+Scan Storage	Speicher prüfen
+Scan for Networks	Netze suchen
+Scan with	Scannen mit
+Scanning for networks	Netze werden gesucht
+Screen	Bildschirm
+Screenshot Captured	Bildschirmfoto gespeichert
+Screenshot Failed	Bildschirmfoto fehlgeschlagen
+Screenshots	Bildschirmfotos
+Scroll	Scrollen
+Select	Wählen
+Select Clean Detected Files again to delete scanned items.	Zum Löschen erneut „Gefundene Dateien löschen“ wählen.
+Set	Einstellen
+Set Automatically	Automatisch einstellen
+Set Server before pairing.	Vor dem Koppeln den Server festlegen.
+Set the clock	Uhr stellen
+Set the date and time, then try again.	Datum und Uhrzeit einstellen und erneut versuchen.
+Settings	Einstellungen
+Settings and editing lock.	Einstellungen und Bearbeitung werden gesperrt.
+Shader: Authentic	Shader: Authentic
+Shader: Dot	Shader: Punkte
+Shader: Grid	Shader: Raster
+Shader: Off	Shader: Aus
+Shape	Form
+Shelf	Regal
+Shelf Mode	Regalansicht
+Shell Color	Gehäusefarbe
+Shell Hex	Gehäusefarbe (Hex)
+Shelves	Regale
+Shift	Umschalt
+Shift x2 = Caps	2× Umschalt: Feststellen
+Shortcuts	Kürzel
+Show	Anzeigen
+Shut Down	Ausschalten
+Skip	Überspringen
+Sleep / Wake	Ruhezustand
+Solid	Einfarbig
+Space	Leertaste
+Start fresh	Neu beginnen
+State Loaded	Spielstand geladen
+State Saved	Spielstand gespeichert
+States	Spielstände
+Stop	Stopp
+Stop Fast-Forward Lock	Vorspulen lösen
+Stopped	Angehalten
+Stopping	Wird angehalten
+Storage Cleanup	Speicher bereinigen
+Stretch	Strecken
+Supports single button and MENU+button.	Eine Taste oder MENU + Taste möglich.
+Supports single button and two button chords.	Eine Taste oder Kombination aus zwei Tasten möglich.
+Swap	Tauschen
+Sync Status	Abgleichstatus
+Syncing	Abgleich läuft
+TAP FAST-FORWARD	VORSPULEN ANTIPPEN
+TAP MENU	MENU ANTIPPEN
+TAP SELECT	SELECT ANTIPPEN
+The cable came loose	Kabel getrennt
+The download was damaged	Download beschädigt
+The other player vanished	Mitspieler nicht mehr verbunden
+The radio did not come up	Funk konnte nicht starten
+The update could not be read	Update nicht lesbar
+Theme	Darstellung
+They cannot be brought back.	Das lässt sich nicht rückgängig machen.
+This device has no Wi-Fi	Dieses Gerät hat kein WLAN
+Tick	Markieren
+Time	Uhrzeit
+To unlock, hold START, SELECT, L2 and R2	Zum Entsperren START, SELECT, L2 und R2 halten
+Tools	Werkzeuge
+Try again later.	Später erneut versuchen.
+Turbo Buttons	Turbotasten
+Turn On	Einschalten
+Turn on Kid Mode?	Kindermodus einschalten?
+Turn on Wi-Fi to see networks	Für die Netzsuche WLAN einschalten
+Undo	Rückgängig
+Undo Load	Laden rückgängig
+Undo Reset	Reset rückgängig
+Undo Save	Speichern rückgängig
+Unlocked	Entsperrt
+Unselect	Abwählen
+Unsupported file type	Dateityp nicht unterstützt
+Updates are available	Updates verfügbar
+VOLUME DOWN	LEISER
+VOLUME UP	LAUTER
+VOLUME UP + DOWN	LAUTER + LEISER
+Verified obsolete files were removed.	Geprüfte veraltete Dateien wurden entfernt.
+View	Ansehen
+Waiting	Warten
+Waiting for a friend	Warten auf Mitspieler
+Wallpaper	Hintergrund
+Wallpaper Tint	Hintergrundtönung
+Wallpaper Tint: 25%	Hintergrundtönung: 25 %
+Wallpaper Tint: 45%	Hintergrundtönung: 45 %
+Wallpaper Tint: 65%	Hintergrundtönung: 65 %
+Wallpaper Tint: Off	Hintergrundtönung: Aus
+Wi-Fi	WLAN
+Wi-Fi Lost	WLAN getrennt
+Wi-Fi Off	WLAN aus
+Wrap	Zeilenumbruch
+Write	Schreiben
+Wrong Password	Falsches Passwort
+Your friend unplugged	Mitspieler hat die Verbindung getrennt
+Your phone	Dein Smartphone
+Zip could not be read	ZIP-Datei nicht lesbar
+Zip holds more than one ROM	ZIP-Datei enthält mehrere ROMs
+Zip holds no playable ROM	ZIP-Datei enthält kein spielbares ROM
+Zoom Out	Verkleinern
+has no art	hat kein Bild
+have no art	haben kein Bild
+in-game save	Spielinterner Speicherstand
+just now	gerade eben
+no nickname yet	noch kein Spitzname
+no nickname, showing the fallback	kein Spitzname, Standardname wird angezeigt
+or later needed	oder neuer erforderlich
+save state	Spielstand
+select. slot. is up to date	select. slot. ist aktuell
+set the clock	Uhr stellen
+slot only plays GB, GBC and GBA	Slot spielt nur GB, GBC und GBA
+slot restarts when it is done.	Slot startet danach neu.
+the server	den Server
+undo load	Laden rückgängig
+undo reset	Reset rückgängig
+undo save	Speichern rückgängig
+was denied	wurde abgelehnt
+while turning on.	beim Einschalten.
+{files} old files; {:.2} MiB. Select Clean Detected Files.	{files} alte Dateien, {:.2} MiB. Zum Löschen „Gefundene Dateien löschen“ wählen.
+{name} was forgotten	Netzwerk {name} entfernt
+{nickname} wants to play	{nickname} möchte spielen
+{n} carts {many}	{n} Module {many}
+1 cart {one}	1 Modul {one}
+{ssid} was forgotten	Netzwerk {ssid} entfernt
+{state}; {} failed ROMs; {}	{state}, {} fehlgeschlagene ROMs, {}
+{} hr ago	vor {} Std.
+{} is the latest version.	{} ist die aktuelle Version.
+{} min ago	vor {} Min.
+{} of {}	{} von {}
+{} | Y Refresh | X Sort	{} | Y Neu laden | X Sortieren
+12-Hour	12 Stunden
+24-Hour	24 Stunden
+MAR	MÄR
+MAY	MAI
+OCT	OKT
+DEC	DEZ
+ WANTS TO PLAY	 MÖCHTE SPIELEN
+Save State	Spielstand speichern
+Screenshot	Bildschirmfoto
+Brightness Up	Heller
+Brightness Down	Dunkler
+Blue Light Down	Weniger Blaulicht
+Blue Light Up	Mehr Blaulicht
+Palette Back	Vorige Palette
+Palette Next	Nächste Palette
+Shader Next	Nächster Shader
+Shader Back	Voriger Shader
+Sunlight Up	Mehr Sonnenlicht
+Sunlight Down	Weniger Sonnenlicht
+Reset Game	Spiel zurücksetzen
+Previous Shelf	Voriges Regal
+Next Shelf	Nächstes Regal
+Favorite	Favorit
+Remove Recent	Aus Verlauf entfernen
+Previous	Zurück
+Next	Weiter
+CAPS	FEST
+Cursor	Zeiger
+Authentic	Authentisch
+Save	Speichern
+Up	Oben
+Down	Unten
+Left	Links
+Right	Rechts
+BaseOS did not see the update	BaseOS hat das Update nicht erkannt
+Cannot read ROM for identification	ROM zur Erkennung nicht lesbar
+ROM identified; requesting game session	ROM erkannt, Spielsitzung wird angefordert
+Looking up exact ROM hash	ROM-Prüfsumme wird gesucht
+ROM not registered on RetroAchievements	ROM bei RetroAchievements nicht registriert
+Loading achievement definitions	Erfolgsdaten werden geladen
+Establishing online game session	Online-Sitzung wird gestartet
+Online session accepted	Online-Sitzung bestätigt
+Connected; presence ping retry pending	Verbunden, Statusmeldung wird wiederholt
+Network timeout; retry pending	Netzwerk-Zeitüberschreitung, neuer Versuch folgt
+Login rejected; check account	Anmeldung abgelehnt, Konto prüfen
+RetroAchievements rejected game request	RetroAchievements hat die Spielanfrage abgelehnt
+Invalid game data or SD storage	Spieldaten oder SD-Speicher fehlerhaft
+Achievements need internet once	Erfolge benötigen einmalig Internet
+Achievement sync needs attention	Erfolgsabgleich prüfen
+Achievements: check account config	Erfolge: Kontoeinstellungen prüfen
+Achievements: data or storage error	Erfolge: Daten- oder Speicherfehler
+Loading achievement metadata	Erfolgsinfos werden geladen
+Rechecking ROM hash and achievement session	ROM-Prüfsumme und Sitzung werden erneut geprüft
+Invalid RetroAchievements config	RetroAchievements-Einstellungen ungültig
+Achievements need an account	Für Erfolge wird ein Konto benötigt
+Achievements network worker failed	Netzwerkdienst für Erfolge fehlgeschlagen
+No achievements for this ROM	Keine Erfolge für dieses ROM
+Achievements ready ({state}, softcore)	Erfolge bereit ({state}, Softcore)
+{} - {unsupported} unsupported	{} – {unsupported} nicht unterstützt
+Achievement tracking interrupted	Erfolgserfassung unterbrochen
+Core does not expose achievement RAM	Core stellt keinen Speicher für Erfolge bereit
+Achievements synced	Erfolge abgeglichen
+Offline achievement cache ready	Offline-Daten für Erfolge bereit
+Achievements offline - sync later	Erfolge offline – Abgleich folgt
+SELECT + VOLUME DOWN	SELECT + LEISER
+SELECT + VOLUME UP/DOWN	SELECT + LAUTER/LEISER
+Per Shelf	Pro Regal
+Slot Blur	Slot weichgezeichnet
+Random	Zufällig
+Default	Standard
+THE EXQUISITE SKEUOMORPHIC	DIE DETAILREICHE GRAFIK
+ARTWORK MADE BY MARKUS.	STAMMT VON MARKUS.
+EMULATION POWERED BY MGBA,	EMULATION MIT MGBA,
+GPSP AND GAMBATTE.	GPSP UND GAMBATTE.
+UNDERLYING OS IS	BETRIEBSSYSTEM:
+BASEOS BY PVAIBHAV. TYPE IS	BASEOS VON PVAIBHAV. SCHRIFT:
+OPEN SANS AND NERD FONTS	OPEN SANS UND NERD FONTS
+SYMBOLS BY RYAN L MCINTYRE.	SYMBOLS VON RYAN L MCINTYRE.
+THE PANEL MASK IS DERIVED	DIE DISPLAYMASKE BASIERT
+FROM GIGAHERZ'S LCD3X. THE	AUF LCD3X VON GIGAHERZ.
+CART SOUNDS ARE MY CHILDHOOD	MODULTÖNE: MEIN GAME BOY
+GAMEBOY.	AUS KINDERTAGEN.
+MADE IN ITHACA	ENTWICKELT IN ITHACA
+SEASONED IN BERLIN	VERFEINERT IN BERLIN
+SEE README.	SIEHE README.
+MODEL NO. AGS-102	MODELL AGS-102
+INPUT : 5V{DC}1.5A	EINGANG: 5V{DC}1,5A
+BATTERY : LI-ION ({p}%)	AKKU: LI-ION ({p}%)
+BATTERY : LI-ION	AKKU: LI-ION
+UP	OBEN
+DOWN	UNTEN
+R-UP	R-OBEN
+R-DOWN	R-UNTEN
+R-LEFT	R-LINKS
+R-RIGHT	R-RECHTS
+NONE	KEINE
+A Button	Taste A
+B Button	Taste B
+L Button	Taste L
+R Button	Taste R

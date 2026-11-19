@@ -6,6 +6,7 @@ There are two independent firmware lines: **Anbernic H700** (Slot 1.16.0) and **
 
 | Version | Status / milestone | Release |
 | --- | --- | --- |
+| **Ver. 44** | German handheld interface | [Ver. 44](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.44) |
 | **Ver. 43** | White Shift key for one-character uppercase entry | [Ver. 43](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.43) |
 | Ver. 42 | Redraw the CAPS indicator when locking the H700 keyboard | [Ver. 42](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.42) |
 | **Ver. 41** | One-shot Shift and Caps Lock on the H700 keyboard | [Ver. 41](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.41) |
@@ -33,6 +34,7 @@ There are two independent firmware lines: **Anbernic H700** (Slot 1.16.0) and **
 
 | Version | Status / milestone | Release |
 | --- | --- | --- |
+| **Ver. 7** | German handheld interface | [Ver. 7](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver7) |
 | **1.8.1 Ver. 6** | **Current stable Miyoo release** — corrected OnionOS/stock detection, no Restart UI, modular build/test pipeline | [Miyoo Ver. 6](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver6) |
 | 1.8.1 Ver. 2 | Original GBA and GBA SP bottom-bezel choices | [Miyoo Ver. 2](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver2) |
 

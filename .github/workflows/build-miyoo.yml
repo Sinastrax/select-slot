@@ -6,10 +6,12 @@ on:
     branches:
       - main
     paths:
+      - "handheld-i18n/**"
       - "miyoo/**"
       - ".github/workflows/build-miyoo.yml"
   pull_request:
     paths:
+      - "handheld-i18n/**"
       - "miyoo/**"
       - ".github/workflows/build-miyoo.yml"
 

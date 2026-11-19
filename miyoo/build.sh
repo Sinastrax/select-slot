@@ -252,6 +252,21 @@ cmp -s "$STAGE/System/launch_frontend.sh" "$PORT/card/System/launch_frontend.sh"
     echo "Packaged launcher differs from original Miyoo port; refusing build" >&2
     exit 1
 }
+# Both language frontends use the same already-patched ARMv7 sources and cores.
+(
+  cd "$PORT"
+  binary=target-miyoo/rust/armv7-unknown-linux-gnueabihf/device/slot
+  python3 "$ROOT/handheld-i18n/language_menu.py" upstream/slot
+  task build
+  cp "$binary" "$STAGE/System/slot"
+  python3 "$ROOT/handheld-i18n/german.py" upstream/slot
+  task build
+  cp "$binary" "$STAGE/System/slot-de"
+  file "$STAGE/System/slot-de" | grep -q 'ELF 32-bit LSB .*ARM'
+  ! cmp -s "$STAGE/System/slot" "$STAGE/System/slot-de"
+)
+python3 "$ROOT/handheld-i18n/launcher.py" "$STAGE/System/launch_frontend.sh"
+sh -n "$STAGE/System/launch_frontend.sh"
 # Only PWM selection/testing and menu-specific blanking may differ in slot-power.
 ! grep -Fq "diff --git a/crates/slot-gfx/" "$PORT/patches/0028-select-miyoo-config.patch"
 grep -Fq 'diff --git a/crates/slot-power/src/device.rs' "$PORT/patches/0028-select-miyoo-config.patch"
@@ -320,6 +335,7 @@ rm "$STAGE/.tmp_update/runtime.sh"
 for z in "$ZIP" "$ZIP_ONION" "$ZIP_STOCK"; do
   unzip -t "$z" | tail -1 | grep -q 'No errors detected'
   unzip -Z1 "$z" | grep -qx 'System/slot'
+  unzip -Z1 "$z" | grep -qx 'System/slot-de'
   unzip -Z1 "$z" | grep -qx 'System/bezels/640x480.png'
   unzip -Z1 "$z" | grep -qx 'System/bezels/gba-original.png'
   unzip -Z1 "$z" | grep -qx 'App/Slot/launch.sh'

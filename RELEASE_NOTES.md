@@ -1,3 +1,3 @@
-# select. slot. 1.16.0 Ver. 43
+# select. slot. 1.16.0 Ver. 44
 
-The H700 keyboard now highlights the Shift arrow in white after one press of Shift or SELECT. The highlight clears when you enter the next character.
+Choose **Deutsch** under **Settings → General → Language (restart)**, then restart Slot. The German interface includes settings, controls, help, dialogs and status messages. To switch back, choose **English** under **Einstellungen → Allgemein → Sprache (Neustart)** and restart. Game content and user-entered names keep their original language.
