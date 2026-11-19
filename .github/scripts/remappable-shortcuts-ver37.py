@@ -106,6 +106,12 @@ def gesture(s):
                 _ => self.shortcut(Some(Mod::Select), b),
             };""",
             "            let action = self.shortcut(Some(Mod::Select), b);", "remove Select+Vol hard-code")
+    s = one(s, """        if self.chording(now) {
+            let action = self.shortcut(Some(Mod::Select), b);""",
+            """        if b != Btn::Menu && self.chording(now) {
+            // MENU is handled by menu_down so it clears an earlier menu tap.
+            let action = self.shortcut(Some(Mod::Select), b);""",
+            "MENU chord must retain menu-tap state cleanup")
     s = one(s, "if let Some((first, action)) = self.pair(b) {",
             "if let Some((first, action)) = self.pair(b, now) {", "pair has timestamp")
     s = one(s, """            return self.fire(b, action, now);
@@ -246,10 +252,10 @@ fn link_play_chord_is_reassignable_and_can_be_disabled() {
     assert!(!actions.contains(&GameMenu), "{actions:?}");
     let mut g = gestures();
     let mut bindings: Vec<_> = today().into_iter().filter(|(_, a)| *a != GameMenu).collect();
-    bindings.push((Chord { modifier: Some(Mod::Select), button: A }, GameMenu));
+    bindings.push((Chord { modifier: Some(Mod::Select), button: Start }, GameMenu));
     g.set_shortcuts(bindings);
     g.feed(Down(Select), 0);
-    assert_eq!(g.feed(Down(A), 50), vec![GameMenu]);
+    assert_eq!(g.feed(Down(Start), 50), vec![GameMenu]);
 }
 """
     return s
