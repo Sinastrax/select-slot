@@ -1281,6 +1281,184 @@ edit("crates/slot/src/frontend.rs", [
     ('''            BezelPick::None | BezelPick::Ags102 => None,''',
      '''            BezelPick::None | BezelPick::Ags102 | BezelPick::Agb001 => None,'''),
 ])
+
+# Ver. 4: port device-neutral menu refinements from the H700 version.
+# Miyoo v1.8.1 has no System page: Restart follows About on the main page.
+edit("crates/slot-ui/src/quick_menu.rs", [
+    ('''    GbcScaling,
+}
+
+impl QuickRow''',
+     '''    GbcScaling,
+    Restart,
+}
+
+impl QuickRow'''),
+    ('''    pub const ALL: [QuickRow; 87]''',
+     '''    pub const ALL: [QuickRow; 88]'''),
+    ('''        QuickRow::GbcScaling,
+    ];
+
+    pub const MAIN:''',
+     '''        QuickRow::GbcScaling,
+        QuickRow::Restart,
+    ];
+
+    pub const MAIN:'''),
+    ('''    pub const MAIN: [QuickRow; 5] = [
+        QuickRow::General,
+        QuickRow::Screen,
+        QuickRow::Game,
+        QuickRow::Controls,
+        QuickRow::About,
+    ];''',
+     '''    pub const MAIN: [QuickRow; 6] = [
+        QuickRow::General,
+        QuickRow::Screen,
+        QuickRow::Game,
+        QuickRow::Controls,
+        QuickRow::About,
+        QuickRow::Restart,
+    ];'''),
+    ('''            QuickRow::About => "About",''',
+     '''            QuickRow::About => "About",
+            QuickRow::Restart => "Restart",'''),
+    ('''            QuickRow::DateTime
+                | QuickRow::About
+                | QuickRow::Screen''',
+     '''            QuickRow::DateTime
+                | QuickRow::About
+                | QuickRow::Restart
+                | QuickRow::Screen'''),
+    ('''fn scrolls(page: &[QuickRow]) -> bool {
+    [
+        &QuickRow::CONTROLS[..],
+        &QuickRow::SHORTCUTS,
+        &QuickRow::GENERAL,
+        &QuickRow::PLAY_SCREEN,
+    ]
+    .contains(&page)
+}''',
+     '''fn scrolls(page: &[QuickRow]) -> bool {
+    // Gameplay, settings and future menu pages share a bounded viewport.
+    !page.is_empty()
+}'''),
+])
+
+edit("crates/slot/src/app.rs", [
+    ('''    battery_percent: slot_ui::Printed,
+    bolt: Option<TexId>,''',
+     '''    battery_percent: slot_ui::Printed,
+    menu_battery_percent: slot_ui::Printed,
+    bolt: Option<TexId>,'''),
+    ('''    shelf_clock: slot_ui::Printed,
+    hud: Hud,''',
+     '''    shelf_clock: slot_ui::Printed,
+    menu_clock: slot_ui::Printed,
+    hud: Hud,'''),
+    ('''            battery_percent: slot_ui::Printed::default(),
+            bolt: None,''',
+     '''            battery_percent: slot_ui::Printed::default(),
+            menu_battery_percent: slot_ui::Printed::default(),
+            bolt: None,'''),
+    ('''            shelf_clock: slot_ui::Printed::default(),
+            hud: Hud::new(),''',
+     '''            shelf_clock: slot_ui::Printed::default(),
+            menu_clock: slot_ui::Printed::default(),
+            hud: Hud::new(),'''),
+    ('''    pub fn set_battery_percent_face(&mut self, face: TexId, w: u32) {
+        self.battery_percent = slot_ui::Printed::new(face, w);
+    }''',
+     '''    pub fn set_battery_percent_face(&mut self, face: TexId, w: u32) {
+        self.battery_percent = slot_ui::Printed::new(face, w);
+    }
+
+    pub fn set_menu_battery_percent_face(&mut self, face: TexId, w: u32) {
+        self.menu_battery_percent = slot_ui::Printed::new(face, w);
+    }'''),
+    ('''    pub fn set_shelf_clock_face(&mut self, face: TexId, w: u32) {
+        self.shelf_clock = slot_ui::Printed::new(face, w);
+    }''',
+     '''    pub fn set_shelf_clock_face(&mut self, face: TexId, w: u32) {
+        self.shelf_clock = slot_ui::Printed::new(face, w);
+    }
+
+    pub fn set_menu_clock_face(&mut self, face: TexId, w: u32) {
+        self.menu_clock = slot_ui::Printed::new(face, w);
+    }'''),
+    ('''            QuickRow::DateTime
+            | QuickRow::About
+            | QuickRow::Screen''',
+     '''            QuickRow::DateTime
+            | QuickRow::About
+            | QuickRow::Restart
+            | QuickRow::Screen'''),
+    ('''            QuickRow::About => self.phase = Phase::About,''',
+     '''            QuickRow::About => self.phase = Phase::About,
+            QuickRow::Restart => self.begin_restart(),'''),
+    ('''                    self.battery_percent,
+                    self.hud_bolt,
+                    self.shelf_clock,
+                    out,
+                );
+            }
+        }
+        self.draw_menu_footer(out);''',
+     '''                    self.menu_battery_percent,
+                    self.hud_bolt,
+                    self.menu_clock,
+                    out,
+                );
+            }
+        }
+        self.draw_menu_footer(out);'''),
+])
+
+# Menu status uses a bright raster independent from the shelf theme.
+# The original clock/battery and framebuffer paths are unchanged.
+edit("crates/slot/src/frontend.rs", [
+    ('''    shelf: Option<TexId>,
+    picked: Option<String>,
+    shown: String,
+    battery: String,
+    battery_tex: Option<TexId>,''',
+     '''    shelf: Option<TexId>,
+    menu_clock_tex: Option<TexId>,
+    picked: Option<String>,
+    shown: String,
+    battery: String,
+    battery_tex: Option<TexId>,
+    menu_battery_tex: Option<TexId>,'''),
+    ('''        app.set_shelf_clock_face(id, w);
+    }
+    let platform_shown''',
+     '''        app.set_shelf_clock_face(id, w);
+        let face = word_ink(&shown, slot_ui::HUD_INK);
+        let menu_w = face.w;
+        let menu_id = upload(compositor, &mut clocks.menu_clock_tex, face);
+        app.set_menu_clock_face(menu_id, menu_w);
+    }
+    let platform_shown'''),
+    ('''            app.set_battery_percent_face(id, w);
+        }
+    }
+}
+
+fn sync_game_bezel''',
+     '''            app.set_battery_percent_face(id, w);
+            let face = word_ink(&battery_shown, slot_ui::HUD_INK);
+            let menu_w = face.w;
+            let menu_id = upload(compositor, &mut clocks.menu_battery_tex, face);
+            app.set_menu_battery_percent_face(menu_id, menu_w);
+        }
+    }
+}
+
+fn sync_game_bezel'''),
+    ('''        version: build.version,''',
+     '''        version: "1.8.1 Ver. 4",'''),
+])
+
 # Invariants: keep PWM brightness untouched. The only power-layer addition is
 # menu-only backlight blank/restore, preserving the stored brightness level.
 # Never patch the frame-buffer, keymon, theme files or OnionOS runtime.
