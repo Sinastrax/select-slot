@@ -1,6 +1,6 @@
 # select. slot. — H700 feature reference
 
-This page keeps the detailed H700 feature list out of the main [README](../README.md). It describes the **Anbernic H700** build only, based on **[Slot](https://github.com/slot-cfw/slot)** and **[pvaibhav/slot](https://github.com/pvaibhav/slot)** at the pinned `v1.16.0-pvaibhav.1` source. It must not be treated as Miyoo Mini documentation.
+This page provides an expanded technical reference for the H700 features also summarized and described in the main [README](../README.md). It describes the **Anbernic H700** build only, based on **[Slot](https://github.com/slot-cfw/slot)** and **[pvaibhav/slot](https://github.com/pvaibhav/slot)** at the pinned `v1.16.0-pvaibhav.1` source. It must not be treated as Miyoo Mini documentation.
 
 For how the game-focused frontend works in general, use the [official Slot guide](https://slot-cfw.fyi/). For original pvaibhav behavior and screenshots, see the [pvaibhav wiki](https://github.com/pvaibhav/slot/wiki). For the current supported version and release milestones, see the [changelog](../CHANGELOG.md).
 
@@ -82,7 +82,7 @@ For detailed per-version history and links to confirmed milestones, see the [cha
 - **Correctly branded OTA version text (Ver. 21).** The updater displays **1.16.0 Ver. 21** instead of the internal `v1.16.0-rgsp.21` identifier. The technical ZIP filename stays unchanged to preserve backwards-compatible OTA updates.
 - **No forced background updates.** The user chooses whether to install. ROMs, saves and personal settings are not bundled in releases.
 
-See [ONLINE_UPDATES.md](ONLINE_UPDATES.md) for technical packaging and release procedures.
+See [the online update guide](../ONLINE_UPDATES.md) for technical packaging and release procedures.
 
 ---
 
