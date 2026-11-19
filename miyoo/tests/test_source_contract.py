@@ -31,6 +31,19 @@ class MiyooSourceContract(unittest.TestCase):
         self.assertIn('"$SLOT_VERSION" "$CUSTOM_VERSION"', build)
         self.assertNotIn('CUSTOM_VERSION="', build)
 
+    def test_release_documents_match_single_version(self):
+        info = versions()
+        label = f'{info["SLOT_VERSION"]} Ver. {info["CUSTOM_VERSION"]}'
+        tag = f'miyoo-v{info["SLOT_VERSION"]}-ver{info["CUSTOM_VERSION"]}'
+        installation = (ROOT / "INSTALL.md").read_text()
+        readme = (ROOT.parent / "README.md").read_text().split("## H700 features")[0]
+        self.assertIn(label, installation)
+        self.assertIn(label, readme)
+        self.assertIn(tag, readme)
+        self.assertNotIn("Settings → Restart", installation.split("## Features")[0])
+        notes = ROOT.parent / ".github/release-notes" / f'miyoo-ver{info["CUSTOM_VERSION"]}.md'
+        self.assertTrue(notes.is_file(), "current release notes must exist")
+
     def test_no_user_restart_paths(self):
         ui = (ROOT / "custom/ui.py").read_text()
         self.assertNotIn("QuickRow::Restart", ui)
