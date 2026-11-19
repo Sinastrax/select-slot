@@ -33,9 +33,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          source miyoo/version.env
+          TASK_VERSION="${TASK_VERSION:-v3.54.0}"
           mkdir -p "$HOME/.local/bin"
-          curl -fsSL https://taskfile.dev/install.sh | sh -s -- -b "$HOME/.local/bin"
+          curl -fsSL https://taskfile.dev/install.sh | sh -s -- -b "$HOME/.local/bin" "$TASK_VERSION"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          task --version
 
       - name: Check Miyoo source-level regression contracts
         shell: bash
