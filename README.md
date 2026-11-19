@@ -99,7 +99,7 @@ The H700 version of select. slot. is based on **[pvaibhav/slot](https://github.c
 
 Detailed upstream references: [Authentic shaders](https://github.com/pvaibhav/slot/wiki/Authentic-shader), [panel calibration](https://github.com/pvaibhav/slot/wiki/Panel-colour-calibration), [120 Hz](https://github.com/pvaibhav/slot/wiki/120-Hz-and-run-ahead), [CPU and battery](https://github.com/pvaibhav/slot/wiki/CPU-speed-and-battery), [RetroAchievements](https://github.com/pvaibhav/slot/wiki/RetroAchievements), [cheats](https://github.com/pvaibhav/slot/wiki/Cheats) and [updates](https://github.com/pvaibhav/slot/wiki/Updates-and-releases).
 
-#### Optional H700 resource packs from pvaibhav
+### Optional H700 resource packs from pvaibhav
 
 | Pack | What it does |
 | --- | --- |
@@ -116,7 +116,7 @@ Everything below is **on top of** the respective upstream project. The custom H7
 
 These are the **custom changes in the H700 build**, on top of upstream Slot and pvaibhav's improvements. Everything listed here is retained in complete **H700** release builds.
 
-### Game Boy visuals and color
+#### Game Boy visuals and color
 
 - **Authentic GB/GBC/GBA shaders.** Extended Authentic rendering with model-specific LCD pixel separation, shadowing, ghosting and reflector response.
 - **Game Boy Color appearance for original Game Boy games.** Additional Authentic color presentation beyond the original monochrome models.
@@ -130,14 +130,14 @@ These are the **custom changes in the H700 build**, on top of upstream Slot and 
 - **GBA scaling on 720×480 screens (Ver. 22).** Under **Screen → Game Boy Advance → Scale**, **Integer** provides a centered **2× (480×320)** image; **Fit** retains the original **3× (720×480)** image. The choice is saved in the GBA settings and does not alter GB/GBC sizing, Authentic/Pocket shaders, or color correction.
 - **GBA / GBA SP bezel choice on 640×480 Anbernic screens (Ver. 20).** Under **Screen → Game Boy Advance → Bezel**, choose **None**, **GBA** (original horizontal Game Boy Advance artwork) or **GBA SP** (the existing AGS-102 strip). The new GBA bezel uses mugwomp93's already-authored *Perfect GBA* artwork, which has a pixel-identical transparency mask to Slot's original AGS-102 image. It retains the same screen placement, bezel size and slide animation. The selection is saved; GBA SP remains the default. The extra GBA choice is available **only at exactly 640×480**, including RG35XX H, not on 720×480 RG SP / RG34XXSP or other resolutions. No shader, scaling or core changes. Existing custom bezels still work; attribution and CC BY-SA 4.0 licensing are included in the firmware.
 
-### Emulation and audio
+#### Emulation and audio
 
 - **Three supported cores:** mGBA and Gambatte for GB/GBC, and mGBA and gpSP for GBA.
 - **Pinned older mGBA core.** Our complete H700 build uses the older mGBA revision `c758314a639aa0066e7b65a8341448181b73c804` rather than replacing it with a newer experimental core. Its modified corresponding source is supplied as a separate asset alongside each firmware release.
 - **GB/GBC mGBA performance and audio changes.** Core-specific CPU governor selection, audio-ring overflow handling with short crossfades, buffer recovery, and pitch-neutral drift behavior. Gambatte and GBA playback are not modified by the mGBA-only audio path.
 - **SameBoy is not bundled.** Experimental SameBoy work was retired after unfavorable performance; the supported GB/GBC choices remain mGBA and Gambatte.
 
-### Controls and handheld behavior
+#### Controls and handheld behavior
 
 - **Extra hotkey buttons:** L3, R3, and right-stick up/down/left/right on devices that have those controls.
 - **Corrected right-stick axis mapping** for H700 handheld input, including the RG34XXSP layout.
@@ -152,7 +152,7 @@ These are the **custom changes in the H700 build**, on top of upstream Slot and 
 - **Light-mode clock and battery percentage (Ver. 22).** Status text at the top of quick menus, including in-game menus, uses independent bright HUD text textures so both the **time** and **battery percentage** remain visible against the dark menu background. The existing shelf footer and wallpaper-specific colors remain untouched.
 - **Corrected Resume on Power On.** **On** starts the last game and loads its resume state; **Off** boots to the shelf with that game selected but not running. **Resume on Insert** stays independent for manual launches.
 
-### Important improvements
+#### Important improvements
 
 - **RetroAchievements (Ver. 30–35):** reliable in-game tracking for German Pokémon Smaragd, safe indirect memory reads, progress and per-game refresh, offline caching, and achievement tracking during fast-forward. The achievement viewer reuses a fixed number of UI textures.
 - **Better menus (Ver. 30–40):** universal menu scrolling, an in-game achievements viewer, safe storage cleanup, a standalone Restart menu entry, readable device names, and a hardware-tested, compact **Controls → Hotkey Guide** for less-obvious shortcuts.
@@ -161,7 +161,7 @@ These are the **custom changes in the H700 build**, on top of upstream Slot and 
 
 For detailed per-version history and links to confirmed milestones, see the [changelog](CHANGELOG.md). The current stable H700 build is **Ver. 40**, tested on all three compatible devices in the regular H700 lineup.
 
-### Online updates
+#### Online updates
 
 - **Custom update channel** from **Settings → System → Check for Updates**. Updates come from [this repository's releases](https://github.com/Sinastrax/select-slot/releases), not an upstream build.
 - **Full releases only:** the updater downloads a complete H700 package, checks its size and SHA-256 checksum, then stages it for installation at restart.
@@ -291,14 +291,14 @@ For cartridge artwork without a network download, use the [pvaibhav Artwork.pack
 
 H700 firmware updates use a **complete manifest-controlled System update** with size/SHA-256 verification. User ROMs, saves and personal configurations outside managed System files are not part of the release. See [online updates](ONLINE_UPDATES.md). SHA-256 from the same download site is an integrity check, not an independently signed package.
 
-### Release versions and update cadence
+## Release versions and update cadence
 
 - **Anbernic H700:** [1.16.0 Ver. 40](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.40) is the current stable release. [Ver. 36](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.36) is a tested fallback; other retained milestone releases are catalogued in the [changelog](CHANGELOG.md).
 - **Miyoo:** [1.8.1 Ver. 6](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver6) is the separate current ARMv7 release, installed manually from SD.
 - **Technical version labels** (such as `v1.16.0-rgsp.40`) remain for compatibility with earlier H700 update installations. The public firmware name is **select. slot.**.
 - **Release cadence:** unlike pvaibhav's automated upstream sync, select. slot. does not claim a daily automatic upstream release schedule. New firmware versions are kept separate from documentation-only edits.
 
-### Source and building
+## Source and building
 
 | Component | H700 build | Miyoo build |
 | --- | --- | --- |
