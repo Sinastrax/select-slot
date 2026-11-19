@@ -7,9 +7,9 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 WORK="$ROOT/.build/miyoo"
 PORT="$WORK/slot-miyoo"
 STAGE="$PORT/release/stage"
-PORT_COMMIT="d096bdb87f25f3aba62de6b40ef859b61d841e43"
-SLOT_VERSION="1.8.1"
-CUSTOM_VERSION="5"
+# Single source for the pinned port and the Miyoo release number.
+# shellcheck disable=SC1091
+. "$ROOT/miyoo/version.env"
 ZIP="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo.zip"
 ZIP_ONION="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo-onion-autoboot.zip"
 ZIP_STOCK="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo-stock-autoboot.zip"
@@ -42,7 +42,7 @@ cp "$ROOT"/miyoo/patches/*.patch "$PORT/patches/"
   cd "$PORT"
   task patch
 )
-python3 "$ROOT/miyoo/apply_custom.py" "$PORT/upstream/slot" "$PORT/patches/0028-select-miyoo-config.patch"
+python3 "$ROOT/miyoo/apply_custom.py" "$PORT/upstream/slot" "$PORT/patches/0028-select-miyoo-config.patch" "$SLOT_VERSION" "$CUSTOM_VERSION"
 # Verify every control path is disabled in the generated patch before release.
 shader_patch="$PORT/patches/0028-select-miyoo-config.patch"
 grep -Fq '+        compositor.set_screen_effect(ScreenEffect::None);' "$shader_patch"
@@ -60,7 +60,7 @@ echo "Verified shader-free Miyoo frontend, menus, shortcuts and default state"
 # The setting, displayed row, physical blanking and OnionOS handoff must
 # all be present. A successful compile alone does not prove wiring.
 grep -Fq '+    pub const GENERAL: [QuickRow; 9]' "$shader_patch"
-grep -Fq '+    pub const ALL: [QuickRow; 88]' "$shader_patch"
+grep -Fq '+    pub const ALL: [QuickRow; 87]' "$shader_patch"
 grep -Fq '+    pub menu_screen_off_min: u8,' "$shader_patch"
 grep -Fq '+    pub menu_power_off_min: u8,' "$shader_patch"
 grep -Fq '+            menu_screen_off_min: 3,' "$shader_patch"
@@ -137,31 +137,21 @@ check_patch '+            BezelPick::None | BezelPick::Ags102 | BezelPick::Agb00
 check_patch '+        let gba_path = self.session.app().root()'
 echo "Verified original GBA / SP bottom-strip selector without new render backend"
 
-# Ver. 4: require the native restart entry, all-page scrolling and separate
-# high-contrast clock/battery menu textures; keep original shelf rendering.
-check_patch '+    pub const MAIN: [QuickRow; 6]'
-check_patch '+        QuickRow::Restart,'
-check_patch '+            QuickRow::Restart => self.begin_restart(),'
+# All quick-menu pages share the bounded viewport. The original About X
+# restart shortcut and its footer legend are removed; no Restart row exists.
 check_patch '+    !page.is_empty()'
 check_patch '+    menu_battery_percent: slot_ui::Printed,'
 check_patch '+    menu_clock: slot_ui::Printed,'
 check_patch '+    menu_clock_tex: Option<TexId>,'
 check_patch '+    menu_battery_tex: Option<TexId>,'
-check_patch '+        version: "1.8.1 Ver. 5",'
-echo "Verified Ver. 5 restart, viewport scrolling, menu status text and About version"
-
-# Miyoo native "reboot" can switch the original Mini off. Restart must
-# re-exec the existing frontend after its save barrier, not power down OS.
-check_patch '+        let err = Command::new("/lib/ld-linux-armhf.so.3")'
-check_patch '+        close_on_exec();'
-check_patch '+            .env("SLOT_ROOT", &self.root)'
-check_patch '+        eprintln!("slot: restart: could not relaunch {}: {err}", slot.display());'
-! grep -Fq '+        let _ = Command::new("reboot").status();' "$shader_patch"
-echo "Verified Miyoo Restart relaunches the frontend without changing power-off"
-
-
-
-
+check_patch '-            Phase::About if action == Action::GbaDown(Btn::X) => self.begin_restart(),'
+check_patch '-        self.draw_side_legend(restart, true, LINK_LEGEND_Y, out);'
+check_patch "+        version: \"$SLOT_VERSION Ver. $CUSTOM_VERSION\","
+if grep -Eq '^\+.*(QuickRow::Restart|\.begin_restart\(\)|Command::new\("reboot"\)|Command::new\("/lib/ld-linux-armhf\.so\.3"\))' "$shader_patch"; then
+  echo "ERROR: user-facing or hardware Restart was reintroduced" >&2
+  exit 1
+fi
+echo "Verified bounded menus, clear clock/battery, About version and no Restart"
 
 (
   cd "$PORT"
@@ -267,7 +257,7 @@ echo 'Verified legacy brightness 0–9 and compatibility migration'
 cp "$ROOT/miyoo/onion-autoboot.sh" "$STAGE/System/autoboot/onion-startup.sh"
 cp "$ROOT/miyoo/INSTALL.md" "$STAGE/System/select-slot-install.md"
 cat > "$STAGE/System/select-slot-version.txt" <<EOF
-select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - Restart, scrolling, menu HUD and About version; mGBA/gpSP only
+select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - menu/OS cleanup; scrolling and HUD; no Restart; mGBA/gpSP only
 Base: https://github.com/deanmarano/slot-miyoo
 Pinned original: $PORT_COMMIT
 GB/GBC: Miyoo-native mGBA only; GBA: gpSP default (mGBA alternative); legacy Gambatte profile choices migrate to mGBA
