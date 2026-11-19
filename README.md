@@ -35,7 +35,25 @@ This repository is not an official Slot release or currently a GitHub-linked for
 | Updates | Wi-Fi / in-app OTA updates | Manual SD-card installation only |
 | Download | [**Latest H700 release**](https://github.com/Sinastrax/select-slot/releases/latest) | [**Miyoo Ver. 6 release**](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver6) |
 
-**Hardware testing:** Every update and reported successful result is tested on **each compatible device in the regular test lineup**, unless explicitly stated otherwise. For the H700 build, those devices are **Anbernic RG SP, RG34XXSP and RG35XX H**; for the separate Miyoo build, it is the **original Miyoo Mini**. Device-specific features are tested on the devices that support them. Other models, including Miyoo Mini Plus and Mini Flip, are not part of this confirmation.
+## Device compatibility
+
+The H700 device list follows [original Slot](https://github.com/slot-cfw/slot#supported-devices) and [pvaibhav's fork](https://github.com/pvaibhav/slot#supported-devices). The Miyoo device list follows [Dean Marano's port](https://github.com/deanmarano/slot-miyoo). An upstream-supported device is **not automatically verified with select. slot.**
+
+| Device | Build | select. slot. testing |
+| --- | --- | --- |
+| **Anbernic RG SP** | H700 | **Tested with every applicable update** |
+| **Anbernic RG34XXSP** | H700 | **Tested with every applicable update** |
+| **Anbernic RG35XX H** | H700 | **Tested with every applicable update** |
+| Anbernic RG34XX | H700 | Supported upstream; not personally tested |
+| Anbernic RG35XXSP | H700 | Supported upstream; not personally tested |
+| Anbernic RG35XX Plus | H700 | Supported upstream; not personally tested |
+| Anbernic RG35XX Pro | H700 | Supported upstream; not personally tested |
+| Anbernic RG28XX | H700 | Supported upstream; not personally tested |
+| **Miyoo Mini (original)** | Miyoo | **Tested with every applicable update** |
+| Miyoo Mini Plus | Miyoo | Supported by the port; not personally tested |
+| Miyoo Mini Flip | Miyoo | Supported by the port; not personally tested |
+
+**Testing convention:** When a result is reported as working, it applies to **every compatible device in the regular four-device test lineup**, unless an exception is explicitly stated. Device-only features are tested only where the hardware supports them. The Miyoo models also require a compatible firmware and appropriate installer; see [Miyoo compatibility and installation](miyoo/INSTALL.md).
 
 ## What it adds
 
