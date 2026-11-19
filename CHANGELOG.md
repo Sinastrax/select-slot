@@ -6,7 +6,8 @@ There are two independent firmware lines: **Anbernic H700** (Slot 1.16.0) and **
 
 | Version | Status / milestone | Release |
 | --- | --- | --- |
-| **Ver. 40** | **Current, hardware-tested stable H700** — compact non-overlapping Hotkey Guide | [Ver. 40](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.40) |
+| **Ver. 41** | One-shot Shift and Caps Lock on the H700 keyboard | [Ver. 41](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.41) |
+| Ver. 40 | Hardware-tested H700 — compact non-overlapping Hotkey Guide | [Ver. 40](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.40) |
 | Ver. 36 | Verified maintenance and reproducible OTA baseline | [Ver. 36](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.36) |
 | Ver. 35 | German Pokémon Smaragd RetroAchievements indirect RAM-read fix | [Ver. 35](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.35) |
 | Ver. 18 | GBA Authentic pixel-grid correction at fractional Fit | [Ver. 18](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.18) |
