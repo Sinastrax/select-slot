@@ -190,3 +190,5 @@ python3 ../.github/scripts/ver35-indirect-memory-compat.py
 python3 ../.github/scripts/readonly-shortcut-guide-ver37.py
 # Ver38: plain-language labels and a display-only effective FF shortcut.
 python3 ../.github/scripts/clarify-fixed-shortcuts-ver38.py
+# Ver.39: verified, read-only instructions for contextual and remappable gestures.
+python3 ../.github/scripts/source-verified-hotkey-guide-ver39.py
