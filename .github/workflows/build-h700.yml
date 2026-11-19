@@ -27,6 +27,13 @@ on:
 permissions:
   contents: read
 
+# Rapid cleanup commits should not spawn competing 2-hour ARM builds.
+# The release job runs only after its own verified build; canceled runs
+# cannot publish.
+concurrency:
+  group: h700-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build-h700:
     runs-on: ubuntu-24.04-arm
@@ -333,6 +340,6 @@ jobs:
           gh release create "$RELEASE_TAG" "$zip" release/versions.json \
             release/upstream/source-release/mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz \
             --repo "$GITHUB_REPOSITORY" \
-            --target "$GITHUB_SHA" \
+            --target "$GITHUB_SHA" --latest \
             --title "select. slot. $DISPLAY_VERSION" \
             --notes-file RELEASE_NOTES.md
