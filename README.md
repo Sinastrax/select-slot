@@ -3,7 +3,7 @@
 <img src="https://raw.githubusercontent.com/slot-cfw/slot/main/.github/resources/hero.webp" width="100%" alt="slot — Game Boy-centric custom firmware for Anbernic H700 handhelds">
 
 [![H700](https://img.shields.io/badge/H700-Latest%20release-238636?style=for-the-badge)](https://github.com/Sinastrax/select-slot/releases/latest)
-[![Miyoo](https://img.shields.io/badge/Miyoo-1.8.1%20Ver.%204-238636?style=for-the-badge)](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver4)
+[![Miyoo](https://img.shields.io/badge/Miyoo-1.8.1%20Ver.%205-238636?style=for-the-badge)](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver5)
 [![Original slot](https://img.shields.io/badge/Original-slot-555?style=for-the-badge)](https://github.com/slot-cfw/slot)
 [![pvaibhav's fork](https://img.shields.io/badge/Based%20on-pvaibhav%2Fslot-555?style=for-the-badge)](https://github.com/pvaibhav/slot)
 [![Guide](https://img.shields.io/badge/Guide-slot--cfw.fyi-555?style=for-the-badge)](https://slot-cfw.fyi)
@@ -28,13 +28,13 @@ Its name is **select. slot.**, not RGSP: the H700 build is intended for other co
 | Build | Version / download | Hardware and updates |
 | --- | --- | --- |
 | **Anbernic H700** | [Latest H700 release](https://github.com/Sinastrax/select-slot/releases/latest) | H700 ARM64; BaseOS/SD2 installation; its own [OTA update channel](ONLINE_UPDATES.md) and H700-specific Authentic shader features |
-| **Miyoo Mini family** | **[select. slot. 1.8.1 Ver. 4 — Miyoo](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver4)** | ARMv7; standalone SD-card build for compatible Miyoo Mini/Mini Plus/Mini Flip setups; **offline installation only** |
+| **Miyoo Mini family** | **[select. slot. 1.8.1 Ver. 5 — Miyoo](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver5)** | ARMv7; standalone SD-card build for compatible Miyoo Mini/Mini Plus/Mini Flip setups; **offline installation only** |
 
 **Do not install an H700 ZIP on a Miyoo or a Miyoo ZIP on an Anbernic H700 device.** The two releases are built from different source versions and are not compatible.
 
-### Miyoo Mini / Mini Plus / Mini Flip — Ver. 4
+### Miyoo Mini / Mini Plus / Mini Flip — Ver. 5
 
-The Miyoo version is based on [deanmarano/slot-miyoo](https://github.com/deanmarano/slot-miyoo) and **Slot 1.8.1**, not the H700 version's Slot 1.16.0/pvaibhav build. **Ver. 4 retains the Ver. 3 two-core setup** (mGBA for GB/GBC; gpSP or mGBA for GBA) and adds Restart below About, universal quick-menu scrolling including Gameplay, high-contrast clock/battery in settings menus, and a Ver. 4 label on the About sticker. The original-GBA bottom bezel, 0–9 brightness, scaling, OnionOS BMO/theme handoff and power behavior are preserved.
+The Miyoo version is based on [deanmarano/slot-miyoo](https://github.com/deanmarano/slot-miyoo) and **Slot 1.8.1**, not the H700 version's Slot 1.16.0/pvaibhav build. **Ver. 5 fixes Restart switching the original Mini off:** it now relaunches select. slot. itself using the ARMv7 loader, rather than issuing the device-level `reboot` command. It keeps Ver. 4's Restart entry, universal quick-menu scrolling (including Gameplay), high-contrast clock/battery display, and shows Ver. 5 on About. The same mGBA/gpSP cores remain. The original-GBA bottom bezel, 0–9 brightness, scaling, OnionOS BMO/theme handoff and power behavior are preserved.
 
 It includes GB/GBC/GBA emulation (mGBA only for GB/GBC; gpSP/mGBA for GBA), **independent persisted scaling defaults for GB, GBC and GBA**, optional per-game scaling overrides, Original/Integer/Aspect Fit/Fill-Crop/Full Stretch modes, resume settings and independent menu Screen Off/Power Off timers. Display shaders are deliberately **disabled**.
 
@@ -46,9 +46,9 @@ Choose **one** complete ZIP; back up the SD card, then extract the contents at i
 
 | Download | Intended firmware | What it installs |
 | --- | --- | --- |
-| **[OnionOS Autoboot ZIP](https://github.com/Sinastrax/select-slot/releases/download/miyoo-v1.8.1-ver4/select-slot-1.8.1-ver4-miyoo-onion-autoboot.zip)** | **OnionOS 4.3+** on supported Mini / Mini Plus | Automatically launches Slot from `.tmp_update/startup/select-slot.sh`, without replacing OnionOS's boot manager or active theme |
-| **[Stock Firmware Autoboot ZIP](https://github.com/Sinastrax/select-slot/releases/download/miyoo-v1.8.1-ver4/select-slot-1.8.1-ver4-miyoo-stock-autoboot.zip)** | **Genuine stock Miyoo firmware only** | Automatically launches Slot using stock's `.tmp_update/runtime.sh` |
-| **[App-only ZIP](https://github.com/Sinastrax/select-slot/releases/download/miyoo-v1.8.1-ver4/select-slot-1.8.1-ver4-miyoo.zip)** | Manual launch; safest for uncertain/modified firmware | Installs the Slot app **without** any startup hook |
+| **[OnionOS Autoboot ZIP](https://github.com/Sinastrax/select-slot/releases/download/miyoo-v1.8.1-ver5/select-slot-1.8.1-ver5-miyoo-onion-autoboot.zip)** | **OnionOS 4.3+** on supported Mini / Mini Plus | Automatically launches Slot from `.tmp_update/startup/select-slot.sh`, without replacing OnionOS's boot manager or active theme |
+| **[Stock Firmware Autoboot ZIP](https://github.com/Sinastrax/select-slot/releases/download/miyoo-v1.8.1-ver5/select-slot-1.8.1-ver5-miyoo-stock-autoboot.zip)** | **Genuine stock Miyoo firmware only** | Automatically launches Slot using stock's `.tmp_update/runtime.sh` |
+| **[App-only ZIP](https://github.com/Sinastrax/select-slot/releases/download/miyoo-v1.8.1-ver5/select-slot-1.8.1-ver5-miyoo.zip)** | Manual launch; safest for uncertain/modified firmware | Installs the Slot app **without** any startup hook |
 
 > [!CAUTION]
 > **Never install the Stock Firmware Autoboot ZIP over OnionOS, Allium or another SD-card OS that already uses `.tmp_update/runtime.sh`.** It can overwrite that operating system's boot script. Always back up your card and use only the matching ZIP.
@@ -62,7 +62,7 @@ Choose **one** complete ZIP; back up the SD card, then extract the contents at i
 - **OS power management still takes priority.** OnionOS manages theme artwork, suspend and shutdown, and its native idle timer may act before Slot's menu timers. Other OS builds can handle these transitions differently.
 - **Core choice and game performance vary.** mGBA and gpSP save states are not interchangeable, and previous Gambatte states cannot be loaded by mGBA. Different Miyoo variants may have different performance and input hardware. ROMs, proprietary BIOS files and user saves are not in the downloads.
 
-[**Miyoo full release and SHA-256 files**](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver4) · [Miyoo installation notes](miyoo/INSTALL.md) · [Miyoo build source](miyoo/)
+[**Miyoo full release and SHA-256 files**](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver5) · [Miyoo installation notes](miyoo/INSTALL.md) · [Miyoo build source](miyoo/)
 
 ---
 
