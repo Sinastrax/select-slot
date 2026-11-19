@@ -43,7 +43,6 @@ KEYS = {
 }
 # Ver.38 source strings -> verified non-misleading reference text.
 UPDATED = [
-    ("FixSleep", "Sleep / Wake", "Sleep / Wake (no link)", "POWER", "POWER"),
     ("FixGameMenu", "Game Menu", "Game Menu", "MENU", "TAP MENU"),
     ("FixStateSwitcher", "Screenshots / States", "Save States (if saved)", "PRESS MENU TWICE", "TAP MENU TWICE"),
     ("FixExit", "Return to Shelf", "Exit (if multiple games)", "HOLD MENU", "HOLD MENU"),
@@ -81,6 +80,11 @@ def edit(path, fn):
     file.write_text(changed)
 
 def ui(src):
+    # The guide includes read-only explanations of some *editable* keys.
+    # Call it a guide rather than implying every listed shortcut is fixed.
+    src = once(src, 'QuickRow::FixedShortcuts => "Fixed Shortcuts",',
+               'QuickRow::FixedShortcuts => "Hotkey Guide",',
+               "accurate read-only menu title")
     src = once(src, "    FixStateBack,\n}", "    FixStateBack,\n"
                + "".join(f"    {row},\n" for row in NEW) + "}", "QuickRow enum")
 
