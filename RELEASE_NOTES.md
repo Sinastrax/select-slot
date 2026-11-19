@@ -1,20 +1,26 @@
-# select. slot. 1.16.0 Ver. 35
+# select. slot. 1.16.0 Ver. 36 — H700 maintenance
 
-## RetroAchievements: correct handling of indirect memory reads
+A maintenance release of the Anbernic H700 firmware, based on the **user-confirmed Ver. 35 behavior**. No emulator, shader, RetroAchievements, menu or data-format feature was intentionally changed.
 
-The original bug was identified from an actual H700 Pokémon Smaragd-Edition (German) session log. The game launched through mGBA, frame-by-frame tracking ran (including fast-forward), but the achievement evaluator reported **"out-of-range achievement RAM read; award suppressed for safety."**
+## What changed
 
-- **Root cause:** select. slot.'s custom rcheevos wrapper reset *all* achievement progress when a dynamic pointer-chain read temporarily left mapped RAM. Official RetroAchievements `rc_client_peek` treats an unavailable pointer-chain read as zero without resetting unrelated achievements.
-- **Fix:** after validating static achievement memory addresses, an unmapped indirect pointer-chain lookup follows the official client behavior. Other achievements retain hit counts and can unlock normally.
-- **Safety:** static memory reads are still checked against real emulated RAM. A multi-byte direct read crossing into unavailable memory still fails closed; unsupported direct addresses are not treated as zero.
-- **Regression tests:** an independent achievement must trigger alongside an invalid pointer chain; direct invalid reads must not fabricate achievements; the legacy Game Boy pointer-hole test now matches official `rc_client` semantics.
-- **Diagnostics:** the first unavailable indirect address is logged once per game, and routine filtered server compatibility warnings no longer flood `slot.log`.
+- **Reproducible, auditable builds:** extracted the complete historical H700 upstream merge/patch sequence from an oversized GitHub Actions YAML step into `.github/scripts/h700-prepare.sh`. The source archives, ordered patches and all Ver. 35 transformations remain in exactly the same order.
+- **Fail-closed release checks:** a new source contract verifies pinned upstream versions, every referenced patch tool, dependency-sensitive shader/RA patch ordering, package checksums and expected regression tests before building firmware.
+- **Single safe publisher:** retired the duplicate post-build and manual release publishers and the obsolete release-curation workflow. The latter could otherwise delete later confirmed releases; an older publisher could force-move tags. The remaining publisher creates new releases only after a successful verified build, never overwrites an existing public release and explicitly maintains the H700 latest-release channel.
+- **CI hygiene:** superseded same-branch H700 builds are cancelled to avoid racing expensive ARM jobs; shell syntax and publisher safety are verified early.
+- **Repository cleanup:** removed the no-longer-used experimental WLAN source transformer and the separate old-mGBA comparison workflow. These deletions do not change the working Ver. 23 WLAN patch or the shipped stable older mGBA core.
+- **Maintenance documentation:** added [H700_MAINTENANCE.md](https://github.com/Sinastrax/select-slot/blob/main/H700_MAINTENANCE.md) explaining the exact patch sequence, tests, installation boundaries and recommended device checks.
 
-Ver. 34's every-emulated-frame tracking, including fast-forward, remains in place. No existing ROMs, saves, shader settings, online account details, game progress, hardware nicknames, or System manifest behavior are changed. Previously missed milestones are not automatically backdated.
+## Preserved from Ver. 35
 
-**Validation:** automated CI and build results are separate from real-device confirmation. Test a *new* eligible event in Smaragd after installing. An existing milestone completed while tracking was broken cannot necessarily be awarded retroactively.
+- Verified RetroAchievements unlock tracking for **German Pokémon Smaragd**, including fast-forward tracking and safe indirect-memory handling, unlock notifications, login and online synchronization.
+- GB/GBC Pocket Color and SGB effects, Authentic colors, corrected RG35XX H Fit scaling, GBA Authentic, GBA/GBA SP bezel selection.
+- Wi-Fi gameplay retention, link play, per-system scaling, menu viewport scrolling, model nicknames, boot/update branding.
+- Existing ROMs, settings, save states, battery saves, offline achievement caches and credentials. **No automatic rescan or migration**.
+- The same H700 ARM64 device support and separately downloadable MPL-2.0 source archive for the bundled stable mGBA core.
 
-### Compatibility
-Anbernic H700 devices (RG34XXSP, RG35XXSP, RG35XX H). No ROMs or BIOS files included.
+## Testing
 
-Implementation references: [official rcheevos rc_client source](https://github.com/RetroAchievements/rcheevos/blob/master/src/rc_client.c), [select. slot. source](https://github.com/Sinastrax/select-slot).
+The release workflow must pass the complete H700 Rust test suite, GLES2 shader checks, OTA and ZIP checks, source/branding checks, and archive checksum verification. These automated checks cannot establish real-device screen appearance, Wi-Fi/link play, suspend or firmware upgrade behavior. Keep **Ver. 35** available as the already-confirmed device-tested fallback until this maintenance release is tested on H700 hardware.
+
+**Compatibility:** Anbernic H700 systems such as RG34XXSP, RG35XXSP and RG35XX H. **Not a Miyoo Mini package.** No ROMs or BIOS files included.
