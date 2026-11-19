@@ -18,7 +18,7 @@
 
 The **H700 build** uses **`v1.16.0-pvaibhav.1`** and adds independent GB/GBC shaders, Pocket Color and Super Game Boy modes, per-core color correction, custom input mappings, performance/audio changes, online updates, and menu power management.
 
-The H700 **Controls → Fixed Shortcuts** menu provides an on-device, read-only guide to non-configurable button gestures (including mute, Link Play, power, shelf, and save-state operations). The existing editable Shortcuts menu and all physical button behavior remain unchanged.
+The H700 **Controls → Fixed Shortcuts** menu provides an on-device, read-only guide to non-configurable button gestures (including mute, Link Play, power, shelf, and save-state operations). The existing editable Shortcuts menu and all physical button behavior remain unchanged. From **Ver. 38**, these reference labels use full button names rather than unexplained abbreviations, and Fast-Forward shows the user's currently assigned button. This changes text only.
 
 Its name is **select. slot.**, not RGSP: the H700 build is intended for other compatible handhelds as well. Both builds support **Game Boy, Game Boy Color and Game Boy Advance**, not NES, SNES, PS1 or N64. Their emulators, display paths and available extras differ; the features below labeled H700 must **not** be assumed to exist in the Miyoo version.
 
@@ -130,7 +130,7 @@ These are the **custom changes in the H700 build**, on top of upstream Slot and 
 
 - **Build cleanup:** moved the pinned H700 upstream merge and exact historical patch sequence into a dedicated script; added strict patch-order and release-safety validation.
 - **Release safety:** retired duplicate/stale OTA publishers, including an unsafe force-tag/draft-replacement path and a historical release-deletion workflow. Existing GitHub releases and tags are preserved.
-- **No gameplay changes:** the user-confirmed Ver. 35 RetroAchievements fix, shaders, device recognition, GB/GBC/GBA scaling, emulators, saves and WLAN remain intact. [Maintenance and hardware-testing guide](H700_MAINTENANCE.md); Ver. 35 remains the confirmed device-tested fallback.
+- **No gameplay changes:** the user-confirmed Ver. 35 RetroAchievements fix, shaders, device recognition, GB/GBC/GBA scaling, emulators, saves and WLAN remain intact. [Maintenance and hardware-testing guide](H700_MAINTENANCE.md); Ver. 36 is the confirmed device-tested fallback.
 
 ### Ver. 35: rcheevos-compatible indirect memory handling
 
@@ -198,13 +198,13 @@ Do not interchange save states made by different emulator cores; in-game battery
 The H700 and Miyoo versions are independent. The **[Miyoo Ver. 6 release](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver6)** is deliberately separate from the H700 `latest` release and its OTA channel. The full Miyoo requirements and limitations are above.
 
 
-Release titles use **select. slot. [upstream version] Ver. [revision]**. The current maintenance version is **1.16.0 Ver. 36**, with the OTA-compatible technical identifier `1.16.0-rgsp.36` and tag `v1.16.0-rgsp.36`. Each new version is a complete firmware build. Documentation-only changes do not require an OTA version bump.
+Release titles use **select. slot. [upstream version] Ver. [revision]**. The latest H700 version is **1.16.0 Ver. 38**, with OTA-compatible technical identifier `1.16.0-rgsp.38` and tag `v1.16.0-rgsp.38`. Each new version is a complete firmware build. Documentation-only changes do not require an OTA version bump.
 
 **[Latest release](https://github.com/Sinastrax/select-slot/releases/latest)** · **[Changes in the latest version](RELEASE_NOTES.md)**
 
 Release notes list **only the additions and fixes since the previous release**, rather than repeating the complete feature list. This README is the permanent place for the full feature overview.
 
-The [H700 build workflow](.github/workflows/build-h700.yml) invokes the [pinned, order-preserving source preparation script](.github/scripts/h700-prepare.sh), runs shader/RetroAchievements/OTA tests and publishes verified full releases. The [H700 maintenance guide](H700_MAINTENANCE.md) documents the cleanup, source checks and device-testing boundaries. **Ver. 35 remains the confirmed fallback** until Ver. 36 is checked on real hardware.
+The [H700 build workflow](.github/workflows/build-h700.yml) invokes the [pinned, order-preserving source preparation script](.github/scripts/h700-prepare.sh), runs shader/RetroAchievements/OTA tests and publishes verified full releases. The [H700 maintenance guide](H700_MAINTENANCE.md) documents the cleanup, source checks and device-testing boundaries. **Ver. 36 remains the confirmed stable fallback**; the Ver. 37 updater has been confirmed working, while the new Ver. 38 UI labels still require device review.
 
 ---
 

@@ -1,28 +1,22 @@
-# select. slot. 1.16.0 Ver. 37 — On-device fixed shortcuts guide
+# select. slot. 1.16.0 Ver. 38 — Clearer built-in shortcut guide
 
-An H700 interface-only update built on the **user-confirmed Ver. 36** firmware. The physical shortcuts themselves have **not** changed.
+An **interface-text-only** refinement of Ver. 37 for Anbernic H700 devices. The user confirmed that the Ver. 37 update mechanism works on RG35XX H, but some short labels were difficult to interpret.
 
-## New: fixed shortcut reference
+## What changed
 
-Open **Controls → Fixed Shortcuts**. The reference is organized into **Global, In-Game, Shelf, Collections and Save States**. Each row shows an action beside its actual physical button or combination, including:
+- Read-only **Controls → Fixed Shortcuts** entries now spell out button names: **SELECT + VOLUME +**, **BOTH VOLUME BUTTONS**, **MENU TWICE**, **HOLD SELECT**, etc., rather than shorthand such as SEL, VOL, FF KEY, and 2x.
+- The Fast-Forward rows now **show the actual configured shortcut button**, such as **R2 TWICE** to lock or **R2** to stop. If the user has rebound it, the displayed key follows that setting. An unassigned key explicitly reads **NOT ASSIGNED**.
+- The double-MENU action is labeled **Screenshots / States** to reflect its context-sensitive behavior. Game Boy and Game Boy Color references no longer use the unclear GB/C abbreviation.
+- The reference remains **read-only**. The pre-existing editable Shortcuts page has not changed.
 
-- All three mute gestures: **SELECT + VOL+**, **SELECT + VOL−**, and **VOL+ + VOL−**.
-- MENU single-tap, double-tap and hold actions; **SELECT + MENU** for Link Play.
-- Fast-forward double-tap latch (using the currently bound fast-forward key).
-- GB/GBC L1/R1 stretch/restore behavior when the shoulders are not mapped to game inputs.
-- POWER taps and holds, shelf hold actions, collection actions and save-state switcher navigation.
+## Explicitly unchanged
 
-This is an **informational, read-only menu**. A, X, Y and left/right cannot reassign or clear any reference entry. The existing editable **Controls → Shortcuts** page remains exactly as before. Existing default gestures, custom settings and shortcut file formats are unchanged.
+- Every physical shortcut, volume/mute timing, POWER/MENU input handling, fast-forward operation, gameplay mapping, Link Play controls, save states, and emulator behavior.
+- Existing configuration files, user mappings, achievements, saved games, Wi-Fi, shaders, OTA updates and installed ROMs. No migration.
+- Miyoo firmware and releases.
 
-## Preserved from confirmed Ver. 36
+## Verification
 
-- All emulator cores, screen shaders, Authentic GB/GBC/GBA modes, SGB visuals and scaling.
-- German Pokémon Smaragd RetroAchievements unlocks, fast-forward tracking, popups and synchronization.
-- In-game input processing, hardware button behavior, volume/mute timing, menu access, Link Play, Wi-Fi state and safe power handling.
-- ROMs, save games, save states, RetroAchievements accounts and caches, and configuration files. No migrations or rescan.
+H700 CI runs the full Rust regression suite, plain-label and dynamic-binding tests, shader checks, source/OTA safety validation, firmware build, archive checksums, and release publication checks. These automated tests cannot prove text readability or appearance on a physical device.
 
-## Testing and compatibility
-
-The H700 pipeline tests the complete Rust suite (including guide navigation, read-only mapping invariants and viewport scrolling), GLES2 shader checks, OTA/update contracts, source branding, packaging and checksums. Automated tests do not replace hardware testing.
-
-**H700 devices:** RG35XX H, RG35XXSP, RG34XXSP and other compatible Anbernic H700 units. **Not compatible with Miyoo Mini.** Keep the confirmed **Ver. 36** release as a fallback until Ver. 37 is tested on a device. No ROMs or proprietary BIOS files included.
+**Platforms:** compatible Anbernic H700 handhelds (including RG35XX H, RG35XXSP and RG34XXSP). **Not for Miyoo Mini**. Ver. 36 remains a confirmed working fallback; Ver. 37 has a confirmed working update path. Ver. 38 still requires checking the labels on actual hardware.
