@@ -33,6 +33,7 @@ This repository is not an official Slot release or currently a GitHub-linked for
 | Rendering | GPU, including Authentic and custom LCD styles | Software rendering; no H700 LCD shaders |
 | Game cores | GB/GBC: Gambatte or mGBA; GBA: gpSP or mGBA | GB/GBC: mGBA; GBA: gpSP or mGBA |
 | Updates | Wi-Fi / in-app OTA updates | Manual SD-card installation only |
+| Current build hardware tests | **Tested** on RG SP, RG34XXSP and RG35XX H | **Tested** on original Miyoo Mini with OnionOS |
 | Download | [**Latest H700 release**](https://github.com/Sinastrax/select-slot/releases/latest) | [**Miyoo Ver. 12 release**](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver12) |
 
 ## Device compatibility
@@ -298,7 +299,7 @@ H700 firmware updates use a **complete manifest-controlled System update** with 
 ## Release versions and update cadence
 
 - **Anbernic H700:** [1.16.0 Ver. 47](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.47) keeps the RetroAchievements header in view. [Ver. 36](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.36) is a tested fallback; other retained milestone releases are catalogued in the [changelog](CHANGELOG.md).
-- **Miyoo:** [1.8.1 Ver. 12](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver12) is the separate current ARMv7 release, installed manually from SD.
+- **Miyoo:** [1.8.1 Ver. 12](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver12) shuts down the original Mini with one long POWER hold on OnionOS. [Ver. 6](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver6) is a tested rollback.
 - **Technical version labels** (such as `v1.16.0-rgsp.40`) remain for compatibility with earlier H700 update installations. The public firmware name is **select. slot.**.
 - **Release cadence:** unlike pvaibhav's automated upstream sync, select. slot. does not claim a daily automatic upstream release schedule. New firmware versions are kept separate from documentation-only edits.
 

@@ -1,18 +1,13 @@
 # select. slot. — release history
 
-There are two independent firmware lines: **Anbernic H700** (Slot 1.16.0) and **Miyoo Mini family** (Slot 1.8.1). The [Releases page](https://github.com/Sinastrax/select-slot/releases) intentionally keeps only meaningful stable milestones and rollback points. Intermediate development versions remain traceable through their original Git tags and merged pull requests; release records for obsolete trials were curated on 19 November 2026.
+There are two independent firmware lines: **Anbernic H700** (Slot 1.16.0) and **Miyoo Mini family** (Slot 1.8.1). The [Releases page](https://github.com/Sinastrax/select-slot/releases) intentionally keeps only meaningful stable milestones and rollback points. Intermediate development versions remain traceable through their original Git tags and merged pull requests; the release downloads below cover the current builds and selected rollback points.
 
 ## Anbernic H700
 
 | Version | Status / milestone | Release |
 | --- | --- | --- |
-| **Ver. 47** | Keep the wrapped RetroAchievements header in view | [Ver. 47](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.47) |
-| Ver. 46 | Horizontal scrolling for long cheat and achievement names | [Ver. 46](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.46) |
-| Ver. 45 | German wording and text layout polish | [Ver. 45](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.45) |
-| Ver. 44 | German handheld interface | [Ver. 44](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.44) |
-| **Ver. 43** | White Shift key for one-character uppercase entry | [Ver. 43](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.43) |
-| Ver. 42 | Redraw the CAPS indicator when locking the H700 keyboard | [Ver. 42](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.42) |
-| **Ver. 41** | One-shot Shift and Caps Lock on the H700 keyboard | [Ver. 41](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.41) |
+| **Ver. 47** | **Current H700 release.** Keeps the wrapped RetroAchievements header in view. Tested on RG SP, RG34XXSP and RG35XX H | [Ver. 47](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.47) |
+| **Ver. 43** | One-shot Shift with a white key indicator, plus Caps Lock. Rollback before the German interface | [Ver. 43](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.43) |
 | Ver. 40 | Hardware-tested H700 — compact non-overlapping Hotkey Guide | [Ver. 40](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.40) |
 | Ver. 36 | Verified maintenance and reproducible OTA baseline | [Ver. 36](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.36) |
 | Ver. 35 | German Pokémon Smaragd RetroAchievements indirect RAM-read fix | [Ver. 35](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.35) |
@@ -37,13 +32,8 @@ There are two independent firmware lines: **Anbernic H700** (Slot 1.16.0) and **
 
 | Version | Status / milestone | Release |
 | --- | --- | --- |
-| **Ver. 12** | Complete OnionOS shutdown in the shared Miyoo launcher | [Ver. 12](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver12) |
-| **Ver. 11** | Keep physical POWER hold timing when input arrives in one frame | [Ver. 11](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver11) |
-| **Ver. 10** | Wait for POWER release before OnionOS shuts down the original Mini | [Ver. 10](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver10) |
-| Ver. 9 | Recognize the first power hold during gameplay while saving in the background | [Ver. 9](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver9) |
-| Ver. 8 | German wording and text layout polish | [Ver. 8](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver8) |
-| Ver. 7 | German handheld interface | [Ver. 7](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver7) |
-| **1.8.1 Ver. 6** | **Current stable Miyoo release** — corrected OnionOS/stock detection, no Restart UI, modular build/test pipeline | [Miyoo Ver. 6](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver6) |
+| **Ver. 12** | **Current Miyoo release.** One long POWER hold shuts down the original Miyoo Mini on OnionOS. Hardware-tested | [Ver. 12](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver12) |
+| **1.8.1 Ver. 6** | **Tested rollback** — corrected OnionOS/stock detection, no Restart UI, modular build/test pipeline | [Miyoo Ver. 6](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver6) |
 | 1.8.1 Ver. 2 | Original GBA and GBA SP bottom-bezel choices | [Miyoo Ver. 2](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver2) |
 
 Miyoo builds are **ARMv7 and installed from the SD card**, not interchangeable with H700 firmware or OTA packages. See [installation](miyoo/INSTALL.md).
