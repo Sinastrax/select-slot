@@ -27,6 +27,7 @@ configure(src, version_label)
 for feature in (
     "emulators",
     "onion_power",
+    "power_timing",
     "rendering",
     "idle",
     "scaling",
@@ -53,6 +54,9 @@ allowed = {
     "crates/slot-power/tests/device.rs",
     "crates/slot/src/frontend.rs",
     "crates/slot-input/src/gesture.rs",
+    "crates/slot-input/src/raw.rs",
+    "crates/slot/src/input/evdev.rs",
+    "crates/slot/src/input/device.rs",
     "crates/slot-input/tests/gesture.rs",
 }
 if set(changes) != allowed:

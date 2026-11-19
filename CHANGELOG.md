@@ -37,6 +37,7 @@ There are two independent firmware lines: **Anbernic H700** (Slot 1.16.0) and **
 
 | Version | Status / milestone | Release |
 | --- | --- | --- |
+| **Ver. 11** | Keep physical POWER hold timing when input arrives in one frame | [Ver. 11](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver11) |
 | **Ver. 10** | Wait for POWER release before OnionOS shuts down the original Mini | [Ver. 10](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver10) |
 | Ver. 9 | Recognize the first power hold during gameplay while saving in the background | [Ver. 9](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver9) |
 | Ver. 8 | German wording and text layout polish | [Ver. 8](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver8) |

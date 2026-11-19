@@ -1,0 +1,1 @@
+- Measure long POWER presses on Miyoo using hardware event timestamps, even when Slot processes the press and release in the same frame.
