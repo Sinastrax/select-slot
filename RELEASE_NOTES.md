@@ -1,3 +1,3 @@
-# select. slot. 1.16.0 Ver. 42
+# select. slot. 1.16.0 Ver. 43
 
-The H700 keyboard now redraws the Shift key on the second Shift or SELECT press. It displays **CAPS** while Caps Lock is active and restores the Shift arrow when you unlock it.
+The H700 keyboard now highlights the Shift arrow in white after one press of Shift or SELECT. The highlight clears when you enter the next character.

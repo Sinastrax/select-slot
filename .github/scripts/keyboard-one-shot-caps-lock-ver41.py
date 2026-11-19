@@ -107,7 +107,7 @@ s = replace_once(s,
     let mut rgba = tile(w, h, fill);
     match cap_icon(cap).and_then(|i| icon_coverage(i, ICON_PX)) {""",
     """    let locked = cap == Cap::Special(Shift) && kb.caps_locked();
-    let (fill, ink) = match chosen || locked {
+    let (fill, ink) = match chosen || (cap == Cap::Special(Shift) && kb.shift()) {
         true => (CHOSEN, CHOSEN_INK),
         false => (TILE, MENU_INK),
     };
@@ -138,6 +138,21 @@ mod select_keyboard_shift_tests {
         kb.row = row;
         kb.col = col;
         kb.press(Btn::A)
+    }
+
+    #[test]
+    fn one_shot_shift_uses_white_arrow_until_character_entry() {
+        for layout in [Layout::General, Layout::Host] {
+            let mut kb = keyboard(layout);
+            let face = |kb: &Keyboard, chosen| cap_face(kb, Cap::Special(Shift), chosen, KEY_W).rgba;
+            let idle = face(&kb, false);
+            let white_arrow = face(&kb, true);
+            assert!(idle != white_arrow);
+            kb.press(Btn::Select);
+            assert!(face(&kb, false) == white_arrow);
+            key(&mut kb, 1, 0);
+            assert!(face(&kb, false) == idle);
+        }
     }
 
     #[test]
@@ -253,4 +268,4 @@ mod select_keyboard_shift_tests {
 if s == source:
     raise SystemExit("No changes to keyboard")
 PATH.write_text(s)
-print("H700 keyboard: Shift Off -> Once -> Caps Lock -> Off, plus eight Rust tests")
+print("H700 keyboard: Shift Off -> Once -> Caps Lock -> Off, plus keyboard regression tests")

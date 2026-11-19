@@ -6,7 +6,8 @@ There are two independent firmware lines: **Anbernic H700** (Slot 1.16.0) and **
 
 | Version | Status / milestone | Release |
 | --- | --- | --- |
-| **Ver. 42** | Redraw the CAPS indicator when locking the H700 keyboard | [Ver. 42](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.42) |
+| **Ver. 43** | White Shift key for one-character uppercase entry | [Ver. 43](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.43) |
+| Ver. 42 | Redraw the CAPS indicator when locking the H700 keyboard | [Ver. 42](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.42) |
 | **Ver. 41** | One-shot Shift and Caps Lock on the H700 keyboard | [Ver. 41](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.41) |
 | Ver. 40 | Hardware-tested H700 — compact non-overlapping Hotkey Guide | [Ver. 40](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.40) |
 | Ver. 36 | Verified maintenance and reproducible OTA baseline | [Ver. 36](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.36) |

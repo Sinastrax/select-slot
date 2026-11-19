@@ -28,7 +28,7 @@ This repository is not an official Slot release or currently a GitHub-linked for
 
 | | **Anbernic H700** | **Miyoo Mini family** |
 | --- | --- | --- |
-| Current build | **1.16.0 Ver. 42** | **1.8.1 Ver. 6** |
+| Current build | **1.16.0 Ver. 43** | **1.8.1 Ver. 6** |
 | Handhelds | RG SP / RG34XXSP / RG35XX H and other compatible H700 models | Miyoo Mini, Mini Plus and Mini Flip, subject to firmware support |
 | Rendering | GPU, including Authentic and custom LCD styles | Software rendering; no H700 LCD shaders |
 | Game cores | GB/GBC: Gambatte or mGBA; GBA: gpSP or mGBA | GB/GBC: mGBA; GBA: gpSP or mGBA |
@@ -160,7 +160,7 @@ These are the **custom changes in the H700 build**, on top of upstream Slot and 
 - **Independent shader and scale settings:** verified Pocket Color/SGB and GBA Authentic Fit optimizations with the intended color-correction options.
 - **Reliable distribution (Ver. 36):** pinned source patches, automated regression checks, and complete OTA builds with a separate mGBA source archive. Earlier public versions were curated to preserve meaningful rollback points.
 
-For detailed per-version history and links to confirmed milestones, see the [changelog](CHANGELOG.md). Ver. 41 adds one-shot Shift and Caps Lock to the H700 keyboard. Press Shift or SELECT once for one character, twice for Caps Lock, and again to unlock. Starting with Ver. 42, the Shift key displays **CAPS** while locked. Ver. 40 was tested on all three regular H700 devices.
+For detailed per-version history and links to confirmed milestones, see the [changelog](CHANGELOG.md). Ver. 41 adds one-shot Shift and Caps Lock to the H700 keyboard. Press Shift or SELECT once for one character, twice for Caps Lock, and again to unlock. The Shift key has a white background behind the arrow after one press and displays **CAPS** while locked. Ver. 40 was tested on all three regular H700 devices.
 
 #### Online updates
 
@@ -294,7 +294,7 @@ H700 firmware updates use a **complete manifest-controlled System update** with 
 
 ## Release versions and update cadence
 
-- **Anbernic H700:** [1.16.0 Ver. 42](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.42) is the keyboard OTA update. [Ver. 36](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.36) is a tested fallback; other retained milestone releases are catalogued in the [changelog](CHANGELOG.md).
+- **Anbernic H700:** [1.16.0 Ver. 43](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.43) is the keyboard OTA update. [Ver. 36](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.36) is a tested fallback; other retained milestone releases are catalogued in the [changelog](CHANGELOG.md).
 - **Miyoo:** [1.8.1 Ver. 6](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver6) is the separate current ARMv7 release, installed manually from SD.
 - **Technical version labels** (such as `v1.16.0-rgsp.40`) remain for compatibility with earlier H700 update installations. The public firmware name is **select. slot.**.
 - **Release cadence:** unlike pvaibhav's automated upstream sync, select. slot. does not claim a daily automatic upstream release schedule. New firmware versions are kept separate from documentation-only edits.
