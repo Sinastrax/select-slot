@@ -98,8 +98,8 @@ jobs:
           # pages scroll within their viewport rather than crossing the footer.
           patch=.build/miyoo/slot-miyoo/patches/0028-select-miyoo-config.patch
           grep -Fq '+    !page.is_empty()' "$patch"
-          grep -Fq "-            Phase::About if action == Action::GbaDown(Btn::X) => self.begin_restart()," "$patch"
-          grep -Fq "-        self.draw_side_legend(restart, true, link_legend_y(), out);" "$patch"
+          grep -Fq -- "-            Phase::About if action == Action::GbaDown(Btn::X) => self.begin_restart()," "$patch"
+          grep -Fq -- "-        self.draw_side_legend(restart, true, link_legend_y(), out);" "$patch"
           grep -Fq '+    menu_battery_percent: slot_ui::Printed,' "$patch"
           grep -Fq '+    menu_clock: slot_ui::Printed,' "$patch"
           grep -Fq "+        version: \"$SLOT_VERSION Ver. $CUSTOM_VERSION\"," "$patch"
