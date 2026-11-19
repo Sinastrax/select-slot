@@ -50,6 +50,7 @@ jobs:
           set -euo pipefail
           python3 -m unittest discover -s miyoo/tests -p 'test_*.py' -v
           ( cd .build/miyoo/slot-miyoo && task test )
+          ( cd .build/miyoo/slot-miyoo/upstream/slot && cargo test -p slot-input --test gesture power_ )
 
       - name: Verify all packages, checksums and OS boundaries
         shell: bash

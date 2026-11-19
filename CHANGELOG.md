@@ -36,7 +36,8 @@ There are two independent firmware lines: **Anbernic H700** (Slot 1.16.0) and **
 
 | Version | Status / milestone | Release |
 | --- | --- | --- |
-| **Ver. 8** | German wording and text layout polish | [Ver. 8](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver8) |
+| **Ver. 9** | Recognize the first power hold during gameplay while saving in the background | [Ver. 9](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver9) |
+| Ver. 8 | German wording and text layout polish | [Ver. 8](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver8) |
 | Ver. 7 | German handheld interface | [Ver. 7](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver7) |
 | **1.8.1 Ver. 6** | **Current stable Miyoo release** — corrected OnionOS/stock detection, no Restart UI, modular build/test pipeline | [Miyoo Ver. 6](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver6) |
 | 1.8.1 Ver. 2 | Original GBA and GBA SP bottom-bezel choices | [Miyoo Ver. 2](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver2) |

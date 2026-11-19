@@ -62,6 +62,7 @@ jobs:
           set -euo pipefail
           cd .build/miyoo/slot-miyoo
           task test
+          ( cd upstream/slot && cargo test -p slot-input --test gesture power_ )
 
       - name: Verify the release is a card-root install, not H700 firmware
         shell: bash

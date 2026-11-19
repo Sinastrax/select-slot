@@ -4,8 +4,8 @@ from .patcher import edit
 # OnionOS owns physical POWER and its theme transitions when running its
 # native runtime. SLOT must not blank the PWM on PowerTap before OnionOS can
 # show whatever splash/shutdown image is provided by the selected theme.
-# Keep SLOT's immediate save-state flush at press, without entering doze or
-# doing a competing poweroff on release/hold. Native non-Onion use unchanged.
+# Queue a save on press without blocking the input loop. A short press belongs
+# to Onion; a hold requests the themed shutdown after pending writes settle.
 edit("crates/slot/src/app.rs", [
     ('''    pub fn apply(&mut self, action: Action) {
         self.track_held_dir(action);
@@ -24,8 +24,7 @@ edit("crates/slot/src/app.rs", [
         }) {
             match action {
                 Action::PowerPress => {
-                    self.state_writer.flush();
-                    self.flush_resume();
+                    self.queue_onion_resume_save();
                     return;
                 }
                 Action::PowerTap => return, // OnionOS short-press suspend
@@ -179,3 +178,107 @@ fn extended_brightness_respects_live_onion_pwm_period() {'''),
 
 
 
+
+# Taking the core snapshot and writing it can both block while playing. Keep
+# them on the save worker so the main loop can recognize the same key hold.
+edit("crates/slot/src/persist.rs", [
+    ('''pub trait Snapshot {
+''', '''pub trait Snapshot {
+    fn background_snapshot(&self) -> Option<Box<dyn Snapshot + Send>> {
+        None
+    }
+
+'''),
+])
+edit("crates/slot/src/emu.rs", [
+    ('''impl Snapshot for EmuSnapshot {
+''', '''impl Snapshot for EmuSnapshot {
+    fn background_snapshot(&self) -> Option<Box<dyn Snapshot + Send>> {
+        Some(Box::new(self.clone()))
+    }
+
+'''),
+])
+edit("crates/slot/src/app.rs", [
+    ('''    pub fn flush_resume(&mut self) {''',
+     '''    fn queue_onion_resume_save(&mut self) {
+        let (Some(root), Some(snapshot), Some(cart)) = (
+            &self.root,
+            self.snapshot.as_ref().and_then(|snapshot| snapshot.background_snapshot()),
+            self.seated(),
+        ) else {
+            return;
+        };
+        let (root, platform, core, cart) =
+            (root.clone(), self.platform, self.core, cart.to_owned());
+        self.autosave_at = self.now() + AUTOSAVE_MS;
+        let previous = self.pending_save.take();
+        let failing = self.card_writes.clone();
+        self.pending_save = Some(std::thread::spawn(move || {
+            if let Some(previous) = previous {
+                let _ = previous.join();
+            }
+            let Some(state) = snapshot.state() else {
+                eprintln!("slot: power save: the core gave up no state");
+                return;
+            };
+            let (state, sav) = trusted_write(snapshot.as_ref(), state, "power save");
+            let written = persist::flush(
+                &root, platform, core, &cart, state.as_deref(), sav.as_deref(),
+            );
+            if let Err(error) = &written {
+                eprintln!("slot: power save: {error}");
+            }
+            failing.wrote("power save", &written);
+        }));
+    }
+
+    pub fn flush_resume(&mut self) {'''),
+])
+
+# A busy frame can deliver release before the periodic hold check.
+# Classify the held time before clearing the press and emit a hold only once.
+edit("crates/slot-input/src/gesture.rs", [
+    ('''            Btn::Power => self.power_up(),''',
+     '''            Btn::Power => self.power_up(now),'''),
+    ('''    fn power_up(&mut self) -> Vec<Action> {
+        let held = self.power_hold_fired;
+        self.power_down_at = None;
+        self.power_hold_fired = false;
+        vec![if held {
+            Action::PowerOff
+        } else {
+            Action::PowerTap
+        }]
+    }''',
+     '''    fn power_up(&mut self, now: Millis) -> Vec<Action> {
+        let held_for = self.power_down_at.take()
+            .map_or(0, |since| now.saturating_sub(since));
+        if std::mem::take(&mut self.power_hold_fired) {
+            vec![Action::PowerOff]
+        } else if held_for >= POWER_HOLD_MS {
+            vec![Action::PowerHold, Action::PowerOff]
+        } else {
+            vec![Action::PowerTap]
+        }
+    }'''),
+])
+
+edit("crates/slot-input/tests/gesture.rs", [
+    ('''#[test]
+fn a_press_just_short_of_the_threshold_is_a_lock() {''',
+     '''#[test]
+fn power_release_still_registers_a_hold_if_the_frame_missed_the_tick() {
+    let mut g = gestures();
+    let down = 100;
+    assert_eq!(g.feed(Down(Btn::Power), down), vec![PowerPress]);
+    assert_eq!(
+        g.feed(Up(Btn::Power), down + POWER_HOLD_MS + 20),
+        vec![PowerHold, PowerOff],
+    );
+    assert!(g.tick(down + POWER_HOLD_MS + 50).is_empty());
+}
+
+#[test]
+fn a_press_just_short_of_the_threshold_is_a_lock() {'''),
+])

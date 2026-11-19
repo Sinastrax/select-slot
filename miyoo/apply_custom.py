@@ -45,12 +45,15 @@ allowed = {
     "crates/slot/src/session.rs",
     "crates/slot/src/video_mode.rs",
     "crates/slot/src/app.rs",
+    "crates/slot/src/persist.rs",
+    "crates/slot/src/emu.rs",
     "crates/slot-ui/src/quick_menu.rs",
     "crates/slot-power/src/device.rs",
     "crates/slot-power/src/power.rs",
     "crates/slot-power/tests/device.rs",
     "crates/slot/src/frontend.rs",
     "crates/slot-input/src/gesture.rs",
+    "crates/slot-input/tests/gesture.rs",
 }
 if set(changes) != allowed:
     raise RuntimeError(f"rebuild source changed unexpected paths: {sorted(set(changes) ^ allowed)}")

@@ -133,6 +133,10 @@ echo "Verified GB, GBC and GBA B-button returns to Screen menu"
 check_patch '+pub const POWER_HOLD_MS: Millis = 350;'
 check_patch '+                Action::PowerHold => {'
 check_patch '+                    self.menu_shutdown_onion = true;'
+check_patch '+                    self.queue_onion_resume_save();'
+check_patch '+        } else if held_for >= POWER_HOLD_MS {'
+check_patch '+            vec![Action::PowerHold, Action::PowerOff]'
+check_patch '+                let _ = previous.join();'
 check_patch '+        if self.shutting_down() {'
 check_patch '+                    && root.join(".tmp_update/onionVersion/version.txt").is_file()'
 echo "Verified menu scaling persistence, quick shutdown, and input lock"
