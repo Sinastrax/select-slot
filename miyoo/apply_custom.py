@@ -1456,7 +1456,7 @@ fn sync_game_bezel''',
 
 fn sync_game_bezel'''),
     ('''        version: build.version,''',
-     '''        version: "1.8.1 Ver. 4",'''),
+     '''        version: "1.8.1 Ver. 5",'''),
 ])
 
 # Match the H700 status treatment in shelf quick settings as well as the
