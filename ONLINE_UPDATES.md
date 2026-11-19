@@ -34,16 +34,19 @@ in the update manifest.
 
 ## Publishing a new release
 
-- Update `.github/ota-version.txt` only when shipping a **functional firmware update**. Retain technical version identifiers and previous-release links for OTA compatibility. Preserve support for historical `-rgsp.N` and `-custom.N` update identifiers. The published Ver. 5 still uses `v1.16.0-rgsp.5`. Its installed updater cannot yet parse `-select.N`, so the next functional update must retain a suffix the existing firmware recognizes (for example `v1.16.0-custom.6` if upstream remains 1.16.0). Only later releases can switch to `-select.N` safely. The public title is always **select. slot. [upstream version] Ver. [revision]**.
+- Update [`.github/ota-version.txt`](.github/ota-version.txt) when shipping a **complete verified firmware release**, including maintenance releases. The existing updater recognizes technical identifiers such as `1.16.0-rgsp.N`; retain that identifier format for compatibility with older installed versions. The user-facing title follows **select. slot. [upstream version] Ver. [revision]**. Never bump the version for a documentation-only change.
 - Update `RELEASE_NOTES.md` with **only the changes made since the previous release**. Keep the cumulative feature list in `README.md`.
 - Verify the full `Build select. slot. H700` GitHub Actions run succeeds on `main`.
-- A successful verified build on `main` publishes `slot-v<VERSION>-h700.zip` and
-  `versions.json` to GitHub Releases with title **select. slot. [upstream version] Ver. [revision]** and
-  the change-only notes from that build's `RELEASE_NOTES.md`. The separate tag workflow
-  can publish the same tagged release when used.
+- A successful verified push build on `main` publishes `slot-v<VERSION>-h700.zip`,
+  `versions.json`, and the corresponding mGBA source archive to GitHub Releases
+  using the release's version-specific `RELEASE_NOTES.md`. An existing release
+  is never overwritten, and manually built/tag-triggered artifacts cannot
+  displace the newest H700 release.
 - Verify the release on real H700 hardware before recommending it broadly.
 - Updating from older firmware requires **one manual installation of the new full build**
   to switch the device's updater to this custom release channel.
+
+The [H700 maintenance guide](H700_MAINTENANCE.md) documents the pinned patch order, non-destructive publisher and regression tests.
 
 BaseOS updates, when offered separately, still come from the official pvaibhav/BaseOS
 project. No games, ROMs, copyrighted BIOS dumps or personal save files are distributed.
