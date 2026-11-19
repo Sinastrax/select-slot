@@ -121,9 +121,9 @@ edit("crates/slot-power/src/device.rs", [
         // /sys/class/pwm/pwmchip0/pwm0/duty_cycle. On original Mini units a
         // secondary display class or dispdbg may exist but isn't the actual
         // backlight. Prefer PWM only while running on the Onion card.
-        let onion_pwm = root.join(".tmp_update/runtime.sh").is_file()
-            .then(|| find_pwm(sysfs).map(Backlight::Pwm))
-            .flatten();
+        let onion_runtime = root.join(".tmp_update/runtime.sh").is_file()
+            && root.join(".tmp_update/onionVersion/version.txt").is_file();
+        let onion_pwm = onion_runtime.then(|| find_pwm(sysfs).map(Backlight::Pwm)).flatten();
         let backlight = onion_pwm.or_else(|| match class {
             Some(dir) => Some(Backlight::Class(dir)),
             None => {
@@ -153,10 +153,19 @@ fn onion_prefers_real_pwm_over_other_reported_display_backlights() {
     assert_eq!(brightness(&d), 255);
     assert_eq!(duty(&d), 6);
 
-    // Once Onion's runtime is present, direct PWM is the real LCD backlight.
+    // Stock autoboot also contains runtime.sh. It must retain the stock
+    // backlight path, not accidentally activate Onion-specific PWM.
     let onion = d.path().join(".tmp_update");
     fs::create_dir_all(&onion).unwrap();
     fs::write(onion.join("runtime.sh"), "#!/bin/sh\\n").unwrap();
+    let mut stock_runtime = DevicePlatform::probe(d.path(), d.path().to_path_buf());
+    stock_runtime.set_backlight(9);
+    assert_eq!(duty(&d), 6);
+
+    // The full OnionOS version marker is required to prefer direct PWM.
+    let version = onion.join("onionVersion/version.txt");
+    fs::create_dir_all(version.parent().unwrap()).unwrap();
+    fs::write(&version, "4.3.1\\n").unwrap();
     let mut slot = DevicePlatform::probe(d.path(), d.path().to_path_buf());
     slot.set_backlight(9);
     assert_eq!(duty(&d), 112);
