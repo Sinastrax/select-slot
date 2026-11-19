@@ -76,7 +76,7 @@ echo "Verified independent menu timers and OnionOS shutdown handoff"
 # Emit a useful failure explaining which verification is missing, instead of
 # aborting the build without context when one hunk is not in the generated patch.
 check_patch() {
-  if ! grep -Fq "$1" "$shader_patch"; then
+  if ! grep -Fq -- "$1" "$shader_patch"; then
     printf 'Missing Miyoo patch wiring: %s\n' "$1" >&2
     exit 1
   fi
