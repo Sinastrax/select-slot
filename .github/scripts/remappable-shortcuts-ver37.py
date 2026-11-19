@@ -89,6 +89,9 @@ def ui(s):
     s = block(s, r"pub const SHORTCUTS: \[QuickRow; \d+\] = \[.*?\n    \];",
         lambda x: x.replace("SHORTCUTS: [QuickRow; 19]", "SHORTCUTS: [QuickRow; 23]")
         .replace("    ];", "        QuickRow::ScMute,\n        QuickRow::ScMuteAlt,\n        QuickRow::ScMuteBoth,\n        QuickRow::ScLinkMenu,\n    ];"), "SHORTCUTS rows")
+    s = one(s, "            | QuickRow::ScGuide => self.shortcut().map_or(\"\", Shortcut::label),",
+            "            | QuickRow::ScGuide\n            | QuickRow::ScMute\n            | QuickRow::ScMuteAlt\n            | QuickRow::ScMuteBoth\n            | QuickRow::ScLinkMenu => self.shortcut().map_or(\"\", Shortcut::label),",
+            "shortcut labels match")
     s = one(s, "            QuickRow::ScGuide => Shortcut::Guide,",
             "            QuickRow::ScGuide => Shortcut::Guide,\n            QuickRow::ScMute => Shortcut::Mute,\n            QuickRow::ScMuteAlt => Shortcut::MuteAlt,\n            QuickRow::ScMuteBoth => Shortcut::MuteBoth,\n            QuickRow::ScLinkMenu => Shortcut::LinkMenu,", "UI mapping")
     return s
