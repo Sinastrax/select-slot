@@ -1,0 +1,301 @@
+{
+  "purpose": "Reversible archival of retired development branch tips before GitHub branch pruning",
+  "current_stable": "v1.16.0-rgsp.40",
+  "previously_active_branches": [
+    {
+      "branch": "diagnostic/sgb-borders",
+      "sha": "8e8e95e1693ec273b08f3456e58587c8ab0c210d",
+      "pr": null,
+      "status": "no_pr"
+    },
+    {
+      "branch": "docs/miyoo-v1-clean-copy",
+      "sha": "979fe8289f048519a4c7ed9f4bfb663af6884dcc",
+      "pr": 28,
+      "status": "merged"
+    },
+    {
+      "branch": "docs/official-miyoo-v26",
+      "sha": "d4691e1e623b96c130052cabf90688050223b605",
+      "pr": 26,
+      "status": "merged"
+    },
+    {
+      "branch": "feature/anbernic-original-gba-bezel-ver19",
+      "sha": "50fc41af5461185d6220b4d6753c542284dcb171",
+      "pr": 31,
+      "status": "merged"
+    },
+    {
+      "branch": "feature/clarify-fixed-shortcut-reference",
+      "sha": "462fc9f314c43609e3192a22261c90b59709bcd9",
+      "pr": 39,
+      "status": "merged"
+    },
+    {
+      "branch": "feature/compact-hidden-hotkey-guide",
+      "sha": "8b9109976f75e39a1585d7e4c32aafe180735693",
+      "pr": 41,
+      "status": "merged"
+    },
+    {
+      "branch": "feature/custom-slot-miyoo-core-scaling",
+      "sha": "6119adfbbe782e2978d39d0d4a7b8cc800bde3ff",
+      "pr": null,
+      "status": "no_pr"
+    },
+    {
+      "branch": "feature/custom-slot-miyoo-mini",
+      "sha": "fefde6cd6f628d06cc28373b4a26c8c3f957d410",
+      "pr": 2,
+      "status": "closed_unmerged"
+    },
+    {
+      "branch": "feature/miyoo-gba-original-bezel",
+      "sha": "b876957a129972390ccd0726935b8db8e4d62825",
+      "pr": 30,
+      "status": "merged"
+    },
+    {
+      "branch": "feature/ra-reliable-indexing-ver29",
+      "sha": "c60e72183c538d498e1b78a8adc8f3f42ac8832e",
+      "pr": 33,
+      "status": "merged"
+    },
+    {
+      "branch": "feature/ra-session-refresh-ver31",
+      "sha": "fe19298719ae5a894c83d9340d6b33fc152957af",
+      "pr": null,
+      "status": "no_pr"
+    },
+    {
+      "branch": "feature/read-only-builtin-shortcut-guide",
+      "sha": "b1c889eb6a5798c4b33468b247b9493e82e5d806",
+      "pr": 38,
+      "status": "merged"
+    },
+    {
+      "branch": "feature/remappable-system-shortcuts",
+      "sha": "86ba680feb757183408e5f3b13b75a3760239498",
+      "pr": 37,
+      "status": "closed_unmerged"
+    },
+    {
+      "branch": "feature/select-slot-miyoo-brightness-boost",
+      "sha": "1b9f15f5936d4b205283c8300cec4e353154b9d2",
+      "pr": 13,
+      "status": "closed_unmerged"
+    },
+    {
+      "branch": "feature/select-slot-miyoo-clean-rebuild",
+      "sha": "965e99ac91121ef564cf42f6de811fb4d612bdc2",
+      "pr": 11,
+      "status": "closed_unmerged"
+    },
+    {
+      "branch": "feature/select-slot-miyoo-onion-power-ownership",
+      "sha": "27535ce6a5b53daca6e728cd0df54e404af7215f",
+      "pr": 15,
+      "status": "closed_unmerged"
+    },
+    {
+      "branch": "feature/select-slot-miyoo-pwm-ownership",
+      "sha": "cdb5bfa24dfaac706aa928668f31c210e5e23fd6",
+      "pr": null,
+      "status": "no_pr"
+    },
+    {
+      "branch": "feature/select-slot-miyoo-pwm-priority",
+      "sha": "fa328ef7e48fcdeafa156b9cf49e7e2f5159b998",
+      "pr": 17,
+      "status": "closed_unmerged"
+    },
+    {
+      "branch": "feature/slot-miyoo-stock-onion-power-owner",
+      "sha": "f96950d721d4cc71b4a0dbcbe0fa6ced04e14ead",
+      "pr": 16,
+      "status": "closed_unmerged"
+    },
+    {
+      "branch": "feature/source-verified-hotkey-reference",
+      "sha": "2a618a0f4ffc9bac20bcb9f107e317bc8365d63c",
+      "pr": 40,
+      "status": "merged"
+    },
+    {
+      "branch": "feature/stock-miyoo-onion-standby-fix",
+      "sha": "965e99ac91121ef564cf42f6de811fb4d612bdc2",
+      "pr": null,
+      "status": "no_pr"
+    },
+    {
+      "branch": "feature/ver30-batched-quality-of-life",
+      "sha": "c896da9d610732a279e6e9593d71f2d634f7a3bd",
+      "pr": 34,
+      "status": "merged"
+    },
+    {
+      "branch": "feature/ver31-ra-reconnect-and-progress",
+      "sha": "52eca0ddb00926881e397af9fcd64bc1335e6d4c",
+      "pr": 36,
+      "status": "merged"
+    },
+    {
+      "branch": "fix/authentic-bright-colour-gamut",
+      "sha": "7e8ce8e5fadedcb96e769377698c57e5095fbff4",
+      "pr": 5,
+      "status": "merged"
+    },
+    {
+      "branch": "fix/authentic-colour-and-reflection",
+      "sha": "be91ce3fd1a73f970a365df56bfd976c16cd345c",
+      "pr": 3,
+      "status": "merged"
+    },
+    {
+      "branch": "fix/authentic-gba-off-lcd-brightness",
+      "sha": "5e01d7d6ccec52381a2dcd5b2c46e06e52b29bb4",
+      "pr": 6,
+      "status": "merged"
+    },
+    {
+      "branch": "fix/fit-integer-reference-sgb-fastpath",
+      "sha": "597a635ede0044bfb028c91799c0efb5c0e0b8b4",
+      "pr": 14,
+      "status": "merged"
+    },
+    {
+      "branch": "fix/fit-vertical-stripe-contrast",
+      "sha": "2006e1ab1bab94c98bdfc09eb54854f8eae2e3d0",
+      "pr": 9,
+      "status": "merged"
+    },
+    {
+      "branch": "fix/fit-visible-shaders-sgb-cc",
+      "sha": "6cc8ab0c04ccdf9394c18c6ad7ea270e134847c8",
+      "pr": 12,
+      "status": "merged"
+    },
+    {
+      "branch": "fix/gba-authentic-fit-rg35xxh-ver18",
+      "sha": "d6d3f5ef4114a792e2f1d8fd73519bb550c73975",
+      "pr": 29,
+      "status": "merged"
+    },
+    {
+      "branch": "fix/menu-overflow-all-pages",
+      "sha": "4f412b6113584d0fdca0a53fb8b98a1c1963b2d7",
+      "pr": 35,
+      "status": "merged"
+    },
+    {
+      "branch": "fix/mgba-sgb-chroma-optics-ver12",
+      "sha": "47d335640d6a3c80e6f49e4bb4b1d62b08e6beef",
+      "pr": 20,
+      "status": "merged"
+    },
+    {
+      "branch": "fix/miyoo-gba-bezel-labels",
+      "sha": "4479144ae49ad35088ba4d95370fbed53381a2d1",
+      "pr": 32,
+      "status": "merged"
+    },
+    {
+      "branch": "fix/pocket-fit-ink-coverage-ver10",
+      "sha": "b3993bfb8fe79a12106318deabff3926c6b75744",
+      "pr": 18,
+      "status": "merged"
+    },
+    {
+      "branch": "fix/pocket-rgb-palette-routing-ver16",
+      "sha": "8ab8a6f63eff21e617c1b66da56b252f5fc0b01b",
+      "pr": 24,
+      "status": "merged"
+    },
+    {
+      "branch": "fix/pocket-sgb-full-optics-ver13",
+      "sha": "8f573c1ab7879b1f4789bf14e6e71407dab572ac",
+      "pr": 21,
+      "status": "merged"
+    },
+    {
+      "branch": "fix/pocket-sgb-render-parity-ver11",
+      "sha": "fd1264686cbfa6e4f96ba35ac935c310526fc878",
+      "pr": 19,
+      "status": "merged"
+    },
+    {
+      "branch": "fix/ra-legacy-bare-credentials-ver28",
+      "sha": "da5957f86e95077a248c8c30ea01ab0173a93a67",
+      "pr": null,
+      "status": "no_pr"
+    },
+    {
+      "branch": "fix/recover-pocket-pre-rg35h-ver14",
+      "sha": "10f4bbdfc06bb2a20c31800c9479aeb947161a98",
+      "pr": 22,
+      "status": "merged"
+    },
+    {
+      "branch": "fix/restore-upstream-authentic-calibration",
+      "sha": "e3ec09c4ea261025002d00b2d822e0b8e2917d5c",
+      "pr": 4,
+      "status": "closed_unmerged"
+    },
+    {
+      "branch": "fix/rg35xxh-dot-grid-pocket-sgb",
+      "sha": "6e65d09792521041242b9fffa738884d41982c36",
+      "pr": 10,
+      "status": "merged"
+    },
+    {
+      "branch": "fix/rg35xxh-fit-shader-grid",
+      "sha": "f7b795b0b4890111dbfe3b3f45490fa5a2821e61",
+      "pr": 7,
+      "status": "merged"
+    },
+    {
+      "branch": "fix/sgb-palette-and-authentic-default-ver12",
+      "sha": "607c5ff80bba29201840e73c7ecc1338adf6a11b",
+      "pr": null,
+      "status": "no_pr"
+    },
+    {
+      "branch": "fix/sgb-pocket-whitepoint-ver17",
+      "sha": "c6b54374e08c2fc595a86c5e5c8e7cb00f6246f3",
+      "pr": 25,
+      "status": "merged"
+    },
+    {
+      "branch": "fix/sgb-use-pocket-color-renderer-ver15",
+      "sha": "750c0cb27fa55462c20a0c8fc8e9c41fc8c2462f",
+      "pr": 23,
+      "status": "merged"
+    },
+    {
+      "branch": "fix/smaller-ota-package-ver12",
+      "sha": "13df6a987eaad6d3791da1f01f4237a566134b64",
+      "pr": null,
+      "status": "no_pr"
+    },
+    {
+      "branch": "fix/ver5-safe-fit-rebuild",
+      "sha": "0cfd5b6fdc514683092f0e27879e63d8c97c1caa",
+      "pr": 8,
+      "status": "merged"
+    },
+    {
+      "branch": "integration/slot-1.16.0",
+      "sha": "06bd089348639b4035bbb7fe5d552535bcac6f82",
+      "pr": 1,
+      "status": "merged"
+    },
+    {
+      "branch": "release/miyoo-v1-only",
+      "sha": "f95bfc3a10f75f905c02bc063be9b12480d103a6",
+      "pr": 27,
+      "status": "merged"
+    }
+  ],
+  "recovery": "Every former branch head is an ancestor of archive/retired-development-2026-11-19. Restore with git branch NAME SHA; original PR history and release tags are also preserved."
+}
