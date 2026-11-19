@@ -19,7 +19,7 @@ This release removes the unnecessary Restart feature from the **Miyoo** build an
 - Added a **single version configuration** (`miyoo/version.env`) for the ARMv7 port revision, Slot version and select. slot. Miyoo release version.
 - Added **Python regression contracts** for menu scrolling, removal of Restart, core compatibility and firmware detection.
 - Added **ARMv7/QEMU graphics and power tests** to continuous integration and the release workflow, beyond ordinary compilation and ZIP checking.
-- Consolidated per-version publishing into one generic workflow. Retired Ver. 3/4/5 publisher YAMLs; **their already-published releases and downloads remain available**.
+- Consolidated per-version publishing into one generic workflow. Retired Ver. 3/4/5 publisher YAMLs; the later GitHub release cleanup removed their superseded public download entries while preserving their Git tags and source history.
 - Removed the unused OnionOS splash script. OnionOS continues to display its own active theme.
 - Local repeat builds may opt into `bash miyoo/build.sh --clean`; the default still refuses to overwrite an existing local source checkout.
 
