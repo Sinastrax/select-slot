@@ -1,6 +1,6 @@
 # select. slot. — Anbernic H700 maintainer guide
 
-The H700 firmware and Miyoo firmware are **different products**. The confirmed H700 firmware baseline is **Slot 1.16.0 Ver. 35**, including the RetroAchievements Smaragd indirect-memory correction, per-device GB/GBC/GBA rendering, hardware nicknames, system scaling and OTA updates. Never port Miyoo's 32-bit renderer, PWM settings, or mGBA-only default into this ARM64 build without device-specific testing.
+The H700 firmware and Miyoo firmware are **different products**. The confirmed H700 firmware fallback is **Slot 1.16.0 Ver. 36** (device-tested), preserving the proven Ver. 35 functionality, including the RetroAchievements Smaragd indirect-memory correction, per-device GB/GBC/GBA rendering, hardware nicknames, system scaling and OTA updates. Never port Miyoo's 32-bit renderer, PWM settings, or mGBA-only default into this ARM64 build without device-specific testing.
 
 ## H700 source and patch order
 
@@ -33,4 +33,4 @@ The old manual `publish-ota-from-run.yml`, post-build `publish-ota-from-build.ym
 
 ## Hardware acceptance checks
 
-Automated tests cannot prove GPU display fidelity or real-world radio/power behavior. On RG35XX H, RG35XXSP and RG34XXSP (when available), test: GB Pocket Color and actual SGB modes and palette changes; Authentic GBA at Fit and Integer; independent per-system scaling after restart; overlay/restart/update branding; GB/GBC/GBA save/load; WLAN and link behavior; RetroAchievements progress and unlock popup; correct device nickname; and a complete OTA update. **Ver. 35 remains the confirmed user-tested fallback until a newer release has been device-tested.**
+Automated tests cannot prove GPU display fidelity or real-world radio/power behavior. On RG35XX H, RG35XXSP and RG34XXSP (when available), test: GB Pocket Color and actual SGB modes and palette changes; Authentic GBA at Fit and Integer; independent per-system scaling after restart; overlay/restart/update branding; GB/GBC/GBA save/load; WLAN and link behavior; RetroAchievements progress and unlock popup; correct device nickname; and a complete OTA update. **Ver. 36 remains the confirmed user-tested fallback until a newer release has been device-tested.**

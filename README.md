@@ -18,6 +18,8 @@
 
 The **H700 build** uses **`v1.16.0-pvaibhav.1`** and adds independent GB/GBC shaders, Pocket Color and Super Game Boy modes, per-core color correction, custom input mappings, performance/audio changes, online updates, and menu power management.
 
+The H700 **Controls → Fixed Shortcuts** menu provides an on-device, read-only guide to non-configurable button gestures (including mute, Link Play, power, shelf, and save-state operations). The existing editable Shortcuts menu and all physical button behavior remain unchanged.
+
 Its name is **select. slot.**, not RGSP: the H700 build is intended for other compatible handhelds as well. Both builds support **Game Boy, Game Boy Color and Game Boy Advance**, not NES, SNES, PS1 or N64. Their emulators, display paths and available extras differ; the features below labeled H700 must **not** be assumed to exist in the Miyoo version.
 
 > [!IMPORTANT]
