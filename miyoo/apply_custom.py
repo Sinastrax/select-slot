@@ -1459,6 +1459,31 @@ fn sync_game_bezel'''),
      '''        version: "1.8.1 Ver. 4",'''),
 ])
 
+# Match the H700 status treatment in shelf quick settings as well as the
+# already updated in-game menu. The original shelf remains theme colored.
+edit("crates/slot/src/app.rs", [
+    ('''            Phase::QuickMenu { row } => QuickMenu {
+                row: *row,''',
+     '''            Phase::QuickMenu { row } => {
+                QuickMenu {
+                row: *row,'''),
+    ('''            }
+            .draw(out),
+            Phase::Shelf => {''',
+     '''                }
+                .draw(out);
+                slot_ui::draw_corners(
+                    self.canvas(),
+                    self.battery,
+                    self.menu_battery_percent,
+                    self.hud_bolt,
+                    self.menu_clock,
+                    out,
+                );
+            }
+            Phase::Shelf => {'''),
+])
+
 # Invariants: keep PWM brightness untouched. The only power-layer addition is
 # menu-only backlight blank/restore, preserving the stored brightness level.
 # Never patch the frame-buffer, keymon, theme files or OnionOS runtime.
