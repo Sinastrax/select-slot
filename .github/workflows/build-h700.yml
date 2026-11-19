@@ -277,9 +277,10 @@ jobs:
 
   release-h700:
     name: Publish complete custom firmware for online updates
-    # Publish after a passing main-branch build when the version changes.
-    # Tag-based releases continue to work; an existing release is never replaced.
-    if: startsWith(github.ref, 'refs/tags/') || (github.ref == 'refs/heads/main' && github.event_name == 'push')
+    # Only a successful push on main may publish. Tag builds still validate
+    # firmware but must never move the latest channel backwards.
+    # If this tag already has a public release, leave it unchanged.
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: build-h700
     runs-on: ubuntu-24.04
     permissions:
