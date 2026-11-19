@@ -4,7 +4,7 @@ This page keeps the detailed H700 feature list out of the main [README](../READM
 
 For how the game-focused frontend works in general, use the [official Slot guide](https://slot-cfw.fyi/). For original pvaibhav behavior and screenshots, see the [pvaibhav wiki](https://github.com/pvaibhav/slot/wiki). For the current supported version and release milestones, see the [changelog](../CHANGELOG.md).
 
-The build deliberately preserves upstream behavior while making extra configuration and visual changes. Hardware-dependent features, such as higher panel refresh rates and analogue button mappings, are **not universal**. **Regular H700 test hardware:** Anbernic RG SP, RG34XXSP and RG35XX H; the original Miyoo Mini is tested separately for the ARMv7 build. Individual features are checked on applicable devices, rather than implying every hardware/feature combination was exhaustively tested. Current stable H700 release: [Ver. 40](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.40).
+The build deliberately preserves upstream behavior while making extra configuration and visual changes. Hardware-dependent features, such as higher panel refresh rates and analogue button mappings, are **not universal**. **Testing coverage:** Every H700 update and reported successful result is tested on all compatible regular H700 devices — **Anbernic RG SP, RG34XXSP and RG35XX H** — unless the maintainer explicitly states otherwise. Hardware-specific features are tested wherever supported. The separate ARMv7 releases are tested on the original Miyoo Mini. Current stable H700 release: [Ver. 40](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.40).
 
 ---
 
@@ -73,7 +73,7 @@ These are the **custom changes in the H700 build**, on top of upstream Slot and 
 - **Independent shader and scale settings:** verified Pocket Color/SGB and GBA Authentic Fit optimizations with the intended color-correction options.
 - **Reliable distribution (Ver. 36):** pinned source patches, automated regression checks, and complete OTA builds with a separate mGBA source archive. Earlier public versions were curated to preserve meaningful rollback points.
 
-For the detailed per-version history and links to confirmed milestones, see the [changelog](CHANGELOG.md). The current stable H700 build is **Ver. 40**, tested on RG35XX H.
+For detailed per-version history and links to confirmed milestones, see the [changelog](../CHANGELOG.md). The current stable H700 build is **Ver. 40**, tested on all three compatible devices in the regular H700 lineup.
 
 ### Online updates
 
