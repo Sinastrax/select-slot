@@ -1,0 +1,129 @@
+name: Publish select. slot. Miyoo release
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "miyoo/version.env"
+
+concurrency:
+  group: miyoo-official-release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  release-miyoo:
+    if: github.repository == 'Sinastrax/select-slot' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout release source
+        uses: actions/checkout@v4
+
+      - name: Install Task
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.local/bin"
+          curl -fsSL https://taskfile.dev/install.sh | sh -s -- -b "$HOME/.local/bin"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Run static Miyoo regression contracts
+        shell: bash
+        run: python3 -m unittest discover -s miyoo/tests -p 'test_*.py' -v
+
+      - name: Build release from pinned port and centralized version
+        shell: bash
+        run: bash miyoo/build.sh
+
+      - name: Verify generated source and ARMv7 power/graphics tests
+        shell: bash
+        env:
+          MIYOO_GENERATED_PATCH: .build/miyoo/slot-miyoo/patches/0028-select-miyoo-config.patch
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s miyoo/tests -p 'test_*.py' -v
+          ( cd .build/miyoo/slot-miyoo && task test )
+
+      - name: Verify all packages, checksums and OS boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          source miyoo/version.env
+          d=.build/miyoo
+          stem="select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo"
+          archive="$d/$stem.zip"
+          onion="$d/$stem-onion-autoboot.zip"
+          stock="$d/$stem-stock-autoboot.zip"
+          for z in "$archive" "$onion" "$stock"; do
+            test -s "$z" && test -s "$z.sha256"
+            sha256sum -c "$z.sha256"
+            unzip -t "$z" | tail -1 | grep -q "No errors detected"
+            unzip -Z1 "$z" | grep -qx 'System/slot'
+            unzip -Z1 "$z" | grep -qx 'System/mgba_libretro.so'
+            unzip -Z1 "$z" | grep -qx 'System/gpsp_libretro.so'
+            unzip -Z1 "$z" | grep -qx 'System/bezels/gba-original.png'
+            unzip -Z1 "$z" | grep -qx 'System/bezels/640x480.png'
+            unzip -Z1 "$z" | grep -qx 'App/Slot/config.json'
+            unzip -Z1 "$z" | grep -qx 'Apps/slot.pak/config.json'
+            unzip -Z1 "$z" | grep -qx 'System/select-slot-version.txt'
+            unzip -p "$z" System/select-slot-version.txt |
+              head -1 | grep -Fq "select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - "
+            ! unzip -Z1 "$z" | grep -Eiq 'gambatte'
+          done
+          ! unzip -Z1 "$archive" | grep -q '^.tmp_update/'
+          unzip -Z1 "$onion" | grep -qx '.tmp_update/startup/select-slot.sh'
+          ! unzip -Z1 "$onion" | grep -qx '.tmp_update/runtime.sh'
+          unzip -Z1 "$stock" | grep -qx '.tmp_update/runtime.sh'
+          ! unzip -Z1 "$stock" | grep -qx '.tmp_update/startup/select-slot.sh'
+          patch="$d/slot-miyoo/patches/0028-select-miyoo-config.patch"
+          grep -Fq -- '-            Phase::About if action == Action::GbaDown(Btn::X) => self.begin_restart(),' "$patch"
+          grep -Fq -- '-        self.draw_side_legend(restart, true, link_legend_y(), out);' "$patch"
+          grep -Fq '+    !page.is_empty()' "$patch"
+          grep -Fq "+        version: \"$SLOT_VERSION Ver. $CUSTOM_VERSION\"," "$patch"
+          ! grep -Eq '^\+.*QuickRow::Restart' "$patch"
+          test -f ".github/release-notes/miyoo-ver$CUSTOM_VERSION.md"
+          echo "Verified all three Miyoo release packages and regression tests."
+
+      - name: Publish versioned Miyoo release without touching other releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          source miyoo/version.env
+          repo="$GITHUB_REPOSITORY"
+          tag="miyoo-v$SLOT_VERSION-ver$CUSTOM_VERSION"
+          stem="select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo"
+          d=.build/miyoo
+
+          latest_before="$(gh api "repos/$repo/releases/latest" --jq '.tag_name')"
+          [[ "$latest_before" == v*-rgsp.* ]] || {
+            echo "Latest release is not the H700 channel; refusing to publish" >&2
+            exit 1
+          }
+
+          if gh release view "$tag" --repo "$repo" >/dev/null 2>&1; then
+            echo "Release $tag already exists: refusing silent overwrite" >&2
+            exit 1
+          fi
+          gh release create "$tag" \
+            "$d/$stem.zip" "$d/$stem.zip.sha256" \
+            "$d/$stem-onion-autoboot.zip" "$d/$stem-onion-autoboot.zip.sha256" \
+            "$d/$stem-stock-autoboot.zip" "$d/$stem-stock-autoboot.zip.sha256" \
+            --repo "$repo" \
+            --target "$GITHUB_SHA" \
+            --title "select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION — Miyoo" \
+            --notes-file ".github/release-notes/miyoo-ver$CUSTOM_VERSION.md" \
+            --latest=false
+          test "$(gh api "repos/$repo/releases/tags/$tag" --jq '.assets | length')" -eq 6
+          gh release view miyoo-v1.8.1-ver5 --repo "$repo" >/dev/null
+          latest_after="$(gh api "repos/$repo/releases/latest" --jq '.tag_name')"
+          [[ "$latest_before" == "$latest_after" ]] || {
+            echo "The H700 latest-release channel changed unexpectedly" >&2
+            exit 1
+          }
+          echo "Published $tag, retaining the prior Miyoo and H700 releases."
