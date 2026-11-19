@@ -212,7 +212,7 @@ def table(s):
                         },""",
         "Link Play remains usable while its modal menu is open")
     return one(s, "                (Some(_), false) => false,",
-        "                (Some(Action::MuteToggle | Action::GameMenu), false) => true,\\n"
+        "                (Some(Action::MuteToggle | Action::GameMenu), false) => true,\n"
         "                (Some(_), false) => false,",
         "retain previously hard-coded system gestures in Kid Mode")
 
