@@ -1484,6 +1484,18 @@ edit("crates/slot/src/app.rs", [
             Phase::Shelf => {'''),
 ])
 
+# Rust exhaustiveness and ownership: Restart is not a value-changing row,
+# and the same formatted clock is used to rasterize both shelf and menu HUD.
+edit("crates/slot/src/app.rs", [
+    ('''            | QuickRow::GbcScaling => return,''',
+     '''            | QuickRow::GbcScaling
+            | QuickRow::Restart => return,'''),
+])
+edit("crates/slot/src/frontend.rs", [
+    ('''        clocks.shown = shown;''',
+     '''        clocks.shown = shown.clone();'''),
+])
+
 # Invariants: keep PWM brightness untouched. The only power-layer addition is
 # menu-only backlight blank/restore, preserving the stored brightness level.
 # Never patch the frame-buffer, keymon, theme files or OnionOS runtime.
