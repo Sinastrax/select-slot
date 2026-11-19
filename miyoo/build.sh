@@ -9,7 +9,7 @@ PORT="$WORK/slot-miyoo"
 STAGE="$PORT/release/stage"
 PORT_COMMIT="d096bdb87f25f3aba62de6b40ef859b61d841e43"
 SLOT_VERSION="1.8.1"
-CUSTOM_VERSION="4"
+CUSTOM_VERSION="5"
 ZIP="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo.zip"
 ZIP_ONION="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo-onion-autoboot.zip"
 ZIP_STOCK="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo-stock-autoboot.zip"
@@ -147,8 +147,18 @@ check_patch '+    menu_battery_percent: slot_ui::Printed,'
 check_patch '+    menu_clock: slot_ui::Printed,'
 check_patch '+    menu_clock_tex: Option<TexId>,'
 check_patch '+    menu_battery_tex: Option<TexId>,'
-check_patch '+        version: "1.8.1 Ver. 4",'
-echo "Verified Ver. 4 restart, viewport scrolling, menu status text and About version"
+check_patch '+        version: "1.8.1 Ver. 5",'
+echo "Verified Ver. 5 restart, viewport scrolling, menu status text and About version"
+
+# Miyoo native "reboot" can switch the original Mini off. Restart must
+# re-exec the existing frontend after its save barrier, not power down OS.
+check_patch '+        let err = Command::new("/lib/ld-linux-armhf.so.3")'
+check_patch '+        close_on_exec();'
+check_patch '+            .env("SLOT_ROOT", &self.root)'
+check_patch '+        eprintln!("slot: restart: could not relaunch {}: {err}", slot.display());'
+! grep -Fq '+        let _ = Command::new("reboot").status();' "$shader_patch"
+echo "Verified Miyoo Restart relaunches the frontend without changing power-off"
+
 
 
 
