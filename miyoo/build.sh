@@ -271,6 +271,7 @@ cmp -s "$STAGE/System/launch_frontend.sh" "$PORT/card/System/launch_frontend.sh"
   ! cmp -s "$STAGE/System/slot" "$STAGE/System/slot-de"
 )
 python3 "$ROOT/handheld-i18n/launcher.py" "$STAGE/System/launch_frontend.sh"
+python3 "$ROOT/miyoo/onion_shutdown.py" "$STAGE/System/launch_frontend.sh"
 sh -n "$STAGE/System/launch_frontend.sh"
 # Only PWM selection/testing and menu-specific blanking may differ in slot-power.
 ! grep -Fq "diff --git a/crates/slot-gfx/" "$PORT/patches/0028-select-miyoo-config.patch"

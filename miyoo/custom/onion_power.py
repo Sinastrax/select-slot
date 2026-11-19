@@ -33,6 +33,7 @@ edit("crates/slot/src/app.rs", [
                     // deepsleep path can suspend us and delay power-off
                     // by its thirty-second fallback. We also exit the
                     // interactive Slot menu immediately.
+                    eprintln!("slot: POWER hold; requesting OnionOS shutdown");
                     self.menu_shutdown_onion = true;
                     self.begin_power_off();
                     self.act_at = self.now();
