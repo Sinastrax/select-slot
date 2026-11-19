@@ -1,20 +1,43 @@
 #!/usr/bin/env python3
-"""Check the OTA publisher's embedded validation script and draft replacement.
+"""Validate the sole H700 release job's embedded manifest validator.
 
-A broken embedded Python statement previously passed H700 compilation but
-prevented GitHub from publishing an otherwise complete release.
+Previously, a duplicate workflow-run publisher could force-move a tag and
+delete a draft release. The audited builder now owns publishing. Catch broken
+embedded Python and dangerous publication operations before building.
 """
 from pathlib import Path
-from textwrap import dedent
-s = Path("../.github/workflows/publish-ota-from-build.yml").read_text()
-anchor = '          python3 - "$current" <<\'PY\'\n'
-assert s.count(anchor) == 1, "Missing release manifest validator"
-body = s.split(anchor, 1)[1].split("\n          PY", 1)[0]
-code = "\n".join(line[10:] if line.startswith("          ") else line for line in body.splitlines())
-compile(code, "release_manifest_validator", "exec")
-assert 'assert any("-" + n + "." in version' in code
-assert 'gh api -X DELETE "repos/$GITHUB_REPOSITORY/releases/$existing_id"' in s
-assert 'git/refs/tags/$TAG' in s and '-F force=true' in s
-assert 'gh release create "$TAG"' in s and '--latest' in s
-assert 'gh release create "$TAG"' in s
-print("PASS: OTA publisher parses Python manifest and replaces withdrawn drafts")
+
+workflow = Path("../.github/workflows/build-h700.yml").read_text()
+verify_step = workflow.split(
+    "      - name: Verify version and archive checksum before publication\n", 1
+)
+assert len(verify_step) == 2, "H700 verified release job missing"
+validate = verify_step[1].split(
+    "      - name: Publish update assets on GitHub Releases\n", 1
+)
+assert len(validate) == 2, "H700 release checksum/publication ordering broken"
+anchor = "          python3 - <<'PY'\n"
+assert validate[0].count(anchor) == 1, "Missing H700 embedded release validator"
+body = validate[0].split(anchor, 1)[1].split("\n          PY", 1)[0]
+code = "\n".join(
+    line[10:] if line.startswith("          ") else line
+    for line in body.splitlines()
+)
+compile(code, "h700_manifest_validator", "exec")
+assert 'assert hashlib.sha256(archive.read_bytes()).hexdigest() == d["sha256"]' in code
+assert 'assert d["tag"] == ref.removeprefix("refs/tags/")' in code
+assert '"RELEASE_TAG=" + d["tag"]' in code
+
+publish = validate[1]
+assert 'gh release view "$RELEASE_TAG"' in publish
+assert "leaving it unchanged" in publish
+assert 'gh release create "$RELEASE_TAG"' in publish
+assert "--latest" in publish
+assert "--notes-file RELEASE_NOTES.md" in publish
+assert "release/versions.json" in publish
+assert "release/upstream/source-release/mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz" in publish
+
+for forbidden in ("gh release delete", "git/refs/tags/", "force=true", " -X DELETE", " --force"):
+    assert forbidden not in publish, f"Unsafe H700 publishing operation: {forbidden}"
+assert "needs: build-h700" in workflow
+print("PASS: single H700 publisher validates checksums, preserves tags and includes mGBA source")
