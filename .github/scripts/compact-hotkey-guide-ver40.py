@@ -143,6 +143,18 @@ def update_ui(text):
             };"""
     text = once(text, old, new, "menu value scaling")
 
+    # The preceding two UI-only versions contain assertions of the exact
+    # verbose labels they introduced. Update those assertions to match the
+    # new compact wording rather than disabling regression coverage.
+    for old, new in [
+        ('Some("SELECT + VOLUME UP")', 'Some("SELECT + VOLUME UP/DOWN")'),
+        ('Some("PRESS BOTH VOLUME BUTTONS")', 'Some("VOLUME UP + DOWN")'),
+        ('Some("PRESS MENU TWICE")', 'Some("MENU TWICE")'),
+        ('QuickRow::FixStateSwitcher.label(), "Save States (if saved)"',
+         'QuickRow::FixStateSwitcher.label(), "Save states"'),
+    ]:
+        text = once(text, old, new, "legacy reference assertion")
+
     text += r"""
 
 #[cfg(test)]
