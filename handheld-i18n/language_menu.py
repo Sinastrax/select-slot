@@ -20,7 +20,7 @@ for label, kind, extra in [('ALL', 'QuickRow', 1), ('GENERAL', 'QuickRow', 1), (
 s = replace(s, '\n    Theme,', '\n    Theme,\n    Language,')
 s = replace(s, '\n        QuickRow::Theme,', '\n        QuickRow::Theme,\n        QuickRow::Language,', 2)
 s = replace(s, '| QuickRow::Theme\n', '| QuickRow::Theme\n            | QuickRow::Language\n')
-s = replace(s, 'QuickRow::Theme => "Theme",', 'QuickRow::Theme => "Theme",\n            QuickRow::Language => "Language (restart)",')
+s = replace(s, 'QuickRow::Theme => "Theme",', 'QuickRow::Theme => "Theme",\n            QuickRow::Language => "Language",')
 s = replace(s, '\n    Dark,', '\n    Dark,\n    English,\n    German,')
 s = replace(s, '\n        QuickValue::Dark,', '\n        QuickValue::Dark,\n        QuickValue::English,\n        QuickValue::German,')
 s = replace(s, 'QuickValue::Dark => "Dark",', 'QuickValue::Dark => "Dark",\n            QuickValue::English => "English",\n            QuickValue::German => "Deutsch",')

@@ -1,12 +1,12 @@
-Language (restart)	Sprache (Neustart)
+Language	Sprache
 About	Über Slot
-Accept Self-Signed	Eigene Zertifikate zulassen
+Accept Self-Signed	Selbstsignierte Zertifikate
 Account	Konto
 Achievements	Erfolge
 Achievements — connecting or no offline cache	Erfolge – Verbindung läuft oder Offline-Daten fehlen
 Add	Hinzufügen
-Add to collection	Zur Sammlung
-Add to which collection?	Zu welcher Sammlung hinzufügen?
+Add to collection	Zu Sammlung hinzufügen
+Add to which collection?	Welche Sammlung?
 Add {n}	{n} hinzufügen
 Added	Hinzugefügt
 Added to {name}	Zu {name} hinzugefügt
@@ -19,7 +19,7 @@ Apply	Anwenden
 Applying Labels	Etiketten werden übernommen
 Aspect Fit	Proportional
 Authenticating	Anmeldung läuft
-Auto-Join	Automatisch verbinden
+Auto-Join	Auto-Verbindung
 Automatic	Automatisch
 BIOS does not match	BIOS passt nicht
 Back	Zurück
@@ -41,7 +41,7 @@ Cancelled	Abgebrochen
 Cannot read achievement config	Erfolgseinstellungen nicht lesbar
 Card is full	Karte voll
 Card repair failed	Reparatur fehlgeschlagen
-Cart Studio	Modulstudio
+Cart Studio	Cartridge-Studio
 Change	Ändern
 Changes apply after restart	Änderungen gelten nach dem Neustart
 Charge the battery to repair	Akku vor der Reparatur laden
@@ -116,21 +116,20 @@ Every button goes back to its default.	Alle Tasten erhalten ihre Standardbelegun
 Every shelf key goes back to its default.	Alle Regaltasten erhalten ihre Standardbelegung.
 Every shortcut goes back to its default.	Alle Kürzel erhalten ihre Standardbelegung.
 Existing	Vorhanden
-Exit (multi-cart)	Beenden (mehrere Module)
+Exit (multi-cart)	Auswahl beenden
 Exit Game	Spiel beenden
 FAST-FORWARD TWICE	2× VORSPULEN
 FF KEY	VORSPULTASTE
 FF double-tap lock	Vorspulen einrasten
 Fast Forward	Vorspulen
 Fast Forward Sound	Ton beim Vorspulen
-Fast-Forward Toggle	Vorspulen umschalten
+Fast-Forward Toggle	Vorspulen ein/aus
 Favorites	Favoriten
 Fetch Box Art	Cover laden
 Fetch Missing Art	Fehlende Cover laden
 Fetching Art	Bilder werden geladen
 Fetching Box Art	Cover werden geladen
 Fill / Crop	Füllen / beschneiden
-Finish	Abschließen
 Fit	Einpassen
 Forget	Entfernen
 Forget {ssid}?	Netzwerk {ssid} entfernen?
@@ -139,7 +138,7 @@ Free some space, then try again.	Speicherplatz freigeben und erneut versuchen.
 Full Screen	Vollbild
 Full Stretch	Strecken
 Game Boy Pocket SGB (restart)	Game Boy Pocket SGB (Neustart)
-Game Boy resize	GB-Bildgröße
+Game Boy resize	GB-Bildgröße ändern
 Game Menu	Spielmenü
 Game Reset	Spiel zurückgesetzt
 Game Titles	Spieltitel
@@ -195,11 +194,11 @@ L1 / R1 (IF FREE)	L1 / R1 (FALLS FREI)
 LEFT	LINKS
 Label Color	Etikettfarbe
 Label Hex	Etikettfarbe (Hex)
-Label Printer	Etikettendrucker
+Label Printer	Etiketten
 Leave blank for a saved account	Für gespeichertes Konto leer lassen
 Leave it empty for an open network	Für ein offenes Netzwerk leer lassen
 Left Stick as D-Pad	Linker Stick als Steuerkreuz
-Lid Power Off	Ausschalten bei geschlossenem Deckel
+Lid Power Off	Deckel-Ausschaltzeit
 Light	Hell
 Link ended	Verbindung beendet
 Link was ended	Verbindung beendet
@@ -211,8 +210,8 @@ Logo Only	Nur Logo
 Looking for the other player	Mitspieler wird gesucht
 Lost the connection	Verbindung verloren
 MENU TWICE	2× MENU
-Menu Power Off	Im Menü ausschalten
-Menu Screen Off	Display im Menü aus
+Menu Power Off	Ausschaltzeit im Menü
+Menu Screen Off	Display-Timeout im Menü
 Missing SD card	SD-Karte fehlt
 Mix	Mischen
 Mode	Modus
@@ -232,7 +231,7 @@ Network	Netzwerk
 Network Name	Netzwerkname
 Network forgotten	Netzwerk entfernt
 New Collection	Neue Sammlung
-Next State	Nächster Spielstand
+Next State	Nächster Speicherplatz
 Nickname	Spitzname
 No Art Found	Keine Bilder gefunden
 No Connection	Keine Verbindung
@@ -241,12 +240,12 @@ No New Labels	Keine neuen Etiketten
 No Other Labels	Keine weiteren Etiketten
 No card root	SD-Karte nicht gefunden
 No eligible old temporary or rotated log files.	Keine veralteten temporären Dateien oder Protokolle gefunden.
-No failed games	Keine fehlgeschlagenen Spiele
+No failed games	Keine Spiele mit Fehlern
 No link support	Keine Link-Unterstützung
 No one joined, try again	Niemand beigetreten. Erneut versuchen.
 No saved login token exists for this account.	Für dieses Konto ist keine Anmeldung gespeichert.
-No scan	Keine Suche
-No unsafe files were intentionally removed.	Dateien mit unklarem Status wurden ausgelassen.
+No scan	Noch nicht geprüft
+No unsafe files were intentionally removed.	Dateien mit unklarem Status wurden nicht gelöscht.
 Nobody arrived	Niemand beigetreten
 None	Keine
 Normal Game Boy/Color	Normaler Game Boy/Color
@@ -259,7 +258,7 @@ Not enough space on the card	Zu wenig Platz auf der Karte
 Not now	Später
 Not registered	Nicht registriert
 Notched	Mit Kerbe
-Nothing is currently marked for retry.	Keine Spiele für einen neuen Versuch vorgemerkt.
+Nothing is currently marked for retry.	Derzeit ist kein Spiel für einen neuen Versuch vorgemerkt.
 Nothing to clean	Nichts zu bereinigen
 Nothing was changed. Try again later.	Keine Änderung. Später erneut versuchen.
 Off	Aus
@@ -287,9 +286,9 @@ Please switch to mGBA	Bitte zu mGBA wechseln
 Plug in before updating BaseOS. A installs anyway.	Für das BaseOS-Update Netzteil anschließen. A installiert trotzdem.
 Powering Down	Wird ausgeschaltet
 Prepare Library	Bibliothek vorbereiten
-Preparing library	Bibliothek wird vorbereitet
+Preparing library	Spielebibliothek wird vorbereitet
 Press SELECT + START to repair	Zur Reparatur SELECT + START drücken
-Previous State	Voriger Spielstand
+Previous State	Voriger Speicherplatz
 Progress is not being saved	Fortschritt wird nicht gespeichert
 Protocol	Protokoll
 R1 (IF FREE)	R1 (FALLS FREI)
@@ -336,14 +335,14 @@ RetroAchievements: No offline cache yet	RetroAchievements: Noch keine Offline-Da
 RetroAchievements: Off	RetroAchievements: Aus
 RetroAchievements: Offline ready	RetroAchievements: Offline bereit
 Retry	Erneut versuchen
-Retry Failed Games	Spiele erneut prüfen
+Retry Failed Games	Fehlerhafte Spiele erneut prüfen
 Retrying failed games	Spiele werden erneut geprüft
 Review Config/retroachievements.toml.	Config/retroachievements.toml prüfen.
 Rewind	Zurückspulen
 RomM refused the request ({n})	RomM hat die Anfrage abgelehnt ({n})
 Rounded	Abgerundet
 Rumble	Vibration
-SCAN OR GO TO	SCANNEN ODER ÖFFNEN
+SCAN OR GO TO	QR SCANNEN\nODER ADRESSE ÖFFNEN
 SD card repaired	SD-Karte repariert
 SD repair (if offered)	SD-Reparatur (falls verfügbar)
 SINGLE KEY ONLY	NUR EINE TASTE
@@ -371,7 +370,7 @@ Select Clean Detected Files again to delete scanned items.	Zum Löschen erneut �
 Set	Einstellen
 Set Automatically	Automatisch einstellen
 Set Server before pairing.	Vor dem Koppeln den Server festlegen.
-Set the clock	Uhr stellen
+Set the clock	Uhr einstellen
 Set the date and time, then try again.	Datum und Uhrzeit einstellen und erneut versuchen.
 Settings	Einstellungen
 Settings and editing lock.	Einstellungen und Bearbeitung werden gesperrt.
@@ -386,13 +385,13 @@ Shell Color	Gehäusefarbe
 Shell Hex	Gehäusefarbe (Hex)
 Shelves	Regale
 Shift	Umschalt
-Shift x2 = Caps	2× Umschalt: Feststellen
+Shift x2 = Caps	2× Umschalt: Feststelltaste
 Shortcuts	Kürzel
 Show	Anzeigen
 Shut Down	Ausschalten
 Skip	Überspringen
 Sleep / Wake	Ruhezustand
-Solid	Einfarbig
+Solid	Undurchsichtig
 Space	Leertaste
 Start fresh	Neu beginnen
 State Loaded	Spielstand geladen
@@ -592,3 +591,15 @@ A Button	Taste A
 B Button	Taste B
 L Button	Taste L
 R Button	Taste R
+HOLD {key}	{key} HALTEN
+TAP {key}	{key} KURZ DRÜCKEN
+PRESS {key}	{key} DRÜCKEN
+{key} TWICE	{key} ZWEIMAL
+Hold Y	Y halten
+HOLD Y	Y HALTEN
+Stickers	Sticker
+{running} is the latest version.	{running} ist die aktuelle Version.
+slot is up to date	Slot ist aktuell
+GBC only	Nur Game Boy Color
+MODEL NO. NTR-002	MODELL NTR-002
+FOR CONSUMER SERVICE: SLOT-CFW.FYI	SUPPORT: SLOT-CFW.FYI

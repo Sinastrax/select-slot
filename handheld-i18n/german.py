@@ -42,10 +42,12 @@ for crate, names in modules.items():
             if name == 'bindings' and en in ('Select', 'Start'):
                 return m[0]  # Printed button names.
             seen.add(en)
-            return json.dumps(catalog[en], ensure_ascii=False)
+            if name == 'studio_view' and en == 'Clear':
+                return '"Durchsichtig"'  # Shell material, unlike the Clear action.
+            return json.dumps(catalog[en].replace(r'\n', '\n'), ensure_ascii=False)
         updated = literal.sub(render, source)
         if source != updated:
             path.write_text(updated)
-if not {'Language (restart)', 'Settings', 'Resume', 'Brightness', 'General', 'Off'} <= seen:
+if not {'Language', 'Settings', 'Resume', 'Brightness', 'General', 'Off'} <= seen:
     raise ValueError('Incomplete pinned menu tree')
 print(f'German frontend: {len(seen)} distinct translated source strings')

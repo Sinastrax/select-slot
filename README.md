@@ -6,7 +6,7 @@
 
 **A personal take on Slot for Game Boy, Game Boy Color and Game Boy Advance.**
 
-[**Download for Anbernic H700**](https://github.com/Sinastrax/select-slot/releases/latest) · [**Download for Miyoo Mini**](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver7) · [**Release history**](CHANGELOG.md) · [**Original Slot guide**](https://slot-cfw.fyi/) · [**Original Slot Discord**](https://discord.gg/NYRWsSuPUu)
+[**Download for Anbernic H700**](https://github.com/Sinastrax/select-slot/releases/latest) · [**Download for Miyoo Mini**](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver8) · [**Release history**](CHANGELOG.md) · [**Original Slot guide**](https://slot-cfw.fyi/) · [**Original Slot Discord**](https://discord.gg/NYRWsSuPUu)
 
 </div>
 
@@ -28,12 +28,12 @@ This repository is not an official Slot release or currently a GitHub-linked for
 
 | | **Anbernic H700** | **Miyoo Mini family** |
 | --- | --- | --- |
-| Current build | **1.16.0 Ver. 44** | **1.8.1 Ver. 7** |
+| Current build | **1.16.0 Ver. 45** | **1.8.1 Ver. 8** |
 | Handhelds | RG SP / RG34XXSP / RG35XX H and other compatible H700 models | Miyoo Mini, Mini Plus and Mini Flip, subject to firmware support |
 | Rendering | GPU, including Authentic and custom LCD styles | Software rendering; no H700 LCD shaders |
 | Game cores | GB/GBC: Gambatte or mGBA; GBA: gpSP or mGBA | GB/GBC: mGBA; GBA: gpSP or mGBA |
 | Updates | Wi-Fi / in-app OTA updates | Manual SD-card installation only |
-| Download | [**Latest H700 release**](https://github.com/Sinastrax/select-slot/releases/latest) | [**Miyoo Ver. 7 release**](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver7) |
+| Download | [**Latest H700 release**](https://github.com/Sinastrax/select-slot/releases/latest) | [**Miyoo Ver. 8 release**](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver8) |
 
 ## Device compatibility
 
@@ -162,7 +162,7 @@ These are the **custom changes in the H700 build**, on top of upstream Slot and 
 
 For detailed per-version history and links to confirmed milestones, see the [changelog](CHANGELOG.md). Ver. 41 adds one-shot Shift and Caps Lock to the H700 keyboard. Press Shift or SELECT once for one character, twice for Caps Lock, and again to unlock. The Shift key has a white background behind the arrow after one press and displays **CAPS** while locked. Ver. 40 was tested on all three regular H700 devices.
 
-Choose **Deutsch** under **Settings → General → Language (restart)**, then restart Slot. The German interface includes settings, controls, help, dialogs and status messages. To switch back, choose **English** under **Einstellungen → Allgemein → Sprache (Neustart)** and restart. Game content and user-entered names keep their original language.
+Choose **Deutsch** under **Settings → General → Language**, then restart Slot. The German interface includes settings, controls, help, dialogs and status messages. To switch back, choose **English** under **Einstellungen → Allgemein → Sprache** and restart. Game content and user-entered names keep their original language.
 
 #### Online updates
 
@@ -193,7 +193,7 @@ select. slot.'s **Miyoo Ver. 6** adds independent GB/GBC/GBA scaling defaults, p
 | Restart | **Not offered on Miyoo.** The Settings entry and About X action/legend were removed. Use normal shutdown and power-on when a new session is needed |
 | Scrolling | All long menu pages, including Gameplay settings, stay within a visible six-row viewport; the in-game Screen panel retains its three-row viewport |
 | Menu readability | High-contrast clock and battery percentage in both main settings and in-game quick menus; normal shelf colors unchanged |
-| About | Shows **Version 1.8.1 Ver. 7** in the existing sticker layout; B/Menu returns to settings |
+| About | Shows **Version 1.8.1 Ver. 8** in the existing sticker layout; B/Menu returns to settings |
 | Menu Screen Off | Off, 1, 3, 5, 10, 15, 30 minutes; default 3; the first button press wakes without launching anything |
 | Menu Power Off | Off, 1, 3, 5, 10, 15, 30 minutes; default 15 |
 | Resume | Independent Resume on Power On and Resume on Insert settings |
@@ -273,7 +273,7 @@ The update package is a complete firmware build, not a standalone patch or a rep
 
 ### Miyoo Mini / Mini Plus / Mini Flip
 
-Download **one** package from [Miyoo Ver. 7](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver7):
+Download **one** package from [Miyoo Ver. 8](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver8):
 
 | Package | Use it for |
 | --- | --- |
@@ -296,8 +296,8 @@ H700 firmware updates use a **complete manifest-controlled System update** with 
 
 ## Release versions and update cadence
 
-- **Anbernic H700:** [1.16.0 Ver. 44](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.44) adds the German handheld interface. [Ver. 36](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.36) is a tested fallback; other retained milestone releases are catalogued in the [changelog](CHANGELOG.md).
-- **Miyoo:** [1.8.1 Ver. 7](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver7) is the separate current ARMv7 release, installed manually from SD.
+- **Anbernic H700:** [1.16.0 Ver. 45](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.45) refines German UI wording and text layout. [Ver. 36](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.36) is a tested fallback; other retained milestone releases are catalogued in the [changelog](CHANGELOG.md).
+- **Miyoo:** [1.8.1 Ver. 8](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver8) is the separate current ARMv7 release, installed manually from SD.
 - **Technical version labels** (such as `v1.16.0-rgsp.40`) remain for compatibility with earlier H700 update installations. The public firmware name is **select. slot.**.
 - **Release cadence:** unlike pvaibhav's automated upstream sync, select. slot. does not claim a daily automatic upstream release schedule. New firmware versions are kept separate from documentation-only edits.
 

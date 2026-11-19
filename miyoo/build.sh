@@ -257,6 +257,7 @@ cmp -s "$STAGE/System/launch_frontend.sh" "$PORT/card/System/launch_frontend.sh"
   cd "$PORT"
   binary=target-miyoo/rust/armv7-unknown-linux-gnueabihf/device/slot
   python3 "$ROOT/handheld-i18n/language_menu.py" upstream/slot
+  python3 "$ROOT/handheld-i18n/text_layout.py" upstream/slot
   task build
   cp "$binary" "$STAGE/System/slot"
   python3 "$ROOT/handheld-i18n/german.py" upstream/slot
