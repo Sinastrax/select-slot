@@ -80,7 +80,7 @@ def bind(s):
 
 
 def ui(s):
-    s = block(s, r"pub enum QuickRow \{.*?\n\}", lambda x: x[:-2] +
+    s = block(s, r"pub enum QuickRow \{.*?\n\}", lambda x: x[:-2] + "\n" +
         "    ScMute,\n    ScMuteAlt,\n    ScMuteBoth,\n    ScLinkMenu,\n}", "QuickRow variants")
     s = block(s, r"pub const ALL: \[QuickRow; \d+ \+ cfg!\(feature = \"nds\"\) as usize\] = \[.*?\n    \];",
         lambda x: re.sub(r"(pub const ALL: \[QuickRow; )(\d+)",
