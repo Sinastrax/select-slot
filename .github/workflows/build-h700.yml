@@ -134,6 +134,7 @@ jobs:
           cargo test -p slot-ui --lib select_ra_menu_tests -- --nocapture
           cargo test -p slot-ui --lib menu_viewport_tests -- --nocapture
           cargo test -p slot-ui --lib select_keyboard_shift_tests -- --nocapture
+          cargo test -p slot --no-default-features --features device --lib caps_indicator_regression -- --nocapture
           cargo test -p slot --no-default-features --features device --lib hardware_nickname_regression -- --nocapture
           cargo test -p slot --no-default-features --features device --lib launch_status_distinguishes_real_ra_online_from_wifi_only -- --nocapture
 

@@ -1,3 +1,3 @@
-# select. slot. 1.16.0 Ver. 41
+# select. slot. 1.16.0 Ver. 42
 
-On the H700 on-screen keyboard, press Shift or SELECT once to capitalize the next character. Press twice before typing to enable Caps Lock. Press again to return to lowercase. The Shift key displays CAPS while locked, and the number row still enters digits.
+The H700 keyboard now redraws the Shift key on the second Shift or SELECT press. It displays **CAPS** while Caps Lock is active and restores the Shift arrow when you unlock it.

@@ -196,3 +196,5 @@ python3 ../.github/scripts/source-verified-hotkey-guide-ver39.py
 python3 ../.github/scripts/compact-hotkey-guide-ver40.py
 # Shared H700 on-screen keyboard: one-shot Shift, double-press Caps Lock.
 python3 ../.github/scripts/keyboard-one-shot-caps-lock-ver41.py
+# Refresh keyboard key textures when one-shot Shift becomes Caps Lock.
+git apply ../patches/keyboard-caps-indicator.patch

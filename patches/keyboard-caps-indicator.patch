@@ -1,0 +1,70 @@
+diff --git a/crates/slot/src/network_faces.rs b/crates/slot/src/network_faces.rs
+index 9ecf1ae..ec58db4 100644
+--- a/crates/slot/src/network_faces.rs
++++ b/crates/slot/src/network_faces.rs
+@@ -15,8 +15,7 @@ struct KeyShape {
+     title: String,
+     subtitle: Option<String>,
+     text: String,
+-    shift: bool,
+-    symbols: bool,
++    cap_state: (bool, bool, bool),
+ }
+ 
+ impl KeyShape {
+@@ -25,8 +24,7 @@ impl KeyShape {
+             title: kb.title().to_string(),
+             subtitle: kb.subtitle().map(str::to_string),
+             text: kb.text(),
+-            shift: kb.shift(),
+-            symbols: kb.symbols(),
++            cap_state: (kb.shift(), kb.caps_locked(), kb.symbols()),
+         }
+     }
+ }
+@@ -275,7 +273,7 @@ impl NetworkSync {
+             swap(compositor, &mut tex.text, &face);
+             tex.stops = stops;
+         }
+-        if (was.shift, was.symbols) != (now.shift, now.symbols) {
++        if was.cap_state != now.cap_state {
+             let faces = keyboard_cap_faces(&kb, app.canvas());
+             for (row, faces) in tex.caps.iter_mut().zip(faces) {
+                 for (pair, faces) in row.iter_mut().zip(faces) {
+@@ -318,3 +316,36 @@ impl NetworkSync {
+         self.keys = Some(shape);
+     }
+ }
++
++#[cfg(test)]
++mod caps_indicator_regression {
++    use super::*;
++    use slot_input::Btn;
++    use slot_ui::{Canvas, Layout};
++
++    #[test]
++    fn locking_and_unlocking_refresh_the_visible_shift_key() {
++        for layout in [Layout::General, Layout::Host] {
++            let mut kb = Keyboard::new(layout, "Test", None, "");
++            let canvas = Canvas::of((640, 480));
++            let shift_faces = |kb: &Keyboard| {
++                let faces = keyboard_cap_faces(kb, canvas);
++                faces[3][0].each_ref().map(|face| face.rgba.clone())
++            };
++            let off = KeyShape::of(&kb).cap_state;
++            let initial = shift_faces(&kb);
++            kb.press(Btn::Select);
++            let once = KeyShape::of(&kb).cap_state;
++            let temporary = shift_faces(&kb);
++            kb.press(Btn::Select);
++            assert_ne!(once, KeyShape::of(&kb).cap_state);
++            let locked = shift_faces(&kb);
++            for focused in 0..2 {
++                assert!(temporary[focused] != locked[focused]);
++            }
++            kb.press(Btn::Select);
++            assert_eq!(off, KeyShape::of(&kb).cap_state);
++            assert!(initial == shift_faces(&kb));
++        }
++    }
++}
