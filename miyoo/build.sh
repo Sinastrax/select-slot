@@ -9,7 +9,7 @@ PORT="$WORK/slot-miyoo"
 STAGE="$PORT/release/stage"
 PORT_COMMIT="d096bdb87f25f3aba62de6b40ef859b61d841e43"
 SLOT_VERSION="1.8.1"
-CUSTOM_VERSION="3"
+CUSTOM_VERSION="4"
 ZIP="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo.zip"
 ZIP_ONION="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo-onion-autoboot.zip"
 ZIP_STOCK="$WORK/select-slot-$SLOT_VERSION-ver$CUSTOM_VERSION-miyoo-stock-autoboot.zip"
@@ -60,7 +60,7 @@ echo "Verified shader-free Miyoo frontend, menus, shortcuts and default state"
 # The setting, displayed row, physical blanking and OnionOS handoff must
 # all be present. A successful compile alone does not prove wiring.
 grep -Fq '+    pub const GENERAL: [QuickRow; 9]' "$shader_patch"
-grep -Fq '+    pub const ALL: [QuickRow; 87]' "$shader_patch"
+grep -Fq '+    pub const ALL: [QuickRow; 88]' "$shader_patch"
 grep -Fq '+    pub menu_screen_off_min: u8,' "$shader_patch"
 grep -Fq '+    pub menu_power_off_min: u8,' "$shader_patch"
 grep -Fq '+            menu_screen_off_min: 3,' "$shader_patch"
@@ -136,6 +136,21 @@ check_patch '+            self.gba_strip.or(self.sp_strip)'
 check_patch '+            BezelPick::None | BezelPick::Ags102 | BezelPick::Agb001 => None,'
 check_patch '+        let gba_path = self.session.app().root()'
 echo "Verified original GBA / SP bottom-strip selector without new render backend"
+
+# Ver. 4: require the native restart entry, all-page scrolling and separate
+# high-contrast clock/battery menu textures; keep original shelf rendering.
+check_patch '+    pub const MAIN: [QuickRow; 6]'
+check_patch '+        QuickRow::Restart,'
+check_patch '+            QuickRow::Restart => self.begin_restart(),'
+check_patch '+fn scrolls(page: &[QuickRow]) -> bool {'
+check_patch '+    !page.is_empty()'
+check_patch '+    menu_battery_percent: slot_ui::Printed,'
+check_patch '+    menu_clock: slot_ui::Printed,'
+check_patch '+    menu_clock_tex: Option<TexId>,'
+check_patch '+    menu_battery_tex: Option<TexId>,'
+check_patch '+        version: "1.8.1 Ver. 4",'
+echo "Verified Ver. 4 restart, viewport scrolling, menu status text and About version"
+
 
 
 
@@ -243,7 +258,7 @@ echo 'Verified legacy brightness 0–9 and compatibility migration'
 cp "$ROOT/miyoo/onion-autoboot.sh" "$STAGE/System/autoboot/onion-startup.sh"
 cp "$ROOT/miyoo/INSTALL.md" "$STAGE/System/select-slot-install.md"
 cat > "$STAGE/System/select-slot-version.txt" <<EOF
-select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - mGBA/gpSP-only Miyoo build; existing bezels and shaders preserved
+select. slot. $SLOT_VERSION Ver. $CUSTOM_VERSION - Restart, scrolling, menu HUD and About version; mGBA/gpSP only
 Base: https://github.com/deanmarano/slot-miyoo
 Pinned original: $PORT_COMMIT
 GB/GBC: Miyoo-native mGBA only; GBA: gpSP default (mGBA alternative); legacy Gambatte profile choices migrate to mGBA
