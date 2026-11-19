@@ -197,27 +197,24 @@ def gesture(s):
 
 
 def table(s):
-    return one(s, """                        contexts: match (anywhere(action), binding.modifier) {
-                            (false, _) => Contexts::GAME,""",
-               """                        contexts: match (action, anywhere(action), binding.modifier) {
-                            (Action::GameMenu, _, _) => Contexts::GAME,
-                            (_, false, _) => Contexts::GAME,"""
-               .replace("                            (true, None)", "                            (_, true, None)")
-               .replace("                            (true, Some(_))", "                            (_, true, Some(_))"),
-               "context for Link Menu") if False else one(s,
-               """                        contexts: match (anywhere(action), binding.modifier) {
+    s = one(s,
+        """                        contexts: match (anywhere(action), binding.modifier) {
                             (false, _) => Contexts::GAME,
                             (true, None) => Contexts::GAME.with(Contexts::SHELF),
                             (true, Some(_)) => Contexts::ALL,
                         },""",
-               """                        contexts: match (action, anywhere(action), binding.modifier) {
-                            (Action::GameMenu, _, _) => Contexts::GAME,
+        """                        contexts: match (action, anywhere(action), binding.modifier) {
+                            // Link Play also closes an already-open link menu.
+                            (Action::GameMenu, _, _) => Contexts::ALL,
                             (_, false, _) => Contexts::GAME,
                             (_, true, None) => Contexts::GAME.with(Contexts::SHELF),
                             (_, true, Some(_)) => Contexts::ALL,
                         },""",
-               "Link Menu may only fire during gameplay")
-
+        "Link Play remains usable while its modal menu is open")
+    return one(s, "                (Some(_), false) => false,",
+        "                (Some(Action::MuteToggle | Action::GameMenu), false) => true,\\n"
+        "                (Some(_), false) => false,",
+        "retain previously hard-coded system gestures in Kid Mode")
 
 def regression(s):
     s = one(s, """        (plain(L2), RewindStart),
