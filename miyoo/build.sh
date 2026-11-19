@@ -145,7 +145,7 @@ check_patch '+    menu_clock: slot_ui::Printed,'
 check_patch '+    menu_clock_tex: Option<TexId>,'
 check_patch '+    menu_battery_tex: Option<TexId>,'
 check_patch '-            Phase::About if action == Action::GbaDown(Btn::X) => self.begin_restart(),'
-check_patch '-        self.draw_side_legend(restart, true, LINK_LEGEND_Y, out);'
+check_patch '-        self.draw_side_legend(restart, true, link_legend_y(), out);'
 check_patch "+        version: \"$SLOT_VERSION Ver. $CUSTOM_VERSION\","
 if grep -Eq '^\+.*(QuickRow::Restart|\.begin_restart\(\)|Command::new\("reboot"\)|Command::new\("/lib/ld-linux-armhf\.so\.3"\))' "$shader_patch"; then
   echo "ERROR: user-facing or hardware Restart was reintroduced" >&2
