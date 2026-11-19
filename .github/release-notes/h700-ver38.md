@@ -4,7 +4,7 @@ An **interface-text-only** refinement of Ver. 37 for Anbernic H700 devices. The 
 
 ## What changed
 
-- Read-only **Controls → Fixed Shortcuts** entries now spell out button names: **SELECT + VOLUME +**, **BOTH VOLUME BUTTONS**, **MENU TWICE**, **HOLD SELECT**, etc., rather than shorthand such as SEL, VOL, FF KEY, and 2x.
+- Read-only **Controls → Fixed Shortcuts** entries now spell out button names: **SELECT + VOLUME UP**, **PRESS BOTH VOLUME BUTTONS**, **PRESS MENU TWICE**, **HOLD SELECT**, etc., rather than shorthand such as SEL, VOL, FF KEY, and 2x.
 - The Fast-Forward rows now **show the actual configured shortcut button**, such as **R2 TWICE** to lock or **R2** to stop. If the user has rebound it, the displayed key follows that setting. An unassigned key explicitly reads **NOT ASSIGNED**.
 - The double-MENU action is labeled **Screenshots / States** to reflect its context-sensitive behavior. Game Boy and Game Boy Color references no longer use the unclear GB/C abbreviation.
 - The reference remains **read-only**. The pre-existing editable Shortcuts page has not changed.

@@ -9,15 +9,15 @@ from pathlib import Path
 
 # (enum row, old label, new label, old key text, new key text)
 CHANGES = [
-    ("FixVolumeUp", "Volume Up", "Increase Volume", "VOL+", "VOLUME +"),
-    ("FixVolumeDown", "Volume Down", "Decrease Volume", "VOL-", "VOLUME -"),
-    ("FixMuteSelectUp", "Mute", "Mute", "SEL+VOL+", "SELECT + VOLUME +"),
-    ("FixMuteSelectDown", "Mute", "Mute", "SEL+VOL-", "SELECT + VOLUME -"),
-    ("FixMuteBoth", "Mute", "Mute", "VOL+ & VOL-", "BOTH VOLUME BUTTONS"),
+    ("FixVolumeUp", "Volume Up", "Increase Volume", "VOL+", "VOLUME UP"),
+    ("FixVolumeDown", "Volume Down", "Decrease Volume", "VOL-", "VOLUME DOWN"),
+    ("FixMuteSelectUp", "Mute", "Mute", "SEL+VOL+", "SELECT + VOLUME UP"),
+    ("FixMuteSelectDown", "Mute", "Mute", "SEL+VOL-", "SELECT + VOLUME DOWN"),
+    ("FixMuteBoth", "Mute", "Mute", "VOL+ & VOL-", "PRESS BOTH VOLUME BUTTONS"),
     ("FixSleep", "Sleep / Wake", "Sleep / Wake", "POWER", "POWER"),
     ("FixPowerOff", "Shut Down", "Shut Down", "HOLD POWER", "HOLD POWER"),
     ("FixGameMenu", "Game Menu", "Game Menu", "MENU", "MENU"),
-    ("FixStateSwitcher", "Save Switcher", "Screenshots / States", "2x MENU", "MENU TWICE"),
+    ("FixStateSwitcher", "Save Switcher", "Screenshots / States", "2x MENU", "PRESS MENU TWICE"),
     ("FixExit", "Return to Shelf", "Return to Shelf", "HOLD MENU", "HOLD MENU"),
     ("FixLink", "Link Play", "Link Play", "SEL+MENU", "SELECT + MENU"),
     ("FixFastLatch", "FF Lock", "Lock Fast-Forward", "2x FF KEY", "FAST-FORWARD TWICE"),
@@ -71,9 +71,9 @@ mod fixed_reference_plain_language_tests {
                 assert!(!label.contains(unclear), "{row:?} has unclear label {label}");
             }
         }
-        assert_eq!(QuickRow::FixMuteSelectUp.fixed_keys(), Some("SELECT + VOLUME +"));
-        assert_eq!(QuickRow::FixMuteBoth.fixed_keys(), Some("BOTH VOLUME BUTTONS"));
-        assert_eq!(QuickRow::FixStateSwitcher.fixed_keys(), Some("MENU TWICE"));
+        assert_eq!(QuickRow::FixMuteSelectUp.fixed_keys(), Some("SELECT + VOLUME UP"));
+        assert_eq!(QuickRow::FixMuteBoth.fixed_keys(), Some("PRESS BOTH VOLUME BUTTONS"));
+        assert_eq!(QuickRow::FixStateSwitcher.fixed_keys(), Some("PRESS MENU TWICE"));
     }
 }
 """
