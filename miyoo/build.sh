@@ -191,9 +191,12 @@ ORIGINAL_GBA_COMMIT="75aa66c41548ebaa95f31d260d47eea2baab9d8a"
 ORIGINAL_GBA_URL="https://raw.githubusercontent.com/chrizzo-hb/knulli-bezels/$ORIGINAL_GBA_COMMIT/default-knulli/systems/gba-4_3.png"
 ORIGINAL_GBA_SOURCE_SHA256="1d25c249c08580c6082656d353d001158e8378653b9a3d90c80e85700990ca93"
 command -v curl >/dev/null || { echo 'Missing build dependency: curl' >&2; exit 1; }
-if ! python3 -c 'from PIL import Image' >/dev/null 2>&1; then
-  echo "Installing Pillow for asset resizing (host build dependency, NOT shipped to Miyoo)"
-  python3 -m pip -q install pillow
+# Pin the host's pixel-resize library as well: PNG artwork checks must not
+# silently change when an unrelated Pillow release changes LANCZOS behavior.
+PILLOW_VERSION="${PILLOW_VERSION:-12.0.0}"
+if ! python3 -c "import PIL; assert PIL.__version__ == '$PILLOW_VERSION'" >/dev/null 2>&1; then
+  echo "Installing pinned Pillow $PILLOW_VERSION for host-only bezel generation"
+  python3 -m pip -q install "pillow==$PILLOW_VERSION"
 fi
 test -s "$STAGE/System/bezels/640x480.png"
 test ! -e "$STAGE/System/bezels/gba-original.png"
