@@ -194,3 +194,5 @@ python3 ../.github/scripts/clarify-fixed-shortcuts-ver38.py
 python3 ../.github/scripts/source-verified-hotkey-guide-ver39.py
 # Ver.40: only obscure shortcuts shown; guide-only text layout cannot collide.
 python3 ../.github/scripts/compact-hotkey-guide-ver40.py
+# Shared H700 on-screen keyboard: one-shot Shift, double-press Caps Lock.
+python3 ../.github/scripts/keyboard-one-shot-caps-lock-ver41.py
