@@ -21,23 +21,5 @@ ROOT=/mnt/SDCARD
 # invoking System/slot directly.
 SLOT_ROOT="$ROOT" sh "$ROOT/System/launch_frontend.sh"
 
-# The standard OnionOS App launcher processes /tmp/.offOrder after an app
-# exits. Optional autoboot runs earlier, in startup hooks, so it must hand off
-# that marker itself instead of launching MainUI while shutdown is pending.
-# Mirror OnionOS's check_off_order("End") without choosing or copying theme
-# artwork: bootScreen resolves whichever theme the user selected.
-if [ -f /tmp/.offOrder ]; then
-    touch /tmp/shutting_down
-    if command -v bootScreen >/dev/null 2>&1; then
-        bootScreen End &
-        sleep 1
-    elif [ -x "$ROOT/.tmp_update/bin/bootScreen" ]; then
-        "$ROOT/.tmp_update/bin/bootScreen" End &
-        sleep 1
-    fi
-    shutdown
-    exit 0
-fi
-
-# Normal exit or crash returns control to OnionOS.
+# The shared launcher also handles OnionOS shutdown requests.
 exit 0

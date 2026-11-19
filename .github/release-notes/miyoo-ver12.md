@@ -1,0 +1,1 @@
+- Hand off to the native OnionOS shutdown helper directly from the Miyoo launcher after the first long POWER press. The launcher records when it invokes the helper.
