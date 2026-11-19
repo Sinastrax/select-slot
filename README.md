@@ -124,6 +124,12 @@ These are the **custom changes in the H700 build**, on top of upstream Slot and 
 - **Light-mode clock and battery percentage (Ver. 22).** Status text at the top of quick menus, including in-game menus, uses independent bright HUD text textures so both the **time** and **battery percentage** remain visible against the dark menu background. The existing shelf footer and wallpaper-specific colors remain untouched.
 - **Corrected Resume on Power On.** **On** starts the last game and loads its resume state; **Off** boots to the shelf with that game selected but not running. **Resume on Insert** stays independent for manual launches.
 
+### Ver. 36: maintenance, unchanged game behavior
+
+- **Build cleanup:** moved the pinned H700 upstream merge and exact historical patch sequence into a dedicated script; added strict patch-order and release-safety validation.
+- **Release safety:** retired duplicate/stale OTA publishers, including an unsafe force-tag/draft-replacement path and a historical release-deletion workflow. Existing GitHub releases and tags are preserved.
+- **No gameplay changes:** the user-confirmed Ver. 35 RetroAchievements fix, shaders, device recognition, GB/GBC/GBA scaling, emulators, saves and WLAN remain intact. [Maintenance and hardware-testing guide](H700_MAINTENANCE.md); Ver. 35 remains the confirmed device-tested fallback.
+
 ### Ver. 35: rcheevos-compatible indirect memory handling
 
 - Fixed the **unavailable indirect RAM read** found in the German Pokémon Smaragd device log. The old wrapper reset *all* achievements when any dynamic pointer briefly pointed outside available memory; official `rc_client` treats this as a zero-valued pointer read without resetting unrelated achievements.
