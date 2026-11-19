@@ -6,7 +6,7 @@
 
 **A personal take on Slot for Game Boy, Game Boy Color and Game Boy Advance.**
 
-[**Download for Anbernic H700**](https://github.com/Sinastrax/select-slot/releases/latest) · [**Download for Miyoo Mini**](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver6) · [**Release history**](CHANGELOG.md) · [**Original Slot guide**](https://slot-cfw.fyi/)
+[**Download for Anbernic H700**](https://github.com/Sinastrax/select-slot/releases/latest) · [**Download for Miyoo Mini**](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver6) · [**Release history**](CHANGELOG.md) · [**Original Slot guide**](https://slot-cfw.fyi/) · [**Original Slot Discord**](https://discord.gg/NYRWsSuPUu)
 
 </div>
 
@@ -39,19 +39,19 @@ This repository is not an official Slot release or currently a GitHub-linked for
 
 The H700 device list follows [original Slot](https://github.com/slot-cfw/slot#supported-devices) and [pvaibhav's fork](https://github.com/pvaibhav/slot#supported-devices). The Miyoo device list follows [Dean Marano's port](https://github.com/deanmarano/slot-miyoo). An upstream-supported device is **not automatically verified with select. slot.**
 
-| Device | Build | select. slot. testing |
-| --- | --- | --- |
-| **Anbernic RG SP** | H700 | **Tested with every applicable update** |
-| **Anbernic RG34XXSP** | H700 | **Tested with every applicable update** |
-| **Anbernic RG35XX H** | H700 | **Tested with every applicable update** |
-| Anbernic RG34XX | H700 | Supported upstream; not personally tested |
-| Anbernic RG35XXSP | H700 | Supported upstream; not personally tested |
-| Anbernic RG35XX Plus | H700 | Supported upstream; not personally tested |
-| Anbernic RG35XX Pro | H700 | Supported upstream; not personally tested |
-| Anbernic RG28XX | H700 | Supported upstream; not personally tested |
-| **Miyoo Mini (original)** | Miyoo | **Tested with every applicable update** |
-| Miyoo Mini Plus | Miyoo | Supported by the port; not personally tested |
-| Miyoo Mini Flip | Miyoo | Supported by the port; not personally tested |
+| Device | Build | Supported since (upstream) | select. slot. testing |
+| --- | --- | --- | --- |
+| **Anbernic RG SP** | H700 | Original Slot | **Every applicable update** |
+| **Anbernic RG34XXSP** | H700 | Slot 1.4.0 | **Every applicable update** |
+| **Anbernic RG35XX H** | H700 | Slot 1.7.0 | **Every applicable update** |
+| Anbernic RG34XX | H700 | Slot 1.4.0 | Upstream-supported; not personally tested |
+| Anbernic RG35XXSP | H700 | Slot 1.5.0 | Upstream-supported; not personally tested |
+| Anbernic RG35XX Plus | H700 | Slot 1.5.0 | Upstream-supported; not personally tested |
+| Anbernic RG35XX Pro | H700 | Slot 1.15.0 | Upstream-supported; not personally tested |
+| Anbernic RG28XX | H700 | Slot 1.6.0 | Upstream-supported; not personally tested |
+| **Miyoo Mini (original)** | Miyoo | Miyoo port of Slot 1.8.1 | **Every applicable update** |
+| Miyoo Mini Plus | Miyoo | Miyoo port of Slot 1.8.1 | Port-supported; not personally tested |
+| Miyoo Mini Flip | Miyoo | Miyoo port of Slot 1.8.1 | Port-supported; not personally tested |
 
 **Testing convention:** When a result is reported as working, it applies to **every compatible device in the regular four-device test lineup**, unless an exception is explicitly stated. Device-only features are tested only where the hardware supports them. The Miyoo models also require a compatible firmware and appropriate installer; see [Miyoo compatibility and installation](miyoo/INSTALL.md).
 
@@ -66,6 +66,7 @@ select. slot. keeps the cartridge-oriented experience created for **[original Sl
 - **Cart Studio:** customize cartridge shells, finishes and labels, including fetching art where network services are available. Games without downloaded artwork can display handwritten names on their carts.
 - **Themes and wallpapers:** dark/light appearance, per-shelf or random backgrounds, tinting, and personally supplied wallpapers.
 - **Custom assets:** system bezels, splash/boot logos, cartridge labels, game guides, and PNG overlays. Overlays can cover a game or tile repeatedly.
+- **Original RomM integration** for connecting to a configured RomM game library on supported network-enabled Slot builds.
 - **Optional Gamebit web interface (H700):** manage games, saves, state files, artwork, guides, bezels, wallpapers, BIOS and other SD-card files over Wi-Fi from a phone or computer. This was created by Slot.
 
 ### Gameplay, controls and convenience
@@ -338,3 +339,5 @@ This repository does not claim ownership of the original interface or artworks a
 **Additional software and assets:** mGBA, gpSP, Gambatte, bezels and shader components retain their original credits and licensing. The optional GBA bezel uses existing artwork credited to [mugwomp93 / KNULLI Bezels](https://github.com/chrizzo-hb/knulli-bezels). Source modifications in this repository were developed with AI assistance and verified using automated checks and device testing.
 
 The Slot-derived frontend is distributed under [GPL-3.0](LICENSE); applicable third-party licenses and emulator source notices are provided with the firmware. **No game ROMs or proprietary BIOS files are distributed.**
+
+If this customization is useful, please also support and credit the creators of [original Slot](https://github.com/slot-cfw/slot), [pvaibhav's fork](https://github.com/pvaibhav/slot) and [Dean Marano's port](https://github.com/deanmarano/slot-miyoo).
