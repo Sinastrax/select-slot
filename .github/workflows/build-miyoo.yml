@@ -71,11 +71,21 @@ jobs:
             ! unzip -Z1 "$variant" | grep -Eiq 'gambatte'
             unzip -Z1 "$variant" | grep -qx 'System/mgba_libretro.so'
             unzip -Z1 "$variant" | grep -qx 'System/gpsp_libretro.so'
-            unzip -p "$variant" 'System/select-slot-version.txt' | grep -Fq 'Ver. 3'
+            unzip -p "$variant" 'System/select-slot-version.txt' | grep -Fq 'Ver. 4'
           done
           test ! -e .build/miyoo/slot-miyoo/cores/gambatte
           grep -Fq '"gambatte" => Some(Core::Mgba),' \
             .build/miyoo/slot-miyoo/patches/0028-select-miyoo-config.patch
+          # Both menu contexts use their own HUD ink, and all quick-menu
+          # pages scroll within their viewport rather than crossing the footer.
+          patch=.build/miyoo/slot-miyoo/patches/0028-select-miyoo-config.patch
+          grep -Fq '+    pub const MAIN: [QuickRow; 6]' "$patch"
+          grep -Fq '+            QuickRow::Restart => self.begin_restart(),' "$patch"
+          grep -Fq '+    !page.is_empty()' "$patch"
+          grep -Fq '+        version: "1.8.1 Ver. 4",' "$patch"
+          grep -Fq '+    menu_battery_percent: slot_ui::Printed,' "$patch"
+          grep -Fq '+    menu_clock: slot_ui::Printed,' "$patch"
+
           unzip -Z1 "$onion" | grep -qx '.tmp_update/startup/select-slot.sh'
           ! unzip -Z1 "$onion" | grep -qx '.tmp_update/runtime.sh'
           unzip -Z1 "$stock" | grep -qx '.tmp_update/runtime.sh'
