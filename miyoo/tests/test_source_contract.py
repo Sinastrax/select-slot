@@ -35,7 +35,7 @@ class MiyooSourceContract(unittest.TestCase):
         ui = (ROOT / "custom/ui.py").read_text()
         self.assertNotIn("QuickRow::Restart", ui)
         self.assertIn("Phase::About if action == Action::GbaDown(Btn::X)", ui)
-        self.assertIn("'''        self.draw_side_legend(restart, true, LINK_LEGEND_Y, out);", ui)
+        self.assertIn("'''        self.draw_side_legend(restart, true, link_legend_y(), out);", ui)
         self.assertNotIn("Command::new(\"reboot\")", ui)
         self.assertNotIn("Command::new(\"/lib/ld-linux-armhf.so.3\")", ui)
 
@@ -65,7 +65,7 @@ class MiyooSourceContract(unittest.TestCase):
             self.skipTest("generated patch available only in build CI")
         patch = Path(patch_path).read_text()
         self.assertIn('-            Phase::About if action == Action::GbaDown(Btn::X) => self.begin_restart(),', patch)
-        self.assertIn("-        self.draw_side_legend(restart, true, LINK_LEGEND_Y, out);", patch)
+        self.assertIn("-        self.draw_side_legend(restart, true, link_legend_y(), out);", patch)
         self.assertIn("+    !page.is_empty()", patch)
         self.assertNotIn("+        QuickRow::Restart,", patch)
         info = versions()
