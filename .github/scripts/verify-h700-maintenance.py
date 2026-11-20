@@ -82,6 +82,8 @@ assert "raw.githubusercontent.com/Sinastrax/select-slot/test-ota/versions.json" 
 assert "release-test-h700" in build
 assert "--prerelease --latest=false" in build
 assert "refs/heads/integration/slot-1.16.0-armgba" in build
+assert 'gh release view "$tag"' in build
+assert 'git/ref/heads/test-ota' in build
 assert "--latest" in build[build.find("release-h700:"):]
 assert "gh release delete" not in build
 assert "git/refs/tags/" not in build  # never force-move a published tag
