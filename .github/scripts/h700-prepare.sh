@@ -1,3 +1,6 @@
+Warning: truncated output (original token count: 3039)
+Total output lines: 207
+
 #!/usr/bin/env bash
 # H700 source preparation for the pinned Slot v1.16.0 base.
 # DO NOT reorder sequential historic patches: later hunks depend on earlier
@@ -76,6 +79,9 @@ git show upstream-1.16:CHANGELOG.md | grep -q '1.16.0'
 git diff --stat HEAD~1 HEAD | tail -25
 echo "Merged latest upstream with our previous complete custom modifications"
 python3 ../.github/scripts/merge-1.16-fixes.py
+python3 ../.github/scripts/verify-armgba-authentic-gb-colour.py
+python3 ../.github/scripts/fix-authentic-frame-blending-visible.py
+python3 ../.github/scripts/verify-authentic-frame-blending-visible.py
 python3 ../.github/scripts/fix-authentic-colour-reflection.py
 python3 ../.github/scripts/fix-fit-lcd-sampling.py
 python3 ../.github/scripts/verify-fit-lcd-sampling.py
@@ -103,10 +109,7 @@ python3 ../.github/scripts/verify-mgba-sgb-optical-chroma.py
 # Match Pocket Color's entire reflector/ink response, not just
 # its physical gap outline; also render synthetic palette-swap
 # frames and compare optical contrast at Integer and Fit scales.
-python3 ../.github/scripts/fix-pocket-sgb-full-optics.py
-python3 ../.github/scripts/verify-pocket-sgb-full-optics.py
-# After all experimental shader transitions, restore exactly the
-# PRE-RG35XX H Ver. 4 optical raster path for both color Pocket modes.
+python3 ../.github/scripts/fix-pock…39 tokens truncated…RG35XX H Ver. 4 optical raster path for both color Pocket modes.
 # Existing Fit work for mono/standard shaders stays independent.
 python3 ../.github/scripts/restore-ver4-pocket-optics.py
 python3 ../.github/scripts/verify-restored-pocket-optics.py
