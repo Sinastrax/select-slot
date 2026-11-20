@@ -46,6 +46,7 @@ stages = [
     "python3 ../.github/scripts/merge-1.16-fixes.py",
     "python3 ../.github/scripts/restore-ver4-pocket-optics.py",
     "python3 ../.github/scripts/restore-sgb-pocket-whitepoint.py",
+    "python3 ../.github/scripts/optimize-authentic-pocket-sampling.py",
     "python3 ../.github/scripts/fix-gba-fit-lcd-intersections.py",
     "python3 ../.github/scripts/ra-config-migration-ver27.py",
     "python3 ../.github/scripts/ver30-menu.py",
