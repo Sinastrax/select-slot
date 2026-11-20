@@ -1,4 +1,4 @@
-# select. slot. 1.16.0 Ver. 50
+# select. slot. 1.16.0 Ver. 51
 
-- Made Authentic Frame Blending available and adjustable from the in-game Screen menu and each system's Screen settings.
-- Authentic Frame Blending is forced off while fast-forwarding; German displays the option as "Bildmischung".
+- Restored Color Correction controls in the Authentic system settings.
+- Restored Ver. 29 Authentic texture sampling while keeping the separate Frame Blending control and fast-forward override.
