@@ -63,6 +63,9 @@ assert source.count("python3 ../.github/scripts/ver35-indirect-memory-compat.py"
 build = (WORKFLOWS / "build-h700.yml").read_text()
 assert "bash .github/scripts/h700-prepare.sh" in build
 assert "python3 .github/scripts/verify-h700-maintenance.py" in build
+prep = (SCRIPTS / "h700-prepare.sh").read_text()
+assert "restore-known-good-authentic-texture-filter.py" in prep
+assert (SCRIPTS / "restore-known-good-authentic-texture-filter.py").exists()
 assert "cargo test -p slot-achievements -- --nocapture" in build
 assert "cargo test -p slot-ui --lib menu_viewport_tests" in build
 assert "cargo test -p slot --no-default-features --features device --lib hardware_nickname_regression" in build
