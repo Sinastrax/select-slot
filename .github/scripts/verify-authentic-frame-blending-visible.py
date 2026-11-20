@@ -19,7 +19,8 @@ assert "QuickRow::GbBlending" not in section
 start = source.index("pub fn in_game_hidden")
 end = source.index("\n    pub fn", start + 1)
 in_game = source[start:end]
-assert "hidden.extend([QuickRow::ColourCorrection, QuickRow::Palette]);" in in_game
+assert "hidden.push(QuickRow::Palette);" in in_game
+assert "hidden.extend([QuickRow::ColourCorrection, QuickRow::Palette]);" not in in_game
 assert "hidden.extend([QuickRow::Blending, QuickRow::Palette]);" not in in_game
 assert "hidden.push(QuickRow::Blending);" not in in_game
 
@@ -33,6 +34,8 @@ assert "for game in self.game" not in set_effect
 
 tests = Path("crates/slot/tests/app.rs").read_text()
 assert "assert!(!in_game.contains(&QuickRow::Blending));" in tests
+assert "assert!(!in_game.contains(&QuickRow::ColourCorrection));" in tests
+assert "assert!(in_game.contains(&QuickRow::Palette));" in tests
 assert "assert!(!settings.contains(&QuickRow::GbBlending));" in tests
 assert "assert!(!settings.contains(&QuickRow::GbColourCorrection));" in tests
 assert "assert!(!settings.contains(&QuickRow::GbaColourCorrection));" in tests
