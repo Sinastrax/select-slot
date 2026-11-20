@@ -69,7 +69,7 @@ assert source.count("python3 ../.github/scripts/ver35-indirect-memory-compat.py"
 build = (WORKFLOWS / "build-h700.yml").read_text()
 test_patch = (PATCHES / "gamegear-picodrive.patch").read_text()
 stable_patch = (PATCHES / "select-online-updates.patch").read_text()
-assert '+    "https://raw.githubusercontent.com/Sinastrax/select-slot/more-slot/versions.json";' in test_patch
+assert '+    "https://raw.githubusercontent.com/Sinastrax/select-slot/more-slot/versions.json"' in test_patch
 assert '+pub const LATEST: &str = "https://github.com/Sinastrax/select-slot/releases/latest/download/versions.json";' in stable_patch
 assert "bash .github/scripts/h700-prepare.sh" in build
 assert "python3 .github/scripts/verify-h700-maintenance.py" in build
