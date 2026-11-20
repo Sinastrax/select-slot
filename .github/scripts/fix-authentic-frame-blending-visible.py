@@ -48,17 +48,16 @@ else:
         assert source.count(new) == 1, "Expected the Authentic per-system row filter"
 assert "QuickRow::GbaBlending" not in new
 
-# Keep the in-game Frame Blending row available. Color Correction is provided
-# by each system's settings row, so the generic duplicate stays hidden here.
+# Keep both Authentic controls available in the in-game Screen page. The
+# generic Color Correction row resolves to the playing system's saved setting.
 old = """        if self.authentic(platform) {
             // Color correction remains selectable for every Authentic screen.
             hidden.extend([QuickRow::Blending, QuickRow::Palette]);
         }
 """
 new = """        if self.authentic(platform) {
-            // Keep the system-only colour and palette controls out of the
-            // in-game panel. Frame Blending stays available here.
-            hidden.extend([QuickRow::ColourCorrection, QuickRow::Palette]);
+            // Color Correction and Frame Blending remain available here.
+            hidden.push(QuickRow::Palette);
         }
 """
 if source.count(old) == 1:
@@ -77,9 +76,9 @@ else:
         }
 """
     if source.count(intermediate) == 1:
-        pass
+        source = source.replace(intermediate, new, 1)
     elif source.count(earlier_intermediate) == 1:
-        source = source.replace(earlier_intermediate, intermediate, 1)
+        source = source.replace(earlier_intermediate, new, 1)
     else:
         assert source.count(new) == 1, "Expected the Authentic in-game screen filter"
 path.write_text(source)
@@ -87,6 +86,22 @@ path.write_text(source)
 # The Authentic regression verifies that correction is available in system
 # settings while the incompatible monochrome GB palette control stays hidden.
 tests = Path("crates/slot/tests/app.rs")
+test_source = tests.read_text()
+old = """    let in_game = app.in_game_hidden();
+    for row in [QuickRow::ColourCorrection, QuickRow::Palette] {
+        assert!(in_game.contains(&row), "{row:?} still shows in the game");
+    }
+"""
+new = """    let in_game = app.in_game_hidden();
+    assert!(!in_game.contains(&QuickRow::ColourCorrection));
+    assert!(in_game.contains(&QuickRow::Palette));
+"""
+if test_source.count(old) == 1:
+    test_source = test_source.replace(old, new, 1)
+else:
+    assert test_source.count(new) == 1, "Expected the Authentic in-game Color Correction regression assertion"
+tests.write_text(test_source)
+
 test_source = tests.read_text()
 old = """    assert!(settings.contains(&QuickRow::GbColourCorrection));
     assert!(settings.contains(&QuickRow::GbPalette));
