@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Restore upstream Authentic Frame Blending behavior after the source merge."""
+"""Expose Authentic correction controls and retain the separate blend setting."""
 from pathlib import Path
 
 path = Path("crates/slot/src/app.rs")
@@ -26,17 +26,11 @@ old = """        for (platform, rows) in [
             }
         }
 """
-new = """        for (platform, rows) in [
-            (Platform::Gba, &[QuickRow::GbaColourCorrection][..]),
-            (Platform::Gbc, &[QuickRow::GbcColourCorrection][..]),
-            (
-                Platform::Gb,
-                &[QuickRow::GbColourCorrection, QuickRow::GbPalette][..],
-            ),
-        ] {
-            if self.authentic(platform) {
-                hidden.extend_from_slice(rows);
-            }
+new = """        // Authentic owns the display response, but its colour-correction
+        // switches still need to remain available in system settings.
+        // Only hide the monochrome GB palette control for the Pocket model.
+        if self.authentic(Platform::Gb) {
+            hidden.push(QuickRow::GbPalette);
         }
 """
 if source.count(old) == 1:
@@ -54,10 +48,8 @@ else:
         assert source.count(new) == 1, "Expected the Authentic per-system row filter"
 assert "QuickRow::GbaBlending" not in new
 
-# The in-game Screen page has one context-sensitive row. It already reads and
-# writes the playing platform's independent setting, so keep it visible for
-# Authentic too; hiding it made the new per-system Authentic value impossible
-# to reach while a game was running.
+# Keep the in-game Frame Blending row available. Color Correction is provided
+# by each system's settings row, so the generic duplicate stays hidden here.
 old = """        if self.authentic(platform) {
             // Color correction remains selectable for every Authentic screen.
             hidden.extend([QuickRow::Blending, QuickRow::Palette]);
@@ -91,6 +83,27 @@ else:
     else:
         assert source.count(new) == 1, "Expected the Authentic in-game screen filter"
 path.write_text(source)
+
+# The Authentic regression verifies that correction is available in system
+# settings while the incompatible monochrome GB palette control stays hidden.
+tests = Path("crates/slot/tests/app.rs")
+test_source = tests.read_text()
+old = """    assert!(settings.contains(&QuickRow::GbColourCorrection));
+    assert!(settings.contains(&QuickRow::GbPalette));
+    assert!(!settings.contains(&QuickRow::GbBlending));
+    assert!(!settings.contains(&QuickRow::GbModel));
+"""
+new = """    assert!(!settings.contains(&QuickRow::GbColourCorrection));
+    assert!(settings.contains(&QuickRow::GbPalette));
+    assert!(!settings.contains(&QuickRow::GbBlending));
+    assert!(!settings.contains(&QuickRow::GbModel));
+    assert!(!settings.contains(&QuickRow::GbcColourCorrection));
+"""
+if test_source.count(old) == 1:
+    test_source = test_source.replace(old, new, 1)
+else:
+    assert test_source.count(new) == 1, "Expected Authentic correction visibility assertions"
+tests.write_text(test_source)
 
 # The Authentic pipeline previously forced Ghosting at all times, ignoring
 # the setting. Preserve the LCD ghost response by default, but honor Off/Mix/
