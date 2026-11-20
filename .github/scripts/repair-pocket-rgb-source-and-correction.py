@@ -80,26 +80,26 @@ b="""        (Core::Mgba, GbColors::GbcAuto) => vec![
         ],"""
 assert core.count(a)==1
 core=core.replace(a,b)
-a="""        match palette {
-            Some(GbColors::SgbAuto) => {"""
-b="""        match palette {
-            Some(GbColors::GbcAuto) => {
+a="""            match palette {
+                Some(GbColors::SgbAuto) => {"""
+b="""            match palette {
+                Some(GbColors::GbcAuto) => {
                 // Pocket Color is a GBC screen + GBC-compatible source colors.
                 // Merely passing Some(Auto) would force 'Game Boy' below.
                 core.set_option("mgba_gb_model", "Game Boy Color");
                 core.set_option("mgba_gb_colors_preset", "1");
                 core.set_option("mgba_gb_colors", "Auto");
             }
-            Some(GbColors::SgbAuto) => {"""
+                Some(GbColors::SgbAuto) => {"""
 assert core.count(a)==1
 core=core.replace(a,b)
 # Gambatte's GBC correction behavior doesn't change for GbcAuto.
-a="""            GbColors::SgbAuto => true,
-            GbColors::Palette(choice) => choice.core_name().starts_with("SGB "),
-            GbColors::Auto => false,"""
-b="""            GbColors::SgbAuto => true,
-            GbColors::Palette(choice) => choice.core_name().starts_with("SGB "),
-            GbColors::Auto | GbColors::GbcAuto => false,"""
+a="""                GbColors::SgbAuto => true,
+                GbColors::Palette(choice) => choice.core_name().starts_with("SGB "),
+                GbColors::Auto => false,"""
+b="""                GbColors::SgbAuto => true,
+                GbColors::Palette(choice) => choice.core_name().starts_with("SGB "),
+                GbColors::Auto | GbColors::GbcAuto => false,"""
 assert core.count(a)==1
 core=core.replace(a,b)
 core_file.write_text(core)

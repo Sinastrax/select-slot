@@ -8,7 +8,7 @@ curl -fsSL --retry 5 --retry-all-errors \
   "https://github.com/pvaibhav/slot/archive/refs/tags/v1.15.3-pvaibhav.1.tar.gz" \
   -o /tmp/base-slot.tar.gz
 curl -fsSL --retry 5 --retry-all-errors \
-  "https://github.com/pvaibhav/slot/archive/refs/tags/v1.16.0-pvaibhav.1.tar.gz" \
+  "https://github.com/pvaibhav/slot/archive/refs/tags/v1.16.0-pvaibhav.2.tar.gz" \
   -o /tmp/new-slot.tar.gz
 mkdir upstream
 tar -xzf /tmp/base-slot.tar.gz --strip-components=1 -C upstream

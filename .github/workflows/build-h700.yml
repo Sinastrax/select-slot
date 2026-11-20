@@ -15,6 +15,7 @@ on:
     branches:
       - main
       - integration/slot-1.16.0
+      - integration/slot-1.16.0-armgba
     tags:
       - "v*-custom.*"
       - "v*-rgsp.*"
@@ -57,6 +58,12 @@ jobs:
       - name: Fetch pinned Slot sources and apply verified H700 patches
         shell: bash
         run: bash .github/scripts/h700-prepare.sh
+
+      - name: Route integration builds to the isolated test OTA feed
+        if: github.ref == 'refs/heads/integration/slot-1.16.0-armgba'
+        working-directory: upstream
+        shell: bash
+        run: python3 ../.github/scripts/configure-h700-test-ota.py .
 
       - name: Capture merged source for integration review
         uses: actions/upload-artifact@v4
@@ -157,7 +164,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          export SLOT_VERSION="$(cat ../.github/ota-version.txt)"
+          if [[ "$GITHUB_REF" == "refs/heads/integration/slot-1.16.0-armgba" ]]; then
+            export SLOT_VERSION="1.16.0-select.${GITHUB_RUN_NUMBER}"
+          else
+            export SLOT_VERSION="$(cat ../.github/ota-version.txt)"
+          fi
           python3 ../handheld-i18n/language_menu.py .
           python3 ../handheld-i18n/text_layout.py .
           task dist:device OUT=select-slot-h700
@@ -236,6 +247,8 @@ jobs:
           test -s source-release/mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz
           test ! -e select-slot-h700/System/licenses/mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz
           test -s select-slot-h700/System/licenses/mgba-source-notice.txt
+          cp select-slot-h700/System/licenses/armgba-*.tar.gz source-release/
+          ls -l source-release/armgba-*.tar.gz
 
       - name: Verify the complete firmware tree
         working-directory: upstream
@@ -254,6 +267,9 @@ jobs:
           grep -qF 'say "UPDATING SELECT. SLOT."' card/System/launch_frontend.sh
           test -s select-slot-h700/System/gpsp_libretro.so
           test -s select-slot-h700/System/gambatte_libretro.so
+          test -s select-slot-h700/System/armgba_libretro.so
+          test -s select-slot-h700/System/licenses/armgba-src.tar.gz || \
+            compgen -G 'select-slot-h700/System/licenses/armgba-*.tar.gz' > /dev/null
           test -s select-slot-h700/System/bezels/640x480.png
           test -s select-slot-h700/System/bezels/640x480-gba-original.png
           test -s select-slot-h700/System/licenses/gba-original-bezel-credits.txt
@@ -263,7 +279,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          version="$(cat ../.github/ota-version.txt)"
+          if [[ "$GITHUB_REF" == "refs/heads/integration/slot-1.16.0-armgba" ]]; then
+            version="1.16.0-select.${GITHUB_RUN_NUMBER}"
+          else
+            version="$(cat ../.github/ota-version.txt)"
+          fi
           zip="slot-v${version}-h700.zip"
           zip -qry "../$zip" select-slot-h700
           VERSION="$version" ZIP="$zip" python3 - <<'PY'
@@ -289,7 +309,74 @@ jobs:
             slot-v*-h700.zip
             versions.json
             upstream/source-release/mgba-*-source.tar.gz
+            upstream/source-release/armgba-*.tar.gz
           if-no-files-found: error
+
+  release-test-h700:
+    name: Publish isolated H700 test OTA
+    if: github.ref == 'refs/heads/integration/slot-1.16.0-armgba' && github.event_name == 'push'
+    needs: build-h700
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: select-slot-complete-h700
+          path: release
+
+      - name: Verify and publish prerelease without changing stable latest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_REF: ${{ github.ref }}
+          RUN_NUMBER: ${{ github.run_number }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, os, pathlib
+          root = pathlib.Path("release")
+          manifest = json.loads((root / "versions.json").read_text())["stable"]
+          expected = "1.16.0-select." + os.environ["RUN_NUMBER"]
+          assert os.environ["RELEASE_REF"] == "refs/heads/integration/slot-1.16.0-armgba"
+          assert manifest["version"] == expected, (manifest["version"], expected)
+          assert manifest["tag"] == "v" + expected
+          archive = root / manifest["zip"]
+          assert archive.is_file() and archive.stat().st_size == manifest["size"]
+          assert hashlib.sha256(archive.read_bytes()).hexdigest() == manifest["sha256"]
+          assert list(root.glob("upstream/source-release/armgba-*.tar.gz")), "Missing armGBA source archive"
+          print("Validated isolated test OTA", manifest["tag"], manifest["sha256"])
+          PY
+          tag="v1.16.0-select.${RUN_NUMBER}"
+          gh release create "$tag" \
+            "release/slot-${tag}-h700.zip" \
+            release/versions.json \
+            release/upstream/source-release/mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz \
+            release/upstream/source-release/armgba-*.tar.gz \
+            --repo "$GH_REPO" --target "$GITHUB_SHA" --prerelease --latest=false \
+            --title "select. slot. 1.16.0 Test ${RUN_NUMBER}" \
+            --notes "Isolated H700 test OTA. It does not update the stable release channel."
+
+          # Keep the OTA pointer on its own branch. Test firmware reads this raw
+          # manifest; stable firmware continues to read Releases/latest.
+          if ! gh api "repos/$GH_REPO/git/ref/heads/test-ota" >/dev/null 2>&1; then
+            gh api --method POST "repos/$GH_REPO/git/refs" \
+              -f ref=refs/heads/test-ota -f sha="$GITHUB_SHA" >/dev/null
+          fi
+          existing_sha="$(gh api "repos/$GH_REPO/contents/versions.json?ref=test-ota" --jq .sha 2>/dev/null || true)"
+          payload="$(base64 -w0 release/versions.json)"
+          if [[ -n "$existing_sha" ]]; then
+            gh api --method PUT "repos/$GH_REPO/contents/versions.json" \
+              -f message="Advance isolated test OTA manifest to $tag" \
+              -f content="$payload" -f sha="$existing_sha" -f branch=test-ota >/dev/null
+          else
+            gh api --method PUT "repos/$GH_REPO/contents/versions.json" \
+              -f message="Create isolated test OTA manifest at $tag" \
+              -f content="$payload" -f branch=test-ota >/dev/null
+          fi
 
   release-h700:
     name: Publish complete custom firmware for online updates
