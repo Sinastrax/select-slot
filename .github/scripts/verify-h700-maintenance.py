@@ -69,21 +69,16 @@ assert "cargo test -p slot --no-default-features --features device --lib hardwar
 assert "check-gles2-shader.py" in build
 assert "verify-ota-publisher.py" in build
 assert "needs: build-h700" in build
-assert "if: github.ref == 'refs/heads/main' && github.event_name == 'push'" in build
+assert "refs/heads/main" in build and "refs/heads/integration/slot-1.16.0-armgba" in build
+assert "SLOT_VERSION=\"$(cat ../.github/ota-version.txt)\"" in build
+assert "version=\"$(cat ../.github/ota-version.txt)\"" in build
 assert "sha256" in build and "versions.json" in build
 assert "mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz" in build
 assert "armgba_libretro.so" in build
 assert "armgba-src" in build
 assert "gh release create" in build and "--latest" in build
-assert "configure-h700-test-ota.py" in build
-assert "raw.githubusercontent.com/Sinastrax/select-slot/test-ota/versions.json" in (
-    SCRIPTS / "configure-h700-test-ota.py"
-).read_text()
-assert "release-test-h700" in build
-assert "--prerelease --latest=false" in build
-assert "refs/heads/integration/slot-1.16.0-armgba" in build
-assert 'gh release view "$tag"' in build
-assert 'git/ref/heads/test-ota' in build
+assert "release-test-h700" not in build
+assert "configure-h700-test-ota.py" not in build
 assert "--latest" in build[build.find("release-h700:"):]
 assert "gh release delete" not in build
 assert "git/refs/tags/" not in build  # never force-move a published tag

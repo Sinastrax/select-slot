@@ -4,19 +4,6 @@ The firmware inherits Slot's existing **Settings → System → Check for Update
 Our `patches/select-online-updates.patch` redirects that interface to **this repository's**
 GitHub Releases. It does not fetch releases from pvaibhav's fork.
 
-## Separate H700 test OTA
-
-The `integration/slot-1.16.0-armgba` branch publishes complete test builds as GitHub
-prereleases. Those builds embed a different manifest address, on the `test-ota` branch.
-Each successful build publishes its ZIP and source archives, then advances only that test
-manifest. The stable build continues to use GitHub's stable latest release and its
-`.github/ota-version.txt`; a test build cannot become the stable updater's offer.
-
-To enter the test channel from stable firmware, install the first test ZIP once using the
-manual SD-card update method. After that, **Settings → System → Check for Updates** follows
-the test manifest and installs later test builds. Test-channel builds keep following that
-feed after update.
-
 ## How a custom update works
 
 1. Connect the device to Wi-Fi and select **Settings → System → Check for Updates**.

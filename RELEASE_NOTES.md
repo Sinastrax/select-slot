@@ -1,3 +1,5 @@
-# select. slot. 1.16.0 Ver. 47
+# select. slot. 1.16.0 Ver. 48
 
-The in-game RetroAchievements list reserves space for the wrapped title and status below the clock and battery indicator. The list adjusts row spacing when the header needs more room.
+- Added armGBA as the default core for GBA cartridges, with armGBA available in the core picker.
+- Kept mGBA and gpSP available as alternate GBA cores; GBA Video cartridges continue to use mGBA.
+- Added armGBA core settings and link-cable support to the existing GBA options.
