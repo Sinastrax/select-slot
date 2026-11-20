@@ -209,3 +209,7 @@ git apply ../patches/keyboard-caps-indicator.patch
 git apply ../patches/scroll-cheat-achievement-names.patch
 # Reserve top chrome and header space in the in-game achievement list.
 git apply ../patches/achievement-header-viewport.patch
+# mGBA GB/GBC only: use a restrained 1% drift correction to reduce
+# ring overflow skips. Every other core keeps the original 0.5% correction.
+git apply --check ../patches/mgba-gb-audio-gentle-drc.patch
+git apply ../patches/mgba-gb-audio-gentle-drc.patch

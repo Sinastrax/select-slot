@@ -1,0 +1,28 @@
+--- a/crates/slot/src/emu.rs
++++ b/crates/slot/src/emu.rs
+@@ -9,7 +9,7 @@
+ use slot_retro::{mask_for, ButtonMask, Link, LinkChannel, RetroCore, Rumble, NETPACKET_RELIABLE};
+ 
+ use crate::audio::Ring;
+-use crate::drc::{drc_ratio, drc_target};
++use crate::drc::{drc_ratio, drc_ratio_limited, drc_target};
+ use crate::frames::{FrameRef, Frames};
+ use crate::link_state;
+ use crate::pacing::{native_period, FrameClock};
+@@ -987,7 +987,15 @@
+                     };
+                     // Keep audio near its native pitch. The previous ±5% buffer
+                     // correction improved frame pacing but noticeably altered pitch.
+-                    resampler.set_ratio(drc_ratio(queued, target) * duration_ratio);
++                    let correction = if self.shared.mgba_gb_audio.load(Ordering::Relaxed) {
++                        // Correct small GB/GBC clock drift before the queue reaches
++                        // capacity, while keeping the pitch shift far below the
++                        // previous 5% correction that was audible.
++                        drc_ratio_limited(queued, target, 0.01)
++                    } else {
++                        drc_ratio(queued, target)
++                    };
++                    resampler.set_ratio(correction * duration_ratio);
+                     resampler.process(&audio, &mut out);
+                     crate::audio::volume::apply(
+                         &mut out,
