@@ -3198,3 +3198,64 @@ index f0b587c..dce7c9b 100644
      let (base, fork) = match v.split_once('-') {
          None => (v, 0),
          Some((base, suffix)) => {
+-            let n = if let Some(s) = suffix.strip_prefix(FORK).and_then(|s| s.strip_prefix('.')) {
++            let n = if let Some(s) = suffix.strip_prefix("more.") {
++                s.parse::<u64>().ok()?.checked_add(4_000_000)?
++            } else if let Some(s) = suffix.strip_prefix(FORK).and_then(|s| s.strip_prefix('.')) {
+                 s.parse::<u64>().ok()?.checked_add(3_000_000)?
+             } else if let Some(s) = suffix.strip_prefix("custom.") {
+                 s.parse::<u64>().ok()?.checked_add(2_000_000)?
+@@ -174,10 +176,14 @@ pub fn display_version(kind: Kind, version: &str) -> String {
+         return format!("v{version}");
+     }
+     if let Some((upstream, suffix)) = version.split_once('-') {
+-        for prefix in ["rgsp.", "custom.", "select."] {
++        for prefix in ["rgsp.", "custom.", "select.", "more."] {
+             if let Some(revision) = suffix.strip_prefix(prefix) {
+                 if !revision.is_empty() && revision.bytes().all(|b| b.is_ascii_digit()) {
+-                    return format!("{upstream} Ver. {revision}");
++                    return if prefix == "more." {
++                        format!("{upstream} Test {revision}")
++                    } else {
++                        format!("{upstream} Ver. {revision}")
++                    };
+                 }
+             }
+         }
+@@ -344,7 +350,8 @@ impl<R: Read> Read for Stoppable<R> {
+ pub const WIFI_CONF: &str = "Config/wifi.conf";
+ // This fork's releases carry their own versions.json, so updates never cross over to
+ // upstream's builds.
+-pub const LATEST: &str = "https://github.com/Sinastrax/select-slot/releases/latest/download/versions.json";
++pub const LATEST: &str =
++    "https://raw.githubusercontent.com/Sinastrax/select-slot/more-slot/versions.json";
+ const RELEASES: &str = "https://github.com/Sinastrax/select-slot/releases/download";
+ const FORK: &str = "select";
+ const BASEOS_RELEASES: &str = "https://github.com/pvaibhav/BaseOS/releases/download";
+diff --git a/crates/slot/tests/update.rs b/crates/slot/tests/update.rs
+index cc85818..10645b8 100644
+--- a/crates/slot/tests/update.rs
++++ b/crates/slot/tests/update.rs
+@@ -210,6 +210,9 @@ fn newer_counts_fork_releases_of_the_same_upstream_version() {
+     assert!(!newer("1.15.3-rgsp.4", "1.15.3-custom.1"));
+     assert!(newer("1.15.3-select.1", "1.15.3-custom.99"));
+     assert!(newer("1.15.3-select.2", "1.15.3-select.1"));
++    assert!(newer("1.15.3-more.1", "1.15.3-select.99"));
++    assert!(newer("1.15.3-more.2", "1.15.3-more.1"));
++    assert!(!newer("1.15.3-select.99", "1.15.3-more.1"));
+     assert!(!newer("1.15.3-custom.99", "1.15.3-select.1"));
+     assert!(!newer("1.15.3-custom.1", "1.15.3-custom.1"));
+     assert!(newer("1.14.0-pvaibhav.2", "1.14.0-pvaibhav.1"));
+diff --git a/taskfile.yml b/taskfile.yml
+index e45bddf..c8cdf78 100644
+--- a/taskfile.yml
++++ b/taskfile.yml
+@@ -310,7 +310,7 @@ tasks:
+       ROOT: '{{.ROOT | default "./sdcard"}}'
+     cmds:
+       - ./target/debug/slot --init-root {{.ROOT}}
+-      - 'echo "content root ready at {{.ROOT}}: roms in Games/GBA, Games/GB or Games/GBC, labels in the matching Labels/GBA, Labels/GB or Labels/GBC, battery saves in the matching Saves/GBA, Saves/GB or Saves/GBC, save states under the matching States/GBA, States/GB or States/GBC, gba_bios.bin in BIOS, pngs in Wallpapers"'
++      - 'echo "content root ready at {{.ROOT}}: ROMs in Games/GBA, Games/GB, Games/GBC or Games/GG; labels, saves and states use the matching system folders; gba_bios.bin in BIOS; pngs in Wallpapers"'
+ 
+   run:
+     desc: >-
