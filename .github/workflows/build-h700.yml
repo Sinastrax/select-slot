@@ -273,11 +273,11 @@ jobs:
           test -s select-slot-h700/System/licenses/picodrive-tremor-BSD.txt
           test -s select-slot-h700/System/licenses/picodrive-headerless-files.txt
           test -s select-slot-h700/System/licenses/picodrive-notice.txt
-          test -s upstream/source-release/picodrive-src.meta
-          test -s upstream/source-release/picodrive-src.tar.gz
-          test -s upstream/source-release/picodrive-emu2413-src.tar.gz
-          test -s upstream/source-release/picodrive-dr_libs-src.tar.gz
-          test -s upstream/source-release/picodrive-libpicofe-src.tar.gz
+          test -s source-release/picodrive-src.meta
+          test -s source-release/picodrive-src.tar.gz
+          test -s source-release/picodrive-emu2413-src.tar.gz
+          test -s source-release/picodrive-dr_libs-src.tar.gz
+          test -s source-release/picodrive-libpicofe-src.tar.gz
           test -s select-slot-h700/System/bezels/640x480.png
           test -s select-slot-h700/System/bezels/640x480-gba-original.png
           test -s select-slot-h700/System/licenses/gba-original-bezel-credits.txt
