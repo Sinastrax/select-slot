@@ -130,14 +130,14 @@ python3 ../.github/scripts/verify-pocket-rgb-source-and-correction.py
 # RGB source and LCD code; apply exact Pocket Color GPU Look last.
 python3 ../.github/scripts/restore-sgb-pocket-whitepoint.py
 python3 ../.github/scripts/verify-sgb-pocket-whitepoint.py
-# Preserve Pocket/SGB output while removing redundant per-pixel texture fetches.
-python3 ../.github/scripts/optimize-authentic-pocket-sampling.py
-python3 ../.github/scripts/verify-authentic-pocket-sampling.py
 # GBA-only Authentic correction for RG35XX H's fractional 2.67x
 # Fit scaling. Applied LAST; all verified Pocket/SGG output
 # and standard GBA Dot/Grid/LCD color effects remain unchanged.
 python3 ../.github/scripts/fix-gba-fit-lcd-intersections.py
 python3 ../.github/scripts/verify-gba-fit-lcd-intersections.py
+# Run only after the shader's byte-exact Ver. 17 regression guard.
+python3 ../.github/scripts/optimize-authentic-pocket-sampling.py
+python3 ../.github/scripts/verify-authentic-pocket-sampling.py
 # H700 GBA-only bottom bezel option: 3.5-inch 640x480 screens.
 # Separate image with original alpha and SP placement. No shader edits.
 python3 ../.github/scripts/add-h700-original-gba-bezel.py
