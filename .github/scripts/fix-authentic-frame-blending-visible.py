@@ -48,15 +48,24 @@ old = """        if self.authentic(platform) {
         }
 """
 new = """        if self.authentic(platform) {
-            // Color correction and Frame Blending remain independently
-            // selectable for every Authentic screen.
-            hidden.push(QuickRow::Palette);
+            // Keep the system-only colour and palette controls out of the
+            // in-game panel. Frame Blending stays available here.
+            hidden.extend([QuickRow::ColourCorrection, QuickRow::Palette]);
         }
 """
 if source.count(old) == 1:
     source = source.replace(old, new, 1)
 else:
-    assert source.count(new) == 1, "Expected the Authentic in-game screen filter"
+    intermediate = """        if self.authentic(platform) {
+            // Color correction and Frame Blending remain independently
+            // selectable for every Authentic screen.
+            hidden.push(QuickRow::Palette);
+        }
+"""
+    if source.count(intermediate) == 1:
+        source = source.replace(intermediate, new, 1)
+    else:
+        assert source.count(new) == 1, "Expected the Authentic in-game screen filter"
 path.write_text(source)
 
 # The Authentic pipeline previously forced Ghosting at all times, ignoring

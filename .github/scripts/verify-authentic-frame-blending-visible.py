@@ -14,7 +14,7 @@ assert "QuickRow::GbBlending" not in section
 start = source.index("pub fn in_game_hidden")
 end = source.index("\n    pub fn", start + 1)
 in_game = source[start:end]
-assert "hidden.push(QuickRow::Palette);" in in_game
+assert "hidden.extend([QuickRow::ColourCorrection, QuickRow::Palette]);" in in_game
 assert "hidden.extend([QuickRow::Blending, QuickRow::Palette]);" not in in_game
 assert "hidden.push(QuickRow::Blending);" not in in_game
 
