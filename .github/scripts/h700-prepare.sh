@@ -135,13 +135,13 @@ python3 ../.github/scripts/verify-sgb-pocket-whitepoint.py
 # and standard GBA Dot/Grid/LCD color effects remain unchanged.
 python3 ../.github/scripts/fix-gba-fit-lcd-intersections.py
 python3 ../.github/scripts/verify-gba-fit-lcd-intersections.py
-# Run only after the shader's byte-exact Ver. 17 regression guard.
-python3 ../.github/scripts/optimize-authentic-pocket-sampling.py
-python3 ../.github/scripts/verify-authentic-pocket-sampling.py
 # H700 GBA-only bottom bezel option: 3.5-inch 640x480 screens.
 # Separate image with original alpha and SP placement. No shader edits.
 python3 ../.github/scripts/add-h700-original-gba-bezel.py
 python3 ../.github/scripts/verify-h700-original-gba-bezel.py
+# Run only after the shader's byte-exact Ver. 17 regression guard.
+python3 ../.github/scripts/optimize-authentic-pocket-sampling.py
+python3 ../.github/scripts/verify-authentic-pocket-sampling.py
 # Preserve the connection when pulling a cart, present branded OTA
 # versions, and keep the shelf clock legible over the built-in dark
 # wallpaper. Leave archive names, checksums and shaders unchanged.
