@@ -48,6 +48,8 @@ stages = [
     "python3 ../.github/scripts/restore-sgb-pocket-whitepoint.py",
     "python3 ../.github/scripts/fix-gba-fit-lcd-intersections.py",
     "python3 ../.github/scripts/verify-gba-fit-lcd-intersections.py",
+    "python3 ../.github/scripts/add-h700-original-gba-bezel.py",
+    "python3 ../.github/scripts/verify-h700-original-gba-bezel.py",
     "python3 ../.github/scripts/optimize-authentic-pocket-sampling.py",
     "python3 ../.github/scripts/ra-config-migration-ver27.py",
     "python3 ../.github/scripts/ver30-menu.py",
