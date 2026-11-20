@@ -1,0 +1,9 @@
+{
+  "stable": {
+    "version": "1.16.0-select.328",
+    "tag": "v1.16.0-select.328",
+    "zip": "slot-v1.16.0-select.328-h700.zip",
+    "size": 28989803,
+    "sha256": "943735ae3500b35e1ba25fed9766306ccdb669906cf92970d10a7b0ba1d001ba"
+  }
+}
