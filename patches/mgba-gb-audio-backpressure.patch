@@ -1,6 +1,6 @@
 --- a/crates/slot/src/emu.rs
 +++ b/crates/slot/src/emu.rs
-@@ -1000,4 +1000,3 @@
+@@ -1000,4 +1000,2 @@
 -                        // Do not hold the emulation thread up to 50ms when the
 -                        // audio ring is full. Discard the oldest buffered audio
 -                        // instead; samples that survive play at native pitch.
