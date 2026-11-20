@@ -1,6 +1,6 @@
 --- a/crates/slot/src/emu.rs
 +++ b/crates/slot/src/emu.rs
-@@ -998,13 +998,8 @@
+@@ -998,14 +998,9 @@
                      crate::audio::volume::apply(
                          &mut out,
                          self.shared.volume.load(Ordering::Relaxed),
