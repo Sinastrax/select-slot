@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 4256)
-Total output lines: 400
-
 #!/usr/bin/env python3
 """Resolve renderer API overlap between the v1.15 select. slot. patches and Slot v1.16.
 
@@ -161,7 +158,106 @@ function = '''    fn open_game_menu(&mut self) {
             #[cfg(feature = "nds")]
             Core::Dsperate => {}
         }
-        if self.platform != …1256 tokens truncated… { return; }
+        if self.platform != Platform::Gba {
+            self.hud.toast(Toast::NoLink, self.now());
+            return;
+        }
+        let carried = self
+            .seated()
+            .and_then(|stem| self.auto_link(stem))
+            .is_some_and(|(cart, _)| link_carried(&cart.code, &cart.title));
+        if !carried {
+            self.hud.toast(Toast::NoLink, self.now());
+            return;
+        }
+        if self.core != Core::Gpsp {
+            self.hud.toast(Toast::NeedsGpsp, self.now());
+            return;
+        }
+        let hardware = self
+            .seated()
+            .map_or(LinkKind::Cable, |stem| self.link_mode(stem).0);
+        self.link_hardware = hardware;
+        self.radio_down();
+        self.radio.ask(RadioJob::Warm);
+        self.learn_game();
+        self.game_menu = Some(GameMenu::Pick(self.last_role));
+    }
+'''
+a = a[:start] + function + a[end:]
+app.write_text(a)
+
+# The armGBA upstream update and select. slot.'s prior SameBoy migration
+# touched the same core-selection file. Preserve the old config migration
+# while adding armGBA as a real selectable core.
+store_core = Path("crates/slot-store/src/core.rs")
+c = store_core.read_text()
+assert c.count("    Gambatte,\n    Sameboy,") == 1, "Core enum overlap changed"
+c = c.replace("    Gambatte,\n    Sameboy,", "    Gambatte,\n    Armgba,", 1)
+for old, new, label in [
+    ('            Core::Gambatte => "gambatte",\n            Core::Sameboy => "sameboy",',
+     '            Core::Gambatte => "gambatte",\n            Core::Armgba => "armgba",', "core name"),
+    ('            Core::Gambatte => "Gambatte",\n            Core::Sameboy => "SameBoy",',
+     '            Core::Gambatte => "Gambatte",\n            Core::Armgba => "armGBA",', "core label"),
+    ('            "gambatte" => Some(Core::Gambatte),\n            // Migrate cartridge choices made while SameBoy was the alternate core.',
+     '            "gambatte" => Some(Core::Gambatte),\n            "armgba" => Some(Core::Armgba),\n            // Migrate cartridge choices made while SameBoy was the alternate core.', "core parse"),
+]:
+    assert c.count(old) == 1, f"armGBA {label} overlap changed"
+    c = c.replace(old, new, 1)
+old = """        .unwrap_or_else(|| match platform {
+            Platform::Gb | Platform::Gbc if gb_core == Core::Gambatte => Core::Gambatte,"""
+new = """        .unwrap_or_else(|| match platform {
+            Platform::Gba => Core::Armgba,
+            Platform::Gbav => Core::Mgba,
+            Platform::Gb | Platform::Gbc if gb_core == Core::Gambatte => Core::Gambatte,"""
+assert c.count(old) == 1, "GBA default core fallback changed"
+store_core.write_text(c.replace(old, new, 1))
+
+# SameBoy was not bundled by select. slot. Keep its old config key as a
+# migration to mGBA, but remove the dead enum variant so armGBA's index and
+# the optional DS core remain aligned with Core::ALL and the cartridge art.
+c = store_core.read_text()
+for old, new, label in [
+    ("    Armgba,\n    Sameboy,", "    Armgba,", "legacy variant"),
+    ('            Core::Sameboy => "sameboy",\n', "", "legacy name"),
+    ('            Core::Sameboy => "SameBoy",\n', "", "legacy label"),
+    ('            Core::Gambatte | Core::Sameboy => matches!(platform, Platform::Gb | Platform::Gbc),',
+     '            Core::Gambatte => matches!(platform, Platform::Gb | Platform::Gbc),', "legacy platform"),
+    ('            Platform::Gb | Platform::Gbc if matches!(gb_core, Core::Mgba | Core::Sameboy) => Core::Mgba,',
+     '            Platform::Gb | Platform::Gbc if gb_core == Core::Mgba => Core::Mgba,', "legacy fallback"),
+]:
+    if c.count(old) == 1:
+        c = c.replace(old, new, 1)
+    elif label not in ("legacy variant", "legacy name", "legacy label"):
+        raise AssertionError(f"SameBoy {label} overlap changed")
+store_core.write_text(c)
+
+state = Path("crates/slot-store/src/slot_state.rs")
+s = state.read_text()
+assert s.count("Core::Mgba | Core::Gpsp | Core::Gambatte | Core::Sameboy") == 1
+state.write_text(s.replace("Core::Mgba | Core::Gpsp | Core::Gambatte | Core::Sameboy",
+                            "Core::Mgba | Core::Gpsp | Core::Gambatte | Core::Armgba", 1))
+
+app = Path("crates/slot/src/app.rs")
+a = app.read_text()
+a = a.replace("Core::Sameboy | Core::Mgba", "Core::Mgba")
+a = a.replace("Core::Mgba | Core::Sameboy", "Core::Mgba")
+a = a.replace("Core::Gambatte | Core::Sameboy", "Core::Gambatte")
+a = a.replace("self.core == Core::Sameboy || self.core == Core::Mgba", "self.core == Core::Mgba")
+assert "Core::Sameboy" not in a, "Legacy SameBoy app branches remain"
+app.write_text(a)
+
+core_options = Path("crates/slot/src/core.rs")
+o = core_options.read_text()
+for old, label in [
+    ('''        Core::Sameboy => Some((
+            "sameboy_color_correction_mode",
+            if on { "emulate hardware" } else { "off" },
+        )),
+''', "colour option"),
+    ('        Core::Sameboy => ("sameboy_interframe_blending", "off"),\n', "blend option"),
+    ('''    // SameBoy has no interframe-blending core option.
+    if which == Core::Sameboy { return; }
 ''', "blend shim"),
     ('        (Core::Sameboy, _) => Vec::new(),\n', "palette option"),
 ]:
