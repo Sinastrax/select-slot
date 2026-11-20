@@ -78,6 +78,7 @@ echo "Merged latest upstream with our previous complete custom modifications"
 python3 ../.github/scripts/merge-1.16-fixes.py
 python3 ../.github/scripts/verify-armgba-authentic-gb-colour.py
 python3 ../.github/scripts/fix-authentic-frame-blending-visible.py
+python3 ../.github/scripts/restore-known-good-authentic-texture-filter.py
 python3 ../.github/scripts/verify-authentic-frame-blending-visible.py
 python3 ../.github/scripts/fix-authentic-colour-reflection.py
 python3 ../.github/scripts/fix-fit-lcd-sampling.py
