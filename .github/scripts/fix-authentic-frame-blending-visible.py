@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Keep the separate per-system Frame Blending row available in Authentic."""
+"""Restore upstream Authentic Frame Blending behavior after the source merge."""
 from pathlib import Path
 
 path = Path("crates/slot/src/app.rs")
@@ -26,16 +26,32 @@ old = """        for (platform, rows) in [
             }
         }
 """
-new = """        // Keep the GB palette hidden on monochrome Authentic models.
-        // Pocket Color and GBC reveal it again immediately below.
-        if self.authentic(Platform::Gb) {
-            hidden.push(QuickRow::GbPalette);
+new = """        for (platform, rows) in [
+            (Platform::Gba, &[QuickRow::GbaColourCorrection][..]),
+            (Platform::Gbc, &[QuickRow::GbcColourCorrection][..]),
+            (
+                Platform::Gb,
+                &[QuickRow::GbColourCorrection, QuickRow::GbPalette][..],
+            ),
+        ] {
+            if self.authentic(platform) {
+                hidden.extend_from_slice(rows);
+            }
         }
 """
 if source.count(old) == 1:
     source = source.replace(old, new, 1)
 else:
-    assert source.count(new) == 1, "Expected the Authentic per-system row filter"
+    palette_only = """        // Keep the GB palette hidden on monochrome Authentic models.
+        // Pocket Color and GBC reveal it again immediately below.
+        if self.authentic(Platform::Gb) {
+            hidden.push(QuickRow::GbPalette);
+        }
+"""
+    if source.count(palette_only) == 1:
+        source = source.replace(palette_only, new, 1)
+    else:
+        assert source.count(new) == 1, "Expected the Authentic per-system row filter"
 assert "QuickRow::GbaBlending" not in new
 
 # The in-game Screen page has one context-sensitive row. It already reads and
@@ -57,13 +73,21 @@ if source.count(old) == 1:
     source = source.replace(old, new, 1)
 else:
     intermediate = """        if self.authentic(platform) {
+            // Keep the system-only colour and palette controls out of the
+            // in-game panel. Frame Blending stays available here.
+            hidden.extend([QuickRow::ColourCorrection, QuickRow::Palette]);
+        }
+"""
+    earlier_intermediate = """        if self.authentic(platform) {
             // Color correction and Frame Blending remain independently
             // selectable for every Authentic screen.
             hidden.push(QuickRow::Palette);
         }
 """
     if source.count(intermediate) == 1:
-        source = source.replace(intermediate, new, 1)
+        pass
+    elif source.count(earlier_intermediate) == 1:
+        source = source.replace(earlier_intermediate, intermediate, 1)
     else:
         assert source.count(new) == 1, "Expected the Authentic in-game screen filter"
 path.write_text(source)
