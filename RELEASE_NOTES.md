@@ -1,4 +1,3 @@
-# select. slot. 1.16.0 Ver. 51
+# select. slot. 1.16.0 Ver. 52
 
-- Restored Color Correction controls in the Authentic system settings.
-- Restored Ver. 29 Authentic texture sampling while keeping the separate Frame Blending control and fast-forward override.
+- Made Color Correction available from the in-game Screen menu while using Authentic.
