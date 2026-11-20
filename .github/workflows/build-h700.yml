@@ -1,4 +1,4 @@
-name: Build H700 firmware
+name: Build more. slot. H700 test
 
 on:
   workflow_dispatch:
