@@ -26,6 +26,11 @@ assert "effective_blend(self.effect, self.authentic_fast_forward, self.blend)" i
 assert "(ScreenEffect::Authentic, true) => FrameBlend::Off" in pipeline
 assert "fn authentic_frame_blending_setting_is_used_and_fast_forward_forces_off()" in pipeline
 
+tests = Path("crates/slot/tests/app.rs").read_text()
+assert "assert!(!in_game.contains(&QuickRow::Blending));" in tests
+assert "assert!(!settings.contains(&QuickRow::GbBlending));" in tests
+assert "GbColors::SgbAuto" in tests
+
 repo = Path(__file__).resolve().parents[2]
 catalog = (repo / "handheld-i18n/de.tsv").read_text().splitlines()
 assert "Frame Blending\tBildmischung" in catalog

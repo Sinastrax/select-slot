@@ -169,4 +169,17 @@ tests = Path("crates/slot/tests/app.rs")
 test_source = tests.read_text()
 assert "assert!(!in_game.contains(&QuickRow::Blending));" in test_source
 assert "assert!(!settings.contains(&QuickRow::GbBlending));" in test_source
+old = "use slot_store::{GbColors, GbPalette, Platform, Shader};"
+new = "use slot_store::{GbColors, Platform, Shader};"
+if test_source.count(old) == 1:
+    test_source = test_source.replace(old, new, 1)
+else:
+    assert test_source.count(new) == 1, "Expected Authentic Game Boy test imports"
+old = "GbColors::Palette(GbPalette::GRAYSCALE)"
+new = "GbColors::SgbAuto"
+if test_source.count(old) == 1:
+    test_source = test_source.replace(old, new, 1)
+else:
+    assert test_source.count(new) >= 1, "Expected current Authentic SGB model assertion"
+tests.write_text(test_source)
 print("Authentic Frame Blending is visible and honors its setting; fast-forward forces it off")
