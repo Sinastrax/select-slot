@@ -1,3 +1,3 @@
-# select. slot. 1.16.0 Ver. 52
+# select. slot. 1.16.0 Ver. 53
 
-- Made Color Correction available from the in-game Screen menu while using Authentic.
+- Reduced redundant GPU texture reads in the Authentic Pocket Color and SGB renderer.
