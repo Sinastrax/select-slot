@@ -130,6 +130,9 @@ python3 ../.github/scripts/verify-pocket-rgb-source-and-correction.py
 # RGB source and LCD code; apply exact Pocket Color GPU Look last.
 python3 ../.github/scripts/restore-sgb-pocket-whitepoint.py
 python3 ../.github/scripts/verify-sgb-pocket-whitepoint.py
+# Preserve Pocket/SGB output while removing redundant per-pixel texture fetches.
+python3 ../.github/scripts/optimize-authentic-pocket-sampling.py
+python3 ../.github/scripts/verify-authentic-pocket-sampling.py
 # GBA-only Authentic correction for RG35XX H's fractional 2.67x
 # Fit scaling. Applied LAST; all verified Pocket/SGG output
 # and standard GBA Dot/Grid/LCD color effects remain unchanged.
