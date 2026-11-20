@@ -1,0 +1,22 @@
+--- a/crates/slot/src/emu.rs
++++ b/crates/slot/src/emu.rs
+@@ -998,13 +998,8 @@
+                     crate::audio::volume::apply(
+                         &mut out,
+                         self.shared.volume.load(Ordering::Relaxed),
+                     );
+-                    if self.shared.mgba_gb_audio.load(Ordering::Relaxed)
+-                        && speed == Speed::Normal
+-                    {
+-                        // Do not hold the emulation thread up to 50ms when the
+-                        // audio ring is full. Discard the oldest buffered audio
+-                        // instead; samples that survive play at native pitch.
+-                        ring.push_drop_oldest(&out);
+-                    } else {
+-                        ring.push_blocking(&out);
+-                    }
++                    // Keep mGBA GB/GBC audio continuous: let the emulator thread
++                    // wait briefly for the ALSA consumer instead of deleting
++                    // queued music samples when the ring fills. This is Slot's
++                    // normal producer policy and preserves the resampler pitch.
++                    ring.push_blocking(&out);

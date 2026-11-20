@@ -213,3 +213,6 @@ git apply ../patches/achievement-header-viewport.patch
 # ring overflow skips. Every other core keeps the original 0.5% correction.
 git apply --check ../patches/mgba-gb-audio-gentle-drc.patch
 git apply ../patches/mgba-gb-audio-gentle-drc.patch
+# Preserve continuous mGBA GB/GBC audio when the ring reaches capacity.
+git apply --check ../patches/mgba-gb-audio-backpressure.patch
+git apply ../patches/mgba-gb-audio-backpressure.patch
