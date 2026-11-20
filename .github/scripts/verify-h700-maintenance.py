@@ -7,6 +7,7 @@ reintroduce a superseded OTA publisher. This runs before the costly build.
 """
 from pathlib import Path
 import re
+import os
 
 ROOT = Path(__file__).resolve().parents[2]
 GH = ROOT / ".github"
@@ -15,7 +16,13 @@ PATCHES = ROOT / "patches"
 WORKFLOWS = GH / "workflows"
 
 version = (GH / "ota-version.txt").read_text().strip()
-assert re.fullmatch(r"1\.16\.0-rgsp\.[1-9]\d*", version), f"unexpected H700 OTA version: {version!r}"
+more_test = version.startswith("1.16.0-more.")
+expected_version = r"1\.16\.0-more\.[1-9]\d*" if more_test else r"1\.16\.0-rgsp\.[1-9]\d*"
+assert re.fullmatch(expected_version, version), f"unexpected H700 OTA version: {version!r}"
+ref = os.environ.get("GITHUB_REF", "")
+assert not ref or (more_test == (ref == "refs/heads/more-slot")), (
+    f"OTA version channel does not match build branch {ref!r}: {version!r}"
+)
 assert "\n" not in version
 
 source = (SCRIPTS / "h700-prepare.sh").read_text()
@@ -60,6 +67,10 @@ assert all(v >= 0 for v in positions) and positions == sorted(positions), (
 assert source.count("python3 ../.github/scripts/ver35-indirect-memory-compat.py") == 1
 
 build = (WORKFLOWS / "build-h700.yml").read_text()
+test_patch = (PATCHES / "gamegear-picodrive.patch").read_text()
+stable_patch = (PATCHES / "select-online-updates.patch").read_text()
+assert '+    "https://raw.githubusercontent.com/Sinastrax/select-slot/more-slot/versions.json";' in test_patch
+assert '+pub const LATEST: &str = "https://github.com/Sinastrax/select-slot/releases/latest/download/versions.json";' in stable_patch
 assert "bash .github/scripts/h700-prepare.sh" in build
 assert "python3 .github/scripts/verify-h700-maintenance.py" in build
 assert "cargo test -p slot-achievements -- --nocapture" in build
@@ -74,6 +85,11 @@ assert "mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz" in build
 assert "gh release create" in build and "--latest" in build
 assert "gh release delete" not in build
 assert "git/refs/tags/" not in build  # never force-move a published tag
+assert "release-more-slot-test:" in build
+test_publisher = build.split("  release-more-slot-test:", 1)[1]
+assert "if: github.ref == 'refs/heads/more-slot' && github.event_name == 'push'" in test_publisher
+assert "--prerelease" in test_publisher and "--latest" not in test_publisher
+assert "git push origin more-slot" in test_publisher
 
 # One audited publisher only: the old workflow_run path forced tags and
 # deleted draft releases; the old release curation could DELETE Ver. 35.

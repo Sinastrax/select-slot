@@ -202,3 +202,5 @@ git apply ../patches/keyboard-caps-indicator.patch
 git apply ../patches/scroll-cheat-achievement-names.patch
 # Reserve top chrome and header space in the in-game achievement list.
 git apply ../patches/achievement-header-viewport.patch
+git apply --check ../patches/gamegear-picodrive.patch
+git apply ../patches/gamegear-picodrive.patch

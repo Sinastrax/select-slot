@@ -1,4 +1,4 @@
-name: Build select. slot. H700
+name: Build H700 firmware
 
 on:
   workflow_dispatch:
@@ -15,6 +15,7 @@ on:
     branches:
       - main
       - integration/slot-1.16.0
+      - more-slot
     tags:
       - "v*-custom.*"
       - "v*-rgsp.*"
@@ -39,6 +40,8 @@ concurrency:
 jobs:
   build-h700:
     runs-on: ubuntu-24.04-arm
+    env:
+      H700_UPDATE_LABEL: ${{ github.ref == 'refs/heads/more-slot' && 'MORE. SLOT' || 'SELECT. SLOT' }}
     container:
       image: rust:1-bullseye
     timeout-minutes: 120
@@ -148,8 +151,12 @@ jobs:
         run: |
           set -euo pipefail
           # Must run before dist:device: the Rust frontend embeds the BMP.
-          python3 ../.github/scripts/brand-h700-boot.py card/System
-          grep -qF 'say "UPDATING SELECT. SLOT."' card/System/launch_frontend.sh
+          if [ "$GITHUB_REF" = "refs/heads/more-slot" ]; then
+            python3 ../.github/scripts/brand-more-h700-boot.py card/System
+          else
+            python3 ../.github/scripts/brand-h700-boot.py card/System
+          fi
+          grep -qF "say \"UPDATING $H700_UPDATE_LABEL.\"" card/System/launch_frontend.sh
           ! grep -qF 'say "UPDATING SLOT"' card/System/launch_frontend.sh
 
       - name: Build the H700 device tree
@@ -237,6 +244,11 @@ jobs:
           test ! -e select-slot-h700/System/licenses/mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz
           test -s select-slot-h700/System/licenses/mgba-source-notice.txt
 
+      - name: Build Game Gear PicoDrive core and retain corresponding source
+        working-directory: upstream
+        shell: bash
+        run: bash ../.github/scripts/build-picodrive.sh select-slot-h700 source-release
+
       - name: Verify the complete firmware tree
         working-directory: upstream
         shell: bash
@@ -245,15 +257,27 @@ jobs:
           sh tools/check-card-tree.sh select-slot-h700
           test ! -f select-slot-h700/System/sameboy_libretro.so
           sha256sum -c select-slot-h700/System/licenses/mgba-stable.sha256
+          sha256sum -c select-slot-h700/System/licenses/picodrive.sha256
           # Both boot scripts and every core must be in an OTA update.
           test -s select-slot-h700/System/launch_frontend.sh
           test -s select-slot-h700/System/bootlogo.bmp
-          grep -qF 'say "UPDATING SELECT. SLOT."' select-slot-h700/System/launch_frontend.sh
+          grep -qF "say \"UPDATING $H700_UPDATE_LABEL.\"" select-slot-h700/System/launch_frontend.sh
           # CI must ship the same branded assets as the embedded frontend.
           cmp card/System/bootlogo.bmp select-slot-h700/System/bootlogo.bmp
-          grep -qF 'say "UPDATING SELECT. SLOT."' card/System/launch_frontend.sh
+          grep -qF "say \"UPDATING $H700_UPDATE_LABEL.\"" card/System/launch_frontend.sh
           test -s select-slot-h700/System/gpsp_libretro.so
           test -s select-slot-h700/System/gambatte_libretro.so
+          test -s select-slot-h700/System/picodrive_libretro.so
+          test -s select-slot-h700/System/licenses/picodrive-LICENSE.txt
+          test -s select-slot-h700/System/licenses/picodrive-emu2413-MIT.txt
+          test -s select-slot-h700/System/licenses/picodrive-tremor-BSD.txt
+          test -s select-slot-h700/System/licenses/picodrive-headerless-files.txt
+          test -s select-slot-h700/System/licenses/picodrive-notice.txt
+          test -s upstream/source-release/picodrive-src.meta
+          test -s upstream/source-release/picodrive-src.tar.gz
+          test -s upstream/source-release/picodrive-emu2413-src.tar.gz
+          test -s upstream/source-release/picodrive-dr_libs-src.tar.gz
+          test -s upstream/source-release/picodrive-libpicofe-src.tar.gz
           test -s select-slot-h700/System/bezels/640x480.png
           test -s select-slot-h700/System/bezels/640x480-gba-original.png
           test -s select-slot-h700/System/licenses/gba-original-bezel-credits.txt
@@ -289,6 +313,8 @@ jobs:
             slot-v*-h700.zip
             versions.json
             upstream/source-release/mgba-*-source.tar.gz
+            upstream/source-release/picodrive-*-src.tar.gz
+            upstream/source-release/picodrive-src.meta
           if-no-files-found: error
 
   release-h700:
@@ -354,9 +380,89 @@ jobs:
             exit 0
           fi
           test -s release/upstream/source-release/mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz
+          test -s release/upstream/source-release/picodrive-src.tar.gz
           gh release create "$RELEASE_TAG" "$zip" release/versions.json \
             release/upstream/source-release/mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz \
+            release/upstream/source-release/picodrive-*-src.tar.gz \
+            release/upstream/source-release/picodrive-src.meta \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" --latest \
-            --title "select. slot. $DISPLAY_VERSION" \
+            --title "more. slot. $DISPLAY_VERSION" \
             --notes-file RELEASE_NOTES.md
+
+  release-more-slot-test:
+    name: Publish isolated more. slot. test build and OTA feed
+    if: github.ref == 'refs/heads/more-slot' && github.event_name == 'push'
+    needs: build-h700
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: select-slot-complete-h700
+          path: release
+
+      - name: Validate the test build manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, pathlib
+          root = pathlib.Path("release")
+          manifest = json.loads((root / "versions.json").read_text())["stable"]
+          version = pathlib.Path(".github/ota-version.txt").read_text().strip()
+          assert version.startswith("1.16.0-more.")
+          assert manifest["version"] == version
+          assert manifest["tag"] == "v" + version
+          archive = root / manifest["zip"]
+          assert archive.is_file()
+          assert archive.stat().st_size == manifest["size"]
+          assert hashlib.sha256(archive.read_bytes()).hexdigest() == manifest["sha256"]
+          print("Validated more. slot. test archive", archive.name)
+          PY
+
+      - name: Publish a prerelease without changing stable releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(cat .github/ota-version.txt)"
+          tag="v$version"
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Test release $tag already exists; leaving it unchanged."
+            exit 0
+          fi
+          gh release create "$tag" \
+            "release/slot-$tag-h700.zip" \
+            release/versions.json \
+            release/upstream/source-release/mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz \
+            release/upstream/source-release/picodrive-*-src.tar.gz \
+            release/upstream/source-release/picodrive-src.meta \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --title "more. slot. $version (test build)" \
+            --notes "Testing build for more. slot. on H700 handhelds. This prerelease is isolated from the stable select. slot. update feed. Install this first test build manually; only more. slot. builds use the test OTA feed."
+
+      - name: Update only the more. slot. test OTA manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin "refs/heads/more-slot:refs/remotes/origin/more-slot"
+          if [ "$(git rev-parse origin/more-slot)" != "$GITHUB_SHA" ]; then
+            echo "A newer more-slot commit exists; leave the feed for that build to publish."
+            exit 0
+          fi
+          git checkout -B more-slot origin/more-slot
+          cp release/versions.json versions.json
+          git add -f versions.json
+          git -c user.name="github-actions[bot]" \
+            -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -m "Update more.slot test OTA manifest"
+          git push origin more-slot

@@ -1,0 +1,3200 @@
+diff --git a/card/Bezels/README.txt b/card/Bezels/README.txt
+index b984467..99344df 100644
+--- a/card/Bezels/README.txt
++++ b/card/Bezels/README.txt
+@@ -1,6 +1,6 @@
+ # Bezels
+ 
+-Add .png files to GBA, GB or GBC. Pick one in Settings > Screen > Game Boy
++Add .png files to GBA, GB, GBC or GG. Pick one in Settings > Screen > the system
+ Advance (or Game Boy, or Game Boy Color) > Bezel.
+ 
+ Make it the size of the screen with a transparent hole where the game
+diff --git a/card/Cheats/README.txt b/card/Cheats/README.txt
+index fd5c48a..13307a2 100644
+--- a/card/Cheats/README.txt
++++ b/card/Cheats/README.txt
+@@ -7,6 +7,7 @@ To use your own cheats for a game, add a RetroArch .cht file to GBA, GBAV, GB or
+ GBC, named after the ROM. It replaces that game's cheats from the pack.
+ 
+   Games/GBA/Metroid Fusion.gba  ->  Cheats/GBA/Metroid Fusion.cht
++  Games/GG/Game.gg             ->  Cheats/GG/Game.cht
+ 
+ Cheats work with the mGBA core. A cheat that changes items or money can
+ end up in your save, even after you turn it off.
+diff --git a/card/Labels/README.txt b/card/Labels/README.txt
+index 344ab13..1bcf00d 100644
+--- a/card/Labels/README.txt
++++ b/card/Labels/README.txt
+@@ -1,6 +1,6 @@
+ # Labels
+ 
+-Add a .png to GBA, GBAV, GB or GBC, named after the ROM. Labels are the same on
++Add a .png to GBA, GBAV, GB, GBC or GG, named after the ROM. Labels are the same on
+ every device.
+ 
+   Games/GBA/Metroid Fusion.gba  ->  Labels/GBA/Metroid Fusion.png
+diff --git a/crates/slot-labels/src/lib.rs b/crates/slot-labels/src/lib.rs
+index 36fd2f6..b4545fa 100644
+--- a/crates/slot-labels/src/lib.rs
++++ b/crates/slot-labels/src/lib.rs
+@@ -64,6 +64,7 @@ pub fn label_size(platform: Platform) -> (u32, u32) {
+         Platform::Gba | Platform::Gbav => (264, 136),
+         Platform::Gb => (223, 199),
+         Platform::Gbc => (223, 199),
++        Platform::Gg => (223, 199),
+         #[cfg(feature = "nds")]
+         Platform::Nds => (170, 184),
+     }
+diff --git a/crates/slot-labels/src/source.rs b/crates/slot-labels/src/source.rs
+index 49c1af2..ad51400 100644
+--- a/crates/slot-labels/src/source.rs
++++ b/crates/slot-labels/src/source.rs
+@@ -51,6 +51,7 @@ pub fn platforms(platform: Platform) -> &'static [&'static str] {
+         Platform::Gba | Platform::Gbav => &["Nintendo Game Boy Advance"],
+         Platform::Gb => &["Nintendo Game Boy", "Nintendo Game Boy Color"],
+         Platform::Gbc => &["Nintendo Game Boy Color", "Nintendo Game Boy"],
++        Platform::Gg => &["Sega Game Gear"],
+         #[cfg(feature = "nds")]
+         Platform::Nds => &[],
+     }
+diff --git a/crates/slot-store/src/bindings.rs b/crates/slot-store/src/bindings.rs
+index 8638626..b843ef1 100644
+--- a/crates/slot-store/src/bindings.rs
++++ b/crates/slot-store/src/bindings.rs
+@@ -270,7 +270,7 @@ impl GameButton {
+     pub fn of(platform: Platform) -> &'static [GameButton] {
+         match platform {
+             Platform::Gba | Platform::Gbav => &GameButton::ALL,
+-            Platform::Gb | Platform::Gbc => &GameButton::GAME_BOY,
++            Platform::Gb | Platform::Gbc | Platform::Gg => &GameButton::GAME_BOY,
+             #[cfg(feature = "nds")]
+             Platform::Nds => &GameButton::ALL,
+         }
+diff --git a/crates/slot-store/src/core.rs b/crates/slot-store/src/core.rs
+index a68bf65..9f95405 100644
+--- a/crates/slot-store/src/core.rs
++++ b/crates/slot-store/src/core.rs
+@@ -12,15 +12,22 @@ pub enum Core {
+     Gpsp,
+     Gambatte,
+     Sameboy,
++    Picodrive,
+     #[cfg(feature = "nds")]
+     Dsperate,
+ }
+ 
+ impl Core {
+     #[cfg(not(feature = "nds"))]
+-    pub const ALL: [Core; 3] = [Core::Mgba, Core::Gpsp, Core::Gambatte];
++    pub const ALL: [Core; 4] = [Core::Mgba, Core::Gpsp, Core::Gambatte, Core::Picodrive];
+     #[cfg(feature = "nds")]
+-    pub const ALL: [Core; 4] = [Core::Mgba, Core::Gpsp, Core::Gambatte, Core::Dsperate];
++    pub const ALL: [Core; 5] = [
++        Core::Mgba,
++        Core::Gpsp,
++        Core::Gambatte,
++        Core::Picodrive,
++        Core::Dsperate,
++    ];
+ 
+     pub fn as_str(&self) -> &'static str {
+         match self {
+@@ -28,6 +35,7 @@ impl Core {
+             Core::Gpsp => "gpsp",
+             Core::Gambatte => "gambatte",
+             Core::Sameboy => "sameboy",
++            Core::Picodrive => "picodrive",
+             #[cfg(feature = "nds")]
+             Core::Dsperate => "dsperate",
+         }
+@@ -43,6 +51,7 @@ impl Core {
+             Core::Gpsp => "gpSP",
+             Core::Gambatte => "Gambatte",
+             Core::Sameboy => "SameBoy",
++            Core::Picodrive => "PicoDrive",
+             #[cfg(feature = "nds")]
+             Core::Dsperate => "DSperate",
+         }
+@@ -55,6 +64,7 @@ impl Core {
+             "gambatte" => Some(Core::Gambatte),
+             // Migrate cartridge choices made while SameBoy was the alternate core.
+             "sameboy" => Some(Core::Mgba),
++            "picodrive" => Some(Core::Picodrive),
+             #[cfg(feature = "nds")]
+             "dsperate" => Some(Core::Dsperate),
+             _ => None,
+@@ -68,6 +78,7 @@ impl Core {
+             Core::Mgba => true,
+             Core::Gpsp => platform.hardware() == Platform::Gba,
+             Core::Gambatte | Core::Sameboy => matches!(platform, Platform::Gb | Platform::Gbc),
++            Core::Picodrive => platform == Platform::Gg,
+             #[cfg(feature = "nds")]
+             Core::Dsperate => false,
+         }
+@@ -77,6 +88,7 @@ impl Core {
+         match platform {
+             Platform::Gba | Platform::Gbav => [Core::Mgba, Core::Gpsp],
+             Platform::Gb | Platform::Gbc => [Core::Mgba, Core::Gambatte],
++            Platform::Gg => [Core::Picodrive, Core::Picodrive],
+             #[cfg(feature = "nds")]
+             Platform::Nds => [Core::Dsperate, Core::Dsperate],
+         }
+@@ -99,8 +111,11 @@ pub fn core_for_platform(root: &Path, stem: &str, platform: Platform, gb_core: C
+         .and_then(Core::parse)
+         .filter(|core| core.runs(platform))
+         .unwrap_or_else(|| match platform {
++            Platform::Gg => Core::Picodrive,
+             Platform::Gb | Platform::Gbc if gb_core == Core::Gambatte => Core::Gambatte,
+-            Platform::Gb | Platform::Gbc if matches!(gb_core, Core::Mgba | Core::Sameboy) => Core::Mgba,
++            Platform::Gb | Platform::Gbc if matches!(gb_core, Core::Mgba | Core::Sameboy) => {
++                Core::Mgba
++            }
+             Platform::Gb | Platform::Gbc => Core::Gambatte,
+             #[cfg(feature = "nds")]
+             Platform::Nds => Core::Dsperate,
+diff --git a/crates/slot-store/src/platform.rs b/crates/slot-store/src/platform.rs
+index d04ad8d..d690ac2 100644
+--- a/crates/slot-store/src/platform.rs
++++ b/crates/slot-store/src/platform.rs
+@@ -7,20 +7,28 @@ pub enum Platform {
+     Gb,
+     Gbc,
+     Gbav,
++    Gg,
+     #[cfg(feature = "nds")]
+     Nds,
+ }
+ 
+ impl Platform {
+     #[cfg(not(feature = "nds"))]
+-    pub const ALL: [Platform; 4] = [Platform::Gba, Platform::Gbav, Platform::Gbc, Platform::Gb];
+-    #[cfg(feature = "nds")]
+     pub const ALL: [Platform; 5] = [
++        Platform::Gba,
++        Platform::Gbav,
++        Platform::Gbc,
++        Platform::Gb,
++        Platform::Gg,
++    ];
++    #[cfg(feature = "nds")]
++    pub const ALL: [Platform; 6] = [
+         Platform::Nds,
+         Platform::Gba,
+         Platform::Gbav,
+         Platform::Gbc,
+         Platform::Gb,
++        Platform::Gg,
+     ];
+ 
+     pub fn name(self) -> &'static str {
+@@ -29,6 +37,7 @@ impl Platform {
+             Platform::Gb => "Game Boy",
+             Platform::Gbc => "Game Boy Color",
+             Platform::Gbav => "Game Boy Advance Video",
++            Platform::Gg => "Sega Game Gear",
+             #[cfg(feature = "nds")]
+             Platform::Nds => "Nintendo DS",
+         }
+@@ -40,6 +49,7 @@ impl Platform {
+             Platform::Gb => "GB",
+             Platform::Gbc => "GBC",
+             Platform::Gbav => "GBAV",
++            Platform::Gg => "GG",
+             #[cfg(feature = "nds")]
+             Platform::Nds => "NDS",
+         }
+@@ -56,6 +66,7 @@ impl Platform {
+         match self {
+             Platform::Gba | Platform::Gbav => &["gba"],
+             Platform::Gb | Platform::Gbc => &["gb", "gbc"],
++            Platform::Gg => &["gg"],
+             #[cfg(feature = "nds")]
+             Platform::Nds => &["nds"],
+         }
+@@ -65,6 +76,7 @@ impl Platform {
+         match self {
+             Platform::Gba | Platform::Gbav => (240, 160),
+             Platform::Gb | Platform::Gbc => (160, 144),
++            Platform::Gg => (160, 144),
+             #[cfg(feature = "nds")]
+             Platform::Nds => (256, 192),
+         }
+diff --git a/crates/slot-store/src/slot_state.rs b/crates/slot-store/src/slot_state.rs
+index f66eb6a..9915d9f 100644
+--- a/crates/slot-store/src/slot_state.rs
++++ b/crates/slot-store/src/slot_state.rs
+@@ -408,8 +408,12 @@ pub enum GbModel {
+ 
+ impl GbModel {
+     pub const ALL: [GbModel; 6] = [
+-        GbModel::Dmg, GbModel::Pocket, GbModel::PocketColor, GbModel::PocketSgb,
+-        GbModel::Light, GbModel::Gbc,
++        GbModel::Dmg,
++        GbModel::Pocket,
++        GbModel::PocketColor,
++        GbModel::PocketSgb,
++        GbModel::Light,
++        GbModel::Gbc,
+     ];
+ 
+     pub fn key(self) -> &'static str {
+@@ -448,7 +452,9 @@ impl Blending {
+     /// Slot blends frames on the GPU, so every Game Boy and GBA core offers every choice.
+     pub fn choices(core: Core) -> &'static [Blending] {
+         match core {
+-            Core::Mgba | Core::Gpsp | Core::Gambatte | Core::Sameboy => &Blending::ALL,
++            Core::Mgba | Core::Gpsp | Core::Gambatte | Core::Sameboy | Core::Picodrive => {
++                &Blending::ALL
++            }
+             #[cfg(feature = "nds")]
+             Core::Dsperate => &[Blending::Off],
+         }
+@@ -511,6 +517,7 @@ pub struct SlotState {
+     /// Independently selectable GB shader for games running in mGBA.
+     pub shader_gb_mgba: Shader,
+     pub shader_gbc: Shader,
++    pub shader_gg: Shader,
+     pub resume_insert: bool,
+     pub resume_power_on: bool,
+     pub rewind: bool,
+@@ -536,6 +543,7 @@ pub struct SlotState {
+     pub bezel_gba: BezelPick,
+     pub bezel_gb: BezelPick,
+     pub bezel_gbc: BezelPick,
++    pub bezel_gg: BezelPick,
+     /// Whether Authentic lays the glass's reflection over each console's screen.
+     pub reflection_gba: bool,
+     pub reflection_gb: bool,
+@@ -543,11 +551,13 @@ pub struct SlotState {
+     pub overlay_gba: Option<String>,
+     pub overlay_gb: Option<String>,
+     pub overlay_gbc: Option<String>,
++    pub overlay_gg: Option<String>,
+     #[cfg(feature = "nds")]
+     pub overlay_nds: Option<String>,
+     pub scale_gba: Scale,
+     pub scale_gb: Scale,
+     pub scale_gbc: Scale,
++    pub scale_gg: Scale,
+     pub stretch_gb: Stretch,
+     pub stretch_gbc: Stretch,
+     pub blending_gba: Blending,
+@@ -557,6 +567,7 @@ pub struct SlotState {
+     /// Independently selected Authentic model for mGBA GB games.
+     pub gb_model_mgba: GbModel,
+     pub blending_gbc: Blending,
++    pub blending_gg: Blending,
+     pub recents: Vec<Recent>,
+     pub favorites: Vec<Recent>,
+     pub shelf: Option<String>,
+@@ -659,6 +670,14 @@ impl Shader {
+         Shader::Shimmerless,
+         Shader::Authentic,
+     ];
++    pub const GG: [Shader; 6] = [
++        Shader::Off,
++        Shader::Lcd3x,
++        Shader::Grid,
++        Shader::Dot,
++        Shader::Simpletex,
++        Shader::Shimmerless,
++    ];
+ 
+     pub fn name(self) -> &'static str {
+         match self {
+@@ -731,6 +750,7 @@ impl Default for SlotState {
+             shader_gb: Shader::Simpletex,
+             shader_gb_mgba: Shader::Simpletex,
+             shader_gbc: Shader::Simpletex,
++            shader_gg: Shader::Off,
+             resume_insert: true,
+             resume_power_on: true,
+             rewind: true,
+@@ -754,17 +774,20 @@ impl Default for SlotState {
+             bezel_gba: BezelPick::Ags102,
+             bezel_gb: BezelPick::Ags102,
+             bezel_gbc: BezelPick::Ags102,
++            bezel_gg: BezelPick::Default,
+             reflection_gba: true,
+             reflection_gb: true,
+             reflection_gbc: true,
+             overlay_gba: None,
+             overlay_gb: None,
+             overlay_gbc: None,
++            overlay_gg: None,
+             #[cfg(feature = "nds")]
+             overlay_nds: None,
+             scale_gba: Scale::Fit,
+             scale_gb: Scale::SpFrame,
+             scale_gbc: Scale::SpFrame,
++            scale_gg: Scale::Fit,
+             stretch_gb: Stretch::Classic,
+             stretch_gbc: Stretch::Classic,
+             blending_gba: Blending::Off,
+@@ -772,6 +795,7 @@ impl Default for SlotState {
+             gb_model: GbModel::Pocket,
+             gb_model_mgba: GbModel::PocketSgb,
+             blending_gbc: Blending::Off,
++            blending_gg: Blending::Off,
+             recents: Vec::new(),
+             favorites: Vec::new(),
+             shelf: None,
+@@ -873,10 +897,23 @@ pub fn write_slot_state(root: &Path, s: &SlotState) -> std::io::Result<()> {
+         s.colour_correction_gbc as u8
+     ));
+     text.push_str(&format!("shader_gbc={}\n", s.shader_gbc.name()));
+-    text.push_str(&format!("authentic_gb_correction={}\n", s.authentic_gb_correction));
+-    text.push_str(&format!("authentic_gb_correction_sameboy={}\n", s.authentic_gb_correction_sameboy));
+-    text.push_str(&format!("authentic_gbc_correction={}\n", s.authentic_gbc_correction as u8));
+-    text.push_str(&format!("authentic_gba_correction={}\n", s.authentic_gba_correction as u8));
++    text.push_str(&format!("shader_gg={}\n", s.shader_gg.name()));
++    text.push_str(&format!(
++        "authentic_gb_correction={}\n",
++        s.authentic_gb_correction
++    ));
++    text.push_str(&format!(
++        "authentic_gb_correction_sameboy={}\n",
++        s.authentic_gb_correction_sameboy
++    ));
++    text.push_str(&format!(
++        "authentic_gbc_correction={}\n",
++        s.authentic_gbc_correction as u8
++    ));
++    text.push_str(&format!(
++        "authentic_gba_correction={}\n",
++        s.authentic_gba_correction as u8
++    ));
+     text.push_str(&format!("shader_gb_mgba={}\n", s.shader_gb_mgba.name()));
+     text.push_str(&format!("dim={}\n", s.dim));
+     text.push_str(&format!("saturation={}\n", s.saturation));
+@@ -904,6 +941,7 @@ pub fn write_slot_state(root: &Path, s: &SlotState) -> std::io::Result<()> {
+     text.push_str(&format!("bezel_gba={}\n", s.bezel_gba.key()));
+     text.push_str(&format!("bezel_gb={}\n", s.bezel_gb.key()));
+     text.push_str(&format!("bezel_gbc={}\n", s.bezel_gbc.key()));
++    text.push_str(&format!("bezel_gg={}\n", s.bezel_gg.key()));
+     text.push_str(&format!("reflection_gba={}\n", s.reflection_gba as u8));
+     text.push_str(&format!("reflection_gb={}\n", s.reflection_gb as u8));
+     text.push_str(&format!("reflection_gbc={}\n", s.reflection_gbc as u8));
+@@ -919,6 +957,10 @@ pub fn write_slot_state(root: &Path, s: &SlotState) -> std::io::Result<()> {
+         "overlay_gbc={}\n",
+         s.overlay_gbc.as_deref().unwrap_or_default()
+     ));
++    text.push_str(&format!(
++        "overlay_gg={}\n",
++        s.overlay_gg.as_deref().unwrap_or_default()
++    ));
+     #[cfg(feature = "nds")]
+     text.push_str(&format!(
+         "overlay_nds={}\n",
+@@ -927,6 +969,7 @@ pub fn write_slot_state(root: &Path, s: &SlotState) -> std::io::Result<()> {
+     text.push_str(&format!("scale_gba={}\n", s.scale_gba.name()));
+     text.push_str(&format!("scale_gb={}\n", s.scale_gb.name()));
+     text.push_str(&format!("scale_gbc={}\n", s.scale_gbc.name()));
++    text.push_str(&format!("scale_gg={}\n", s.scale_gg.name()));
+     text.push_str(&format!("stretch_gb={}\n", s.stretch_gb.name()));
+     text.push_str(&format!("stretch_gbc={}\n", s.stretch_gbc.name()));
+     text.push_str(&format!("blending_gba={}\n", s.blending_gba.key()));
+@@ -934,6 +977,7 @@ pub fn write_slot_state(root: &Path, s: &SlotState) -> std::io::Result<()> {
+     text.push_str(&format!("gb_model={}\n", s.gb_model.key()));
+     text.push_str(&format!("gb_model_mgba={}\n", s.gb_model_mgba.key()));
+     text.push_str(&format!("blending_gbc={}\n", s.blending_gbc.key()));
++    text.push_str(&format!("blending_gg={}\n", s.blending_gg.key()));
+     text.push_str(&format!("shelf={}\n", s.shelf.as_deref().unwrap_or("")));
+     text.push_str(&format!(
+         "shelf_cart={}\n",
+@@ -1000,6 +1044,7 @@ fn parse(text: &str) -> Option<SlotState> {
+     let mut shader_gb = None;
+     let mut shader_gb_mgba = None;
+     let mut shader_gbc = None;
++    let mut shader_gg = None;
+     let mut auto_load = None;
+     let mut resume_insert = None;
+     let mut resume_power_on = None;
+@@ -1024,17 +1069,20 @@ fn parse(text: &str) -> Option<SlotState> {
+     let mut bezel_gba = None;
+     let mut bezel_gb = None;
+     let mut bezel_gbc = None;
++    let mut bezel_gg = None;
+     let mut reflection_gba = None;
+     let mut reflection_gb = None;
+     let mut reflection_gbc = None;
+     let mut overlay_gba = None;
+     let mut overlay_gb = None;
+     let mut overlay_gbc = None;
++    let mut overlay_gg = None;
+     #[cfg(feature = "nds")]
+     let mut overlay_nds = None;
+     let mut scale_gba = None;
+     let mut scale_gb = None;
+     let mut scale_gbc = None;
++    let mut scale_gg = None;
+     let mut stretch_gb = None;
+     let mut stretch_gbc = None;
+     let mut blending_gba = None;
+@@ -1042,6 +1090,7 @@ fn parse(text: &str) -> Option<SlotState> {
+     let mut gb_model = None;
+     let mut gb_model_mgba = None;
+     let mut blending_gbc = None;
++    let mut blending_gg = None;
+     let mut shelf = None;
+     let mut shelf_cart = None;
+     let mut shelf_mode = None;
+@@ -1109,17 +1158,20 @@ fn parse(text: &str) -> Option<SlotState> {
+             "bezel_gba" => bezel_gba = Some(BezelPick::parse(value)),
+             "bezel_gb" => bezel_gb = Some(BezelPick::parse(value)),
+             "bezel_gbc" => bezel_gbc = Some(BezelPick::parse(value)),
++            "bezel_gg" => bezel_gg = Some(BezelPick::parse(value)),
+             "reflection_gba" => reflection_gba = flag(value),
+             "reflection_gb" => reflection_gb = flag(value),
+             "reflection_gbc" => reflection_gbc = flag(value),
+             "overlay_gba" => overlay_gba = overlay_name(value),
+             "overlay_gb" => overlay_gb = overlay_name(value),
+             "overlay_gbc" => overlay_gbc = overlay_name(value),
++            "overlay_gg" => overlay_gg = overlay_name(value),
+             #[cfg(feature = "nds")]
+             "overlay_nds" => overlay_nds = overlay_name(value),
+             "scale_gba" => scale_gba = Scale::parse(value),
+             "scale_gb" => scale_gb = Scale::parse(value),
+             "scale_gbc" => scale_gbc = Scale::parse(value),
++            "scale_gg" => scale_gg = Scale::parse(value),
+             "stretch_gb" => stretch_gb = Stretch::parse(value),
+             "stretch_gbc" => stretch_gbc = Stretch::parse(value),
+             "blending_gba" => blending_gba = Some(Blending::parse(value).unwrap_or_default()),
+@@ -1127,6 +1179,7 @@ fn parse(text: &str) -> Option<SlotState> {
+             "gb_model" => gb_model = GbModel::parse(value),
+             "gb_model_mgba" => gb_model_mgba = GbModel::parse(value),
+             "blending_gbc" => blending_gbc = Some(Blending::parse(value).unwrap_or_default()),
++            "blending_gg" => blending_gg = Some(Blending::parse(value).unwrap_or_default()),
+             "shelf" => shelf = Some(value.to_string()).filter(|v| !v.is_empty()),
+             "shelf_cart" => shelf_cart = recent_value(value),
+             "shelf_mode" => shelf_mode = ShelfMode::parse(value),
+@@ -1135,10 +1188,17 @@ fn parse(text: &str) -> Option<SlotState> {
+             "collection" => collection = Some(value.to_string()).filter(|v| !v.is_empty()),
+             "gba_video" => gba_video = flag(value),
+             "shader_gb" => shader_gb = Shader::parse(value).filter(|s| Shader::GB.contains(s)),
+-            "shader_gb_mgba" => shader_gb_mgba = Shader::parse(value).filter(|s| Shader::GB.contains(s)),
++            "shader_gb_mgba" => {
++                shader_gb_mgba = Shader::parse(value).filter(|s| Shader::GB.contains(s))
++            }
+             "shader_gbc" => shader_gbc = Shader::parse(value).filter(|s| Shader::GB.contains(s)),
+-            "authentic_gb_correction" => authentic_gb_correction = value.parse::<u32>().ok().map(|n| n & 0x3f),
+-            "authentic_gb_correction_sameboy" => authentic_gb_correction_sameboy = value.parse::<u32>().ok().map(|n| n & 0x3f),
++            "shader_gg" => shader_gg = Shader::parse(value).filter(|s| Shader::GG.contains(s)),
++            "authentic_gb_correction" => {
++                authentic_gb_correction = value.parse::<u32>().ok().map(|n| n & 0x3f)
++            }
++            "authentic_gb_correction_sameboy" => {
++                authentic_gb_correction_sameboy = value.parse::<u32>().ok().map(|n| n & 0x3f)
++            }
+             "authentic_gbc_correction" => authentic_gbc_correction = flag(value),
+             "authentic_gba_correction" => authentic_gba_correction = flag(value),
+             _ => {}
+@@ -1179,14 +1239,22 @@ fn parse(text: &str) -> Option<SlotState> {
+             .or(colour_correction_gb)
+             .or(colour_correction)
+             .unwrap_or(fallback.colour_correction_gbc),
+-        authentic_gb_correction: authentic_gb_correction.unwrap_or(fallback.authentic_gb_correction),
+-        authentic_gb_correction_sameboy: authentic_gb_correction_sameboy.or(authentic_gb_correction).unwrap_or(fallback.authentic_gb_correction_sameboy),
+-        authentic_gbc_correction: authentic_gbc_correction.unwrap_or(fallback.authentic_gbc_correction),
+-        authentic_gba_correction: authentic_gba_correction.unwrap_or(fallback.authentic_gba_correction),
++        authentic_gb_correction: authentic_gb_correction
++            .unwrap_or(fallback.authentic_gb_correction),
++        authentic_gb_correction_sameboy: authentic_gb_correction_sameboy
++            .or(authentic_gb_correction)
++            .unwrap_or(fallback.authentic_gb_correction_sameboy),
++        authentic_gbc_correction: authentic_gbc_correction
++            .unwrap_or(fallback.authentic_gbc_correction),
++        authentic_gba_correction: authentic_gba_correction
++            .unwrap_or(fallback.authentic_gba_correction),
+         shader_gba: shader_gba.unwrap_or(fallback.shader_gba),
+         shader_gb: shader_gb.unwrap_or(fallback.shader_gb),
+-        shader_gb_mgba: shader_gb_mgba.or(shader_gb).unwrap_or(fallback.shader_gb_mgba),
++        shader_gb_mgba: shader_gb_mgba
++            .or(shader_gb)
++            .unwrap_or(fallback.shader_gb_mgba),
+         shader_gbc: shader_gbc.or(shader_gb).unwrap_or(fallback.shader_gbc),
++        shader_gg: shader_gg.unwrap_or(fallback.shader_gg),
+         resume_insert: resume_insert
+             .or(auto_load.map(|(insert, _)| insert))
+             .unwrap_or(fallback.resume_insert),
+@@ -1214,17 +1282,20 @@ fn parse(text: &str) -> Option<SlotState> {
+         bezel_gba: bezel_gba.unwrap_or(fallback.bezel_gba),
+         bezel_gb: bezel_gb.unwrap_or(fallback.bezel_gb),
+         bezel_gbc: bezel_gbc.unwrap_or(fallback.bezel_gbc),
++        bezel_gg: bezel_gg.unwrap_or(fallback.bezel_gg),
+         reflection_gba: reflection_gba.unwrap_or(fallback.reflection_gba),
+         reflection_gb: reflection_gb.unwrap_or(fallback.reflection_gb),
+         reflection_gbc: reflection_gbc.unwrap_or(fallback.reflection_gbc),
+         overlay_gba,
+         overlay_gb,
+         overlay_gbc,
++        overlay_gg,
+         #[cfg(feature = "nds")]
+         overlay_nds,
+         scale_gba: scale_gba.unwrap_or(fallback.scale_gba),
+         scale_gb: scale_gb.unwrap_or(fallback.scale_gb),
+         scale_gbc: scale_gbc.unwrap_or(fallback.scale_gbc),
++        scale_gg: scale_gg.unwrap_or(fallback.scale_gg),
+         stretch_gb: stretch_gb.unwrap_or(fallback.stretch_gb),
+         stretch_gbc: stretch_gbc.unwrap_or(fallback.stretch_gbc),
+         blending_gba: blending_gba
+@@ -1238,6 +1309,7 @@ fn parse(text: &str) -> Option<SlotState> {
+         blending_gbc: blending_gbc
+             .or_else(|| legacy_blending(ghosting_gbc))
+             .unwrap_or(fallback.blending_gbc),
++        blending_gg: blending_gg.unwrap_or(fallback.blending_gg),
+         recents: Vec::new(),
+         favorites: Vec::new(),
+         shelf,
+@@ -1341,7 +1413,9 @@ mod core_screen_profiles_tests {
+         let original = std::fs::read_to_string(&path).unwrap();
+         let old = original
+             .lines()
+-            .filter(|line| !line.starts_with("shader_gb_mgba=") && !line.starts_with("gb_model_mgba="))
++            .filter(|line| {
++                !line.starts_with("shader_gb_mgba=") && !line.starts_with("gb_model_mgba=")
++            })
+             .collect::<Vec<_>>()
+             .join("\n");
+         std::fs::write(&path, old).unwrap();
+diff --git a/crates/slot-ui/src/bitmaps.rs b/crates/slot-ui/src/bitmaps.rs
+index e9967a8..e32008d 100644
+--- a/crates/slot-ui/src/bitmaps.rs
++++ b/crates/slot-ui/src/bitmaps.rs
+@@ -9,6 +9,7 @@ pub enum Mould {
+     Gba,
+     Notched,
+     Rounded,
++    GameGear,
+     #[cfg(feature = "nds")]
+     Ds,
+ }
+@@ -398,13 +399,17 @@ pub fn shell_asset(mould: Mould, clear: bool) -> &'static [u8] {
+     static GBA_CLEAR: OnceLock<Vec<u8>> = OnceLock::new();
+     static GB_CLEAR: OnceLock<Vec<u8>> = OnceLock::new();
+     static GBC_CLEAR: OnceLock<Vec<u8>> = OnceLock::new();
++    static GG: OnceLock<Vec<u8>> = OnceLock::new();
++    static GG_CLEAR: OnceLock<Vec<u8>> = OnceLock::new();
+     let (bytes, w, h, slot) = match (mould, clear) {
+         (Mould::Gba, false) => (GBA_SHELL_PNG, GBA_CART_W, GBA_CART_H, &GBA),
+         (Mould::Notched, false) => (GB_SHELL_PNG, GB_CART_W, GB_CART_H, &GB),
+         (Mould::Rounded, false) => (GBC_SHELL_PNG, GB_CART_W, GB_CART_H, &GBC),
++        (Mould::GameGear, false) => (GBC_SHELL_PNG, GB_CART_W, GB_CART_H, &GG),
+         (Mould::Gba, true) => (GBA_CLEAR_PNG, GBA_CART_W, GBA_CART_H, &GBA_CLEAR),
+         (Mould::Notched, true) => (GB_CLEAR_PNG, GB_CART_W, GB_CART_H, &GB_CLEAR),
+         (Mould::Rounded, true) => (GBC_CLEAR_PNG, GB_CART_W, GB_CART_H, &GBC_CLEAR),
++        (Mould::GameGear, true) => (GBC_CLEAR_PNG, GB_CART_W, GB_CART_H, &GG_CLEAR),
+         #[cfg(feature = "nds")]
+         (Mould::Ds, _) => return ds_cart(),
+     };
+diff --git a/crates/slot-ui/src/cart.rs b/crates/slot-ui/src/cart.rs
+index 76f6680..e123858 100644
+--- a/crates/slot-ui/src/cart.rs
++++ b/crates/slot-ui/src/cart.rs
+@@ -46,6 +46,10 @@ pub const GBC_LABEL_X: u32 = 45;
+ pub const GBC_LABEL_Y: u32 = 110;
+ pub const GBC_LABEL_W: u32 = 223;
+ pub const GBC_LABEL_H: u32 = 199;
++pub const GG_LABEL_X: u32 = 44;
++pub const GG_LABEL_Y: u32 = 95;
++pub const GG_LABEL_W: u32 = 223;
++pub const GG_LABEL_H: u32 = 199;
+ 
+ const PAD: u32 = 10;
+ const MAX_LINES: usize = 3;
+@@ -89,6 +93,7 @@ pub fn folder_gb_shell(cart: &Cart) -> Option<GbShell> {
+         Platform::Gba | Platform::Gbav => None,
+         #[cfg(feature = "nds")]
+         Platform::Nds => None,
++        Platform::Gg => Some(GbShell::GameGear),
+         Platform::Gb | Platform::Gbc => Some(match cart.shell.map(|c| c.outline) {
+             Some(Outline::Notched) => GbShell::Notched,
+             Some(Outline::Rounded) => GbShell::Rounded,
+@@ -109,6 +114,9 @@ pub fn shelf_shape(cart: &Cart) -> (Option<GbShell>, bool) {
+         None => folder_is_clear(cart),
+     };
+     let shell = crate::shell::indexed_shell(cart);
++    if cart.platform == Platform::Gg {
++        return (Some(GbShell::GameGear), clear(shell));
++    }
+     let outline = cart.shell.map(|c| c.outline);
+     let shape = match (cart.platform, outline) {
+         (Platform::Gba | Platform::Gbav, _) => None,
+@@ -130,6 +138,7 @@ pub fn gb_shell_of(cart: &Cart) -> Option<GbShell> {
+         Platform::Gba | Platform::Gbav => None,
+         #[cfg(feature = "nds")]
+         Platform::Nds => None,
++        Platform::Gg => Some(GbShell::GameGear),
+         Platform::Gb | Platform::Gbc => Some(match cart.shell.map(|c| c.outline) {
+             Some(Outline::Notched) => GbShell::Notched,
+             Some(Outline::Rounded) => GbShell::Rounded,
+@@ -197,15 +206,18 @@ fn spec(shape: Shape) -> Spec {
+             label: match shell {
+                 GbShell::Notched => (GB_LABEL_X, GB_LABEL_Y, GB_LABEL_W, GB_LABEL_H),
+                 GbShell::Rounded => (GBC_LABEL_X, GBC_LABEL_Y, GBC_LABEL_W, GBC_LABEL_H),
++                GbShell::GameGear => (GG_LABEL_X, GG_LABEL_Y, GG_LABEL_W, GG_LABEL_H),
+             },
+             mask: gb_cart_mask(shell),
+             mould: match shell {
+                 GbShell::Notched => Mould::Notched,
+                 GbShell::Rounded => Mould::Rounded,
++                GbShell::GameGear => Mould::GameGear,
+             },
+             paint: match shell {
+                 GbShell::Notched => bitmaps::gb_cart(),
+                 GbShell::Rounded => bitmaps::gbc_cart(),
++                GbShell::GameGear => bitmaps::gbc_cart(),
+             },
+         },
+         #[cfg(feature = "nds")]
+@@ -232,7 +244,7 @@ pub fn seated_box(platform: Platform) -> (u32, u32) {
+             (SEATED_H * bitmaps::DS_CART_W + bitmaps::DS_CART_H / 2) / bitmaps::DS_CART_H,
+             SEATED_H,
+         ),
+-        Platform::Gb | Platform::Gbc => (SEATED_W, GB_SEATED_H),
++        Platform::Gb | Platform::Gbc | Platform::Gg => (SEATED_W, GB_SEATED_H),
+     }
+ }
+ 
+@@ -242,6 +254,7 @@ pub fn cart_box(platform: Platform) -> (u32, u32) {
+         #[cfg(feature = "nds")]
+         Platform::Nds => Shape::Ds,
+         Platform::Gb | Platform::Gbc => Shape::Gb(GbShell::Notched),
++        Platform::Gg => Shape::Gb(GbShell::GameGear),
+     });
+     (s.w, s.h)
+ }
+@@ -289,6 +302,7 @@ pub fn cart_interior(cart: &Cart) -> CartFace {
+             let src = match shell {
+                 GbShell::Notched => bitmaps::gb_interior(),
+                 GbShell::Rounded => bitmaps::gbc_interior(),
++                GbShell::GameGear => bitmaps::gbc_interior(),
+             };
+             (src, s.w, s.h, Some(s.mask))
+         }
+@@ -503,6 +517,7 @@ pub fn neutral_shell(mould: Mould, clear: bool) -> Vec<u8> {
+         Mould::Gba => Shape::Gba,
+         Mould::Notched => Shape::Gb(GbShell::Notched),
+         Mould::Rounded => Shape::Gb(GbShell::Rounded),
++        Mould::GameGear => Shape::Gb(GbShell::GameGear),
+         #[cfg(feature = "nds")]
+         Mould::Ds => Shape::Ds,
+     };
+@@ -568,6 +583,7 @@ fn dress(s: &Spec, rgba: &mut [u8]) {
+         Mould::Gba => "GAME BOY ADVANCE",
+         Mould::Notched => "GAME BOY",
+         Mould::Rounded => "GAME BOY COLOR",
++        Mould::GameGear => "GAME GEAR",
+         #[cfg(feature = "nds")]
+         Mould::Ds => "NINTENDO DS",
+     };
+@@ -652,7 +668,10 @@ fn shell_face(s: &Spec, shell: &Shell) -> CartFace {
+ 
+ fn shell_face_of(s: &Spec, shell: &Shell, bare: bool) -> CartFace {
+     let clear = shell.finish != Finish::Solid;
+-    let src = bitmaps::shell_asset(s.mould, clear);
++    let generated = (s.mould == Mould::GameGear).then(|| neutral_shell(s.mould, clear));
++    let src = generated
++        .as_deref()
++        .unwrap_or_else(|| bitmaps::shell_asset(s.mould, clear));
+     assert_eq!(
+         src.len(),
+         (s.w * s.h * 4) as usize,
+diff --git a/crates/slot-ui/src/house_label.rs b/crates/slot-ui/src/house_label.rs
+index f58f686..307fa61 100644
+--- a/crates/slot-ui/src/house_label.rs
++++ b/crates/slot-ui/src/house_label.rs
+@@ -24,6 +24,10 @@ pub fn size(platform: Platform) -> (u32, u32) {
+         #[cfg(feature = "nds")]
+         Platform::Nds => (DS_W, DS_H),
+         Platform::Gb | Platform::Gbc => (GB_W, GB_H),
++        Platform::Gg => (
++            GB_W,
++            GB_W * crate::cart::GG_LABEL_H / crate::cart::GG_LABEL_W,
++        ),
+     }
+ }
+ 
+diff --git a/crates/slot-ui/src/keyboard.rs b/crates/slot-ui/src/keyboard.rs
+index 1fbc389..b36d5fb 100644
+--- a/crates/slot-ui/src/keyboard.rs
++++ b/crates/slot-ui/src/keyboard.rs
+@@ -52,7 +52,7 @@ pub struct Keyboard {
+     cursor: usize,
+     row: usize,
+     col: usize,
+-    shift: bool, // One character only.
++    shift: bool,     // One character only.
+     caps_lock: bool, // Persistent until Shift is pressed again.
+     symbols: bool,
+     help: bool,
+@@ -655,7 +655,11 @@ fn cap_face(kb: &Keyboard, cap: Cap, chosen: bool, key_w: u32) -> UndoFace {
+             }
+         }
+         None => {
+-            let label = if locked { "CAPS".to_string() } else { kb.label(cap) };
++            let label = if locked {
++                "CAPS".to_string()
++            } else {
++                kb.label(cap)
++            };
+             let px = match label.chars().count() {
+                 1 => CAP_PX,
+                 _ => WORD_PX,
+@@ -903,14 +907,16 @@ mod secret_input_test {
+         let (stars_face, stars_cursors) = keyboard_text_face(&stars);
+         assert_eq!(masked_face.rgba, stars_face.rgba);
+         assert_eq!(masked_cursors, stars_cursors);
+-        let (visible, _) = keyboard_text_face(
+-            &Keyboard::new(Layout::General, "Password", None, "Secret42")
+-        );
++        let (visible, _) = keyboard_text_face(&Keyboard::new(
++            Layout::General,
++            "Password",
++            None,
++            "Secret42",
++        ));
+         assert_ne!(visible.rgba, masked_face.rgba);
+     }
+ }
+ 
+-
+ #[cfg(test)]
+ mod select_keyboard_shift_tests {
+     use super::*;
+@@ -929,7 +935,8 @@ mod select_keyboard_shift_tests {
+     fn one_shot_shift_uses_white_arrow_until_character_entry() {
+         for layout in [Layout::General, Layout::Host] {
+             let mut kb = keyboard(layout);
+-            let face = |kb: &Keyboard, chosen| cap_face(kb, Cap::Special(Shift), chosen, KEY_W).rgba;
++            let face =
++                |kb: &Keyboard, chosen| cap_face(kb, Cap::Special(Shift), chosen, KEY_W).rgba;
+             let idle = face(&kb, false);
+             let white_arrow = face(&kb, true);
+             assert!(idle != white_arrow);
+diff --git a/crates/slot-ui/src/lib.rs b/crates/slot-ui/src/lib.rs
+index 8289a16..03da096 100644
+--- a/crates/slot-ui/src/lib.rs
++++ b/crates/slot-ui/src/lib.rs
+@@ -78,7 +78,8 @@ pub use cart::{
+     label_panel, label_size, label_tags, label_text, neutral_shell, seal_rect, seated_box,
+     shelf_shape, shows_interior, text_label, writes_by_hand, CartFace, HandReveal, CART_H, CART_W,
+     GBC_LABEL_H, GBC_LABEL_W, GBC_LABEL_X, GBC_LABEL_Y, GB_CART_H, GB_CART_W, GB_LABEL_H,
+-    GB_LABEL_W, GB_LABEL_X, GB_LABEL_Y, LABEL_H, LABEL_W, LABEL_WELL, LABEL_X, LABEL_Y,
++    GB_LABEL_W, GB_LABEL_X, GB_LABEL_Y, GG_LABEL_H, GG_LABEL_W, GG_LABEL_X, GG_LABEL_Y, LABEL_H,
++    LABEL_W, LABEL_WELL, LABEL_X, LABEL_Y,
+ };
+ #[cfg(feature = "nds")]
+ pub use cart::{DS_LABEL_H, DS_LABEL_W, DS_LABEL_X, DS_LABEL_Y};
+@@ -130,14 +131,15 @@ pub use polaroids::{
+ };
+ pub use power_menu::{heading_face, menu_detail_face, menu_face, PowerChoice, MENU_PAD};
+ pub use quick_menu::{
+-    add_legend, cheat_name_face, clock_legend_faces, core_button_legends, delete_legends,
+-    draw_menu_ground, fetch_choice_legends, fetch_legends, fetch_skip_legend, link_button_legends,
++    achievement_detail_face, achievement_page_window, add_legend, cheat_name_face,
++    clock_legend_faces, core_button_legends, delete_legends, draw_menu_ground,
++    fetch_choice_legends, fetch_legends, fetch_skip_legend, link_button_legends,
+     picking_legend_faces, print_stop_legend, prompt_legends, quick_description_face,
+     quick_label_face, quick_legend_faces, quick_placeholder_face, quick_pointer_face,
+     quick_row_top, quick_row_top_at, quick_scroll, quick_value_face, quick_warning_value_face,
+     quick_window, repair_legends, small_prompt_legends, studio_legend, update_legends,
+-    visible_rows, achievement_page_window, achievement_detail_face, AchievementPage, CheatPage, MenuGround, QuickMenu, QuickMenuFaces, QuickRow, QuickScroll,
+-    QuickValue, StudioGlyph, QUICK_EDGE, QUICK_LABEL_X, QUICK_PITCH, QUICK_VISIBLE,
++    visible_rows, AchievementPage, CheatPage, MenuGround, QuickMenu, QuickMenuFaces, QuickRow,
++    QuickScroll, QuickValue, StudioGlyph, QUICK_EDGE, QUICK_LABEL_X, QUICK_PITCH, QUICK_VISIBLE,
+ };
+ pub use rebuild::{headline_face, rebuild_count_face, rebuild_title_face, RebuildScreen};
+ pub use receipt::{receipt_blank, receipt_face, ReceiptText};
+diff --git a/crates/slot-ui/src/quick_menu.rs b/crates/slot-ui/src/quick_menu.rs
+index 24e42f4..0181998 100644
+--- a/crates/slot-ui/src/quick_menu.rs
++++ b/crates/slot-ui/src/quick_menu.rs
+@@ -32,6 +32,11 @@ pub enum QuickRow {
+     KidShelf,
+     WallpaperTint,
+     GbcShader,
++    GgShader,
++    GgOverlay,
++    GgBezel,
++    GgScale,
++    GgBlending,
+     GbcColourCorrection,
+     Resume,
+     States,
+@@ -51,6 +56,7 @@ pub enum QuickRow {
+     GbaBezel,
+     ScreenGbc,
+     ScreenGb,
++    ScreenGg,
+     General,
+     ShelfPrev,
+     ShelfNext,
+@@ -213,7 +219,7 @@ pub enum QuickRow {
+ }
+ 
+ impl QuickRow {
+-    pub const ALL: [QuickRow; 199 + cfg!(feature = "nds") as usize] = [
++    pub const ALL: [QuickRow; 205 + cfg!(feature = "nds") as usize] = [
+         QuickRow::FastForward,
+         QuickRow::FastForwardSound,
+         QuickRow::Screen,
+@@ -237,6 +243,11 @@ impl QuickRow {
+         QuickRow::KidShelf,
+         QuickRow::WallpaperTint,
+         QuickRow::GbcShader,
++        QuickRow::GgShader,
++        QuickRow::GgOverlay,
++        QuickRow::GgBezel,
++        QuickRow::GgScale,
++        QuickRow::GgBlending,
+         QuickRow::GbcColourCorrection,
+         QuickRow::Resume,
+         QuickRow::States,
+@@ -256,6 +267,7 @@ impl QuickRow {
+         QuickRow::GbaBezel,
+         QuickRow::ScreenGbc,
+         QuickRow::ScreenGb,
++        QuickRow::ScreenGg,
+         QuickRow::General,
+         QuickRow::ShelfPrev,
+         QuickRow::ShelfNext,
+@@ -611,11 +623,12 @@ impl QuickRow {
+         QuickRow::FixKidExit,
+     ];
+ 
+-    pub const SCREEN: [QuickRow; 4] = [
++    pub const SCREEN: [QuickRow; 5] = [
+         QuickRow::ScreenGeneral,
+         QuickRow::ScreenGba,
+         QuickRow::ScreenGbc,
+         QuickRow::ScreenGb,
++        QuickRow::ScreenGg,
+     ];
+ 
+     pub const SCREEN_GENERAL: [QuickRow; 4] = [
+@@ -646,6 +659,14 @@ impl QuickRow {
+         QuickRow::GbcStretch,
+     ];
+ 
++    pub const SCREEN_GG: [QuickRow; 5] = [
++        QuickRow::GgShader,
++        QuickRow::GgOverlay,
++        QuickRow::GgBlending,
++        QuickRow::GgBezel,
++        QuickRow::GgScale,
++    ];
++
+     pub const SCREEN_GB: [QuickRow; 10] = [
+         QuickRow::GbShader,
+         QuickRow::GbModel,
+@@ -719,7 +740,8 @@ impl QuickRow {
+             QuickRow::ScreenGeneral
+             | QuickRow::ScreenGba
+             | QuickRow::ScreenGbc
+-            | QuickRow::ScreenGb => &QuickRow::SCREEN,
++            | QuickRow::ScreenGb
++            | QuickRow::ScreenGg => &QuickRow::SCREEN,
+             QuickRow::Brightness
+             | QuickRow::BlueLight
+             | QuickRow::Saturation
+@@ -743,6 +765,11 @@ impl QuickRow {
+             | QuickRow::GbcReflection
+             | QuickRow::GbcScale
+             | QuickRow::GbcStretch => &QuickRow::SCREEN_GBC,
++            QuickRow::GgShader
++            | QuickRow::GgOverlay
++            | QuickRow::GgBlending
++            | QuickRow::GgBezel
++            | QuickRow::GgScale => &QuickRow::SCREEN_GG,
+             QuickRow::GbShader
+             | QuickRow::GbModel
+             | QuickRow::GbOverlay
+@@ -779,8 +806,11 @@ impl QuickRow {
+             | QuickRow::Nickname => &QuickRow::SYSTEM,
+             QuickRow::RetroAchievements | QuickRow::Cleanup => &QuickRow::NETWORK,
+             QuickRow::CleanupScan | QuickRow::CleanupDelete => &QuickRow::CLEANUP,
+-            QuickRow::RaAccount | QuickRow::RaStatus | QuickRow::RaPrepare
+-            | QuickRow::RaRetry | QuickRow::RaBackground => &QuickRow::RA,
++            QuickRow::RaAccount
++            | QuickRow::RaStatus
++            | QuickRow::RaPrepare
++            | QuickRow::RaRetry
++            | QuickRow::RaBackground => &QuickRow::RA,
+             QuickRow::WifiPower | QuickRow::Networks => &QuickRow::WIFI,
+             QuickRow::FetchArt | QuickRow::Romm | QuickRow::Server => &QuickRow::NETWORK,
+             #[cfg(feature = "nds")]
+@@ -798,13 +828,47 @@ impl QuickRow {
+             | QuickRow::Shortcuts
+             | QuickRow::ControlsInGame
+             | QuickRow::FixedShortcuts => &QuickRow::CONTROL_PAGES,
+-            QuickRow::FixedGlobal | QuickRow::FixedGame | QuickRow::FixedShelf | QuickRow::FixedCollections | QuickRow::FixedStates | QuickRow::FixedRecovery => &QuickRow::FIXED_CATEGORIES,
+-            QuickRow::FixVolumeUp | QuickRow::FixVolumeDown | QuickRow::FixMuteSelectUp | QuickRow::FixMuteSelectDown | QuickRow::FixMuteBoth | QuickRow::FixSleep | QuickRow::FixPowerOff => &QuickRow::FIXEDGLOBAL,
+-            QuickRow::FixGameMenu | QuickRow::FixStateSwitcher | QuickRow::FixExit | QuickRow::FixLink | QuickRow::FixFastLatch | QuickRow::FixFastRelease | QuickRow::FixGbStretch | QuickRow::FixGbOriginal | QuickRow::FixFastUnlatch | QuickRow::FixFastToggle => &QuickRow::FIXEDGAME,
+-            QuickRow::FixFresh | QuickRow::FixMultiselect | QuickRow::FixAddCollection | QuickRow::FixStudio | QuickRow::FixCorePicker => &QuickRow::FIXEDSHELF,
+-            QuickRow::FixRemoveFromCollection | QuickRow::FixMoveInCollection | QuickRow::FixMoveCollection => &QuickRow::FIXEDCOLLECTIONS,
+-            QuickRow::FixStatePrev | QuickRow::FixStateNext | QuickRow::FixStateLoad | QuickRow::FixStateDelete | QuickRow::FixStateUndo | QuickRow::FixStateBack => &QuickRow::FIXEDSTATES,
+-            QuickRow::FixRepair | QuickRow::FixAboutRestart | QuickRow::FixKidUnlock | QuickRow::FixKidExit => &QuickRow::FIXEDRECOVERY,
++            QuickRow::FixedGlobal
++            | QuickRow::FixedGame
++            | QuickRow::FixedShelf
++            | QuickRow::FixedCollections
++            | QuickRow::FixedStates
++            | QuickRow::FixedRecovery => &QuickRow::FIXED_CATEGORIES,
++            QuickRow::FixVolumeUp
++            | QuickRow::FixVolumeDown
++            | QuickRow::FixMuteSelectUp
++            | QuickRow::FixMuteSelectDown
++            | QuickRow::FixMuteBoth
++            | QuickRow::FixSleep
++            | QuickRow::FixPowerOff => &QuickRow::FIXEDGLOBAL,
++            QuickRow::FixGameMenu
++            | QuickRow::FixStateSwitcher
++            | QuickRow::FixExit
++            | QuickRow::FixLink
++            | QuickRow::FixFastLatch
++            | QuickRow::FixFastRelease
++            | QuickRow::FixGbStretch
++            | QuickRow::FixGbOriginal
++            | QuickRow::FixFastUnlatch
++            | QuickRow::FixFastToggle => &QuickRow::FIXEDGAME,
++            QuickRow::FixFresh
++            | QuickRow::FixMultiselect
++            | QuickRow::FixAddCollection
++            | QuickRow::FixStudio
++            | QuickRow::FixCorePicker => &QuickRow::FIXEDSHELF,
++            QuickRow::FixRemoveFromCollection
++            | QuickRow::FixMoveInCollection
++            | QuickRow::FixMoveCollection => &QuickRow::FIXEDCOLLECTIONS,
++            QuickRow::FixStatePrev
++            | QuickRow::FixStateNext
++            | QuickRow::FixStateLoad
++            | QuickRow::FixStateDelete
++            | QuickRow::FixStateUndo
++            | QuickRow::FixStateBack => &QuickRow::FIXEDSTATES,
++            QuickRow::FixRepair
++            | QuickRow::FixAboutRestart
++            | QuickRow::FixKidUnlock
++            | QuickRow::FixKidExit => &QuickRow::FIXEDRECOVERY,
+ 
+             QuickRow::Resume
+             | QuickRow::UndoSave
+@@ -847,6 +911,7 @@ impl QuickRow {
+             QuickRow::GbaShader => Some(QuickRow::ScreenGba),
+             QuickRow::GbcShader => Some(QuickRow::ScreenGbc),
+             QuickRow::GbShader => Some(QuickRow::ScreenGb),
++            QuickRow::GgShader => Some(QuickRow::ScreenGg),
+             QuickRow::FastForward => Some(QuickRow::Game),
+             QuickRow::PlayScreen => Some(QuickRow::Settings),
+             QuickRow::Shader => Some(QuickRow::PlayScreen),
+@@ -930,6 +995,7 @@ impl QuickRow {
+             QuickRow::ScreenGba => Some(QuickRow::SCREEN_GBA[0]),
+             QuickRow::ScreenGbc => Some(QuickRow::SCREEN_GBC[0]),
+             QuickRow::ScreenGb => Some(QuickRow::SCREEN_GB[0]),
++            QuickRow::ScreenGg => Some(QuickRow::SCREEN_GG[0]),
+             _ => None,
+         }
+     }
+@@ -970,7 +1036,7 @@ impl QuickRow {
+             QuickRow::CleanupDelete => "Clean Detected Files",
+             QuickRow::GbaShader => "Shader",
+             QuickRow::GbShader => "Shader",
+-            QuickRow::GbcShader => "Shader",
++            QuickRow::GbcShader | QuickRow::GgShader => "Shader",
+             QuickRow::GbaColourCorrection => "Color Correction",
+             QuickRow::GbColourCorrection => "Color Correction",
+             QuickRow::GbcColourCorrection => "Color Correction",
+@@ -1075,7 +1141,6 @@ impl QuickRow {
+             QuickRow::FixKidUnlock => "Kid unlock (boot)",
+             QuickRow::FixKidExit => "Kid Mode: Exit Game",
+ 
+-
+             QuickRow::GameUp
+             | QuickRow::GameDown
+             | QuickRow::GameLeft
+@@ -1121,15 +1186,19 @@ impl QuickRow {
+             QuickRow::ScreenGba => "Game Boy Advance",
+             QuickRow::ScreenGbc => "Game Boy Color",
+             QuickRow::ScreenGb => "Game Boy",
++            QuickRow::ScreenGg => "Game Gear",
+             QuickRow::GbBezel => "Bezel",
+-            QuickRow::GbcBezel => "Bezel",
+-            QuickRow::GbaScale | QuickRow::GbScale | QuickRow::GbcScale | QuickRow::Scale => {
+-                "Scale"
+-            }
++            QuickRow::GbcBezel | QuickRow::GgBezel => "Bezel",
++            QuickRow::GbaScale
++            | QuickRow::GbScale
++            | QuickRow::GbcScale
++            | QuickRow::GgScale
++            | QuickRow::Scale => "Scale",
+             QuickRow::GbStretch | QuickRow::GbcStretch | QuickRow::Stretch => "Stretch",
+             QuickRow::GbaBlending
+             | QuickRow::GbcBlending
+             | QuickRow::GbBlending
++            | QuickRow::GgBlending
+             | QuickRow::Blending => "Frame Blending",
+             QuickRow::GbaBezel => "Bezel",
+             QuickRow::Bezel => "Bezel",
+@@ -1137,6 +1206,7 @@ impl QuickRow {
+             QuickRow::GbaOverlay
+             | QuickRow::GbOverlay
+             | QuickRow::GbcOverlay
++            | QuickRow::GgOverlay
+             | QuickRow::Overlay => "Overlay",
+             QuickRow::GbaReflection
+             | QuickRow::GbReflection
+@@ -1193,6 +1263,7 @@ impl QuickRow {
+                 | QuickRow::ScreenGba
+                 | QuickRow::ScreenGbc
+                 | QuickRow::ScreenGb
++                | QuickRow::ScreenGg
+                 | QuickRow::ScreenGeneral
+                 | QuickRow::Network
+                 | QuickRow::Wifi
+@@ -2114,10 +2185,12 @@ pub struct QuickMenu<'a> {
+     pub gba_bezel: Option<[(TexId, u32, u32); 2]>,
+     pub gb_bezel: Option<[(TexId, u32, u32); 2]>,
+     pub gbc_bezel: Option<[(TexId, u32, u32); 2]>,
++    pub gg_bezel: Option<[(TexId, u32, u32); 2]>,
+     pub bezel: Option<[(TexId, u32, u32); 2]>,
+     pub gba_overlay: Option<[(TexId, u32, u32); 2]>,
+     pub gb_overlay: Option<[(TexId, u32, u32); 2]>,
+     pub gbc_overlay: Option<[(TexId, u32, u32); 2]>,
++    pub gg_overlay: Option<[(TexId, u32, u32); 2]>,
+     pub overlay: Option<[(TexId, u32, u32); 2]>,
+     pub bound: Option<&'a [Option<FacePair>]>,
+     pub description: Option<(TexId, u32, u32)>,
+@@ -2215,10 +2288,12 @@ impl QuickMenu<'_> {
+                 QuickRow::GbaBezel => self.gba_bezel.map(|c| c[lit as usize]),
+                 QuickRow::GbBezel => self.gb_bezel.map(|c| c[lit as usize]),
+                 QuickRow::GbcBezel => self.gbc_bezel.map(|c| c[lit as usize]),
++                QuickRow::GgBezel => self.gg_bezel.map(|c| c[lit as usize]),
+                 QuickRow::Bezel => self.bezel.map(|c| c[lit as usize]),
+                 QuickRow::GbaOverlay => self.gba_overlay.map(|c| c[lit as usize]),
+                 QuickRow::GbOverlay => self.gb_overlay.map(|c| c[lit as usize]),
+                 QuickRow::GbcOverlay => self.gbc_overlay.map(|c| c[lit as usize]),
++                QuickRow::GgOverlay => self.gg_overlay.map(|c| c[lit as usize]),
+                 QuickRow::Overlay => self.overlay.map(|c| c[lit as usize]),
+                 // Read-only values reuse the existing text-face cache but
+                 // deliberately have no Shortcut or binding API.
+@@ -2241,8 +2316,7 @@ impl QuickMenu<'_> {
+             // Only on the read-only reference: never enforce the normal
+             // 60% minimum when it would cause the two columns to collide.
+             let s = if row.fixed_keys().is_some() {
+-                (room.max(0.0) / (w as f32 - pad).max(1.0))
+-                    .clamp(0.0, 0.8)
++                (room.max(0.0) / (w as f32 - pad).max(1.0)).clamp(0.0, 0.8)
+             } else {
+                 (room / (w as f32 - 2.0 * pad)).clamp(VALUE_MIN_SCALE, 1.0)
+             };
+@@ -2347,7 +2421,11 @@ fn row_name_offset(overflow: f32, elapsed_ms: u64) -> f32 {
+     let leg_ms = travel_ms + PAUSE_MS;
+     let within = elapsed_ms as f32 % (2.0 * leg_ms);
+     let distance = ((within % leg_ms - PAUSE_MS) * PIXELS_PER_MS).clamp(0.0, overflow);
+-    if within < leg_ms { distance } else { overflow - distance }
++    if within < leg_ms {
++        distance
++    } else {
++        overflow - distance
++    }
+ }
+ 
+ fn push_scroll(out: &mut Vec<Draw>, canvas: Canvas, bar: QuickScroll) {
+@@ -2377,10 +2455,18 @@ pub fn cheat_name_face(name: &str, lit: bool) -> UndoFace {
+     let Some(font) = text::label_font() else {
+         return quick_text_face(name, colour);
+     };
+-    let line = name.to_uppercase().split_whitespace().collect::<Vec<_>>().join(" ");
++    let line = name
++        .to_uppercase()
++        .split_whitespace()
++        .collect::<Vec<_>>()
++        .join(" ");
+     let tracking = text::tracking_for(MENU_PX);
+     let ink = text::line_width(font, &line, MENU_PX, tracking);
+-    let layout = text::Layout { lines: vec![line], px: MENU_PX, tracking };
++    let layout = text::Layout {
++        lines: vec![line],
++        px: MENU_PX,
++        tracking,
++    };
+     let w = ink.ceil() as u32 + 2 * MENU_PAD;
+     let mut rgba = vec![0; (w * MENU_H * 4) as usize];
+     text::draw_centred(&mut rgba, w, MENU_H, &layout, colour);
+@@ -2405,11 +2491,11 @@ pub struct AchievementPage<'a> {
+     pub selected: usize,
+     pub selected_elapsed_ms: u64,
+     pub total: usize,
+-    pub names: &'a [[(TexId,u32,u32); 2]],
+-    pub values: &'a [[(TexId,u32,u32); 2]],
+-    pub badges: &'a [Option<(TexId,u32,u32)>],
+-    pub header: Option<(TexId,u32,u32)>,
+-    pub detail: Option<(TexId,u32,u32)>,
++    pub names: &'a [[(TexId, u32, u32); 2]],
++    pub values: &'a [[(TexId, u32, u32); 2]],
++    pub badges: &'a [Option<(TexId, u32, u32)>],
++    pub header: Option<(TexId, u32, u32)>,
++    pub detail: Option<(TexId, u32, u32)>,
+     pub faces: Option<&'a QuickMenuFaces>,
+     pub footer_top: f32,
+     pub canvas: Canvas,
+@@ -2418,8 +2504,11 @@ pub struct AchievementPage<'a> {
+ impl AchievementPage<'_> {
+     pub fn draw(&self, out: &mut Vec<Draw>) {
+         out.push(Draw::Rect {
+-            x: 0.0, y: 0.0, w: self.canvas.w, h: self.footer_top,
+-            colour: [0.0,0.0,0.0,GROUND_SCRIM],
++            x: 0.0,
++            y: 0.0,
++            w: self.canvas.w,
++            h: self.footer_top,
++            colour: [0.0, 0.0, 0.0, GROUND_SCRIM],
+         });
+         let count = self.total;
+         let (start, len) = achievement_page_window(self.selected, count);
+@@ -2434,32 +2523,51 @@ impl AchievementPage<'_> {
+             let local = i - start;
+             // The frontend uploads exactly the visible window; never index an
+             // off-screen achievement through a bounded texture cache.
+-            let (Some(names), Some(values)) = (self.names.get(local), self.values.get(local)) else {
++            let (Some(names), Some(values)) = (self.names.get(local), self.values.get(local))
++            else {
+                 break;
+             };
+             let y = top + pitch * local as f32 + TYPE_DROP;
+             let lit = i == self.selected;
+-            if let Some(Some((tex,_,_))) = self.badges.get(local) {
+-                push(out,*tex, QUICK_LABEL_X - 32.0, y+1.0,24,24);
++            if let Some(Some((tex, _, _))) = self.badges.get(local) {
++                push(out, *tex, QUICK_LABEL_X - 32.0, y + 1.0, 24, 24);
+             }
+             let (tex, w, h) = values[lit as usize];
+             let value_x = right + MENU_PAD as f32 - w as f32;
+             push_scrolling_name(
+-                out, faces, names[lit as usize], QUICK_LABEL_X + 8.0, y,
++                out,
++                faces,
++                names[lit as usize],
++                QUICK_LABEL_X + 8.0,
++                y,
+                 value_x + MENU_PAD as f32 - QUICK_VALUE_GAP,
+-                lit.then_some(if self.detail.is_some() { 0 } else { self.selected_elapsed_ms }),
++                lit.then_some(if self.detail.is_some() {
++                    0
++                } else {
++                    self.selected_elapsed_ms
++                }),
+             );
+             push(out, tex, value_x, y, w, h);
+         }
+         if let Some(bar) = scroll_bar_with_pitch(top, len, count, self.selected, pitch) {
+-            push_scroll(out,self.canvas,bar);
++            push_scroll(out, self.canvas, bar);
+         }
+-        if let Some((tex,w,h)) = self.detail {
+-            out.push(Draw::Rect {x: 0.0,y: self.canvas.h*0.19,
+-                w: self.canvas.w,h: self.canvas.h*0.55,
+-                colour: [0.0,0.0,0.0,0.95]});
+-            push(out,tex,self.canvas.centred(w as f32),
+-                self.canvas.h*0.43-h as f32/2.0,w,h);
++        if let Some((tex, w, h)) = self.detail {
++            out.push(Draw::Rect {
++                x: 0.0,
++                y: self.canvas.h * 0.19,
++                w: self.canvas.w,
++                h: self.canvas.h * 0.55,
++                colour: [0.0, 0.0, 0.0, 0.95],
++            });
++            push(
++                out,
++                tex,
++                self.canvas.centred(w as f32),
++                self.canvas.h * 0.43 - h as f32 / 2.0,
++                w,
++                h,
++            );
+         }
+     }
+ }
+@@ -2496,14 +2604,21 @@ impl CheatPage<'_> {
+         for i in start..start + len {
+             let y = top + QUICK_PITCH * (i - start) as f32 + TYPE_DROP;
+             let lit = i == self.selected;
+-            let value = faces.values.get(QuickValue::flag(self.on[i]).index())
++            let value = faces
++                .values
++                .get(QuickValue::flag(self.on[i]).index())
+                 .map(|pair| pair[lit as usize]);
+             let name_right = value.map_or(right, |(_, w, _)| {
+                 right + 2.0 * MENU_PAD as f32 - w as f32 - QUICK_VALUE_GAP
+             });
+             push_scrolling_name(
+-                out, faces, self.names[i][lit as usize], QUICK_LABEL_X - MENU_PAD as f32,
+-                y, name_right, lit.then_some(self.selected_elapsed_ms),
++                out,
++                faces,
++                self.names[i][lit as usize],
++                QUICK_LABEL_X - MENU_PAD as f32,
++                y,
++                name_right,
++                lit.then_some(self.selected_elapsed_ms),
+             );
+             if let Some((tex, w, h)) = value {
+                 push(out, tex, right + MENU_PAD as f32 - w as f32, y, w, h);
+@@ -2682,7 +2797,13 @@ fn scroll_bar(y: f32, len: usize, count: usize, at: usize) -> Option<QuickScroll
+     scroll_bar_with_pitch(y, len, count, at, QUICK_PITCH)
+ }
+ 
+-fn scroll_bar_with_pitch(y: f32, len: usize, count: usize, at: usize, pitch: f32) -> Option<QuickScroll> {
++fn scroll_bar_with_pitch(
++    y: f32,
++    len: usize,
++    count: usize,
++    at: usize,
++    pitch: f32,
++) -> Option<QuickScroll> {
+     if len >= count {
+         return None;
+     }
+@@ -2697,15 +2818,20 @@ fn scroll_bar_with_pitch(y: f32, len: usize, count: usize, at: usize, pitch: f32
+     })
+ }
+ 
+-
+ #[cfg(test)]
+ mod select_ra_menu_tests {
+     use super::QuickRow;
+ 
+     #[test]
+     fn ra_submenu_is_reachable_and_b_returns_to_tools() {
+-        assert_eq!(QuickRow::RetroAchievements.child(), Some(QuickRow::RaAccount));
+-        assert_eq!(QuickRow::RaAccount.parent(), Some(QuickRow::RetroAchievements));
++        assert_eq!(
++            QuickRow::RetroAchievements.child(),
++            Some(QuickRow::RaAccount)
++        );
++        assert_eq!(
++            QuickRow::RaAccount.parent(),
++            Some(QuickRow::RetroAchievements)
++        );
+         assert_eq!(QuickRow::RaBackground.page(), &QuickRow::RA);
+         assert_eq!(QuickRow::RetroAchievements.page(), &QuickRow::NETWORK);
+         assert!(QuickRow::RaPrepare.opens());
+@@ -2713,7 +2839,6 @@ mod select_ra_menu_tests {
+     }
+ }
+ 
+-
+ #[cfg(test)]
+ mod menu_viewport_tests {
+     use super::*;
+@@ -2726,16 +2851,27 @@ mod menu_viewport_tests {
+             Canvas { w: 800.0, h: 600.0 },
+         ] {
+             for row in QuickRow::ALL {
+-                let page=row.page();
+-                let shown=row.shown(&[]);
+-                let (start,len)=quick_window(canvas,row,&[]);
+-                let fit=visible(canvas,page);
+-                assert!(len<=fit,"{:?} shows {len} rows with a limit of {fit}",row);
+-                assert!(start+len<=shown.len(),"page window out of bounds: {:?}",row);
++                let page = row.page();
++                let shown = row.shown(&[]);
++                let (start, len) = quick_window(canvas, row, &[]);
++                let fit = visible(canvas, page);
++                assert!(
++                    len <= fit,
++                    "{:?} shows {len} rows with a limit of {fit}",
++                    row
++                );
++                assert!(
++                    start + len <= shown.len(),
++                    "page window out of bounds: {:?}",
++                    row
++                );
+                 if !shown.is_empty() {
+-                    let selected=row.position(&[]);
+-                    assert!(start<=selected && selected<start+len,
+-                        "{:?} must stay visible while scrolling",row);
++                    let selected = row.position(&[]);
++                    assert!(
++                        start <= selected && selected < start + len,
++                        "{:?} must stay visible while scrolling",
++                        row
++                    );
+                 }
+             }
+         }
+@@ -2743,34 +2879,42 @@ mod menu_viewport_tests {
+ 
+     #[test]
+     fn seven_row_main_and_long_in_game_menu_keep_last_entry_clear_of_footer() {
+-        let canvas=Canvas::FRAMED;
+-        let main=QuickRow::Restart;
+-        let (start,len)=quick_window(canvas,main,&[]);
+-        assert_eq!(QuickRow::MAIN.len(),7);
+-        assert_eq!(len,QUICK_VISIBLE);
+-        assert_eq!(start,1);
+-        for row in [QuickRow::Restart, QuickRow::ExitGame, QuickRow::GbStretch,
+-                    QuickRow::GbcStretch, QuickRow::RommDisconnect] {
+-            let (start,len)=quick_window(canvas,row,&[]);
+-            assert_eq!(len,QUICK_VISIBLE,"{:?} should scroll",row);
+-            let shown=row.shown(&[]);
+-            let top=quick_row_top_at(canvas,shown[start],row,&[]);
+-            let last_y=top+QUICK_PITCH*(len-1) as f32+TYPE_DROP;
+-            assert!(last_y + MENU_H as f32 <= legend_y(canvas) - 18.0,
+-                "{:?} overlaps lower chrome (bottom {})",row,last_y+MENU_H as f32);
++        let canvas = Canvas::FRAMED;
++        let main = QuickRow::Restart;
++        let (start, len) = quick_window(canvas, main, &[]);
++        assert_eq!(QuickRow::MAIN.len(), 7);
++        assert_eq!(len, QUICK_VISIBLE);
++        assert_eq!(start, 1);
++        for row in [
++            QuickRow::Restart,
++            QuickRow::ExitGame,
++            QuickRow::GbStretch,
++            QuickRow::GbcStretch,
++            QuickRow::RommDisconnect,
++        ] {
++            let (start, len) = quick_window(canvas, row, &[]);
++            assert_eq!(len, QUICK_VISIBLE, "{:?} should scroll", row);
++            let shown = row.shown(&[]);
++            let top = quick_row_top_at(canvas, shown[start], row, &[]);
++            let last_y = top + QUICK_PITCH * (len - 1) as f32 + TYPE_DROP;
++            assert!(
++                last_y + MENU_H as f32 <= legend_y(canvas) - 18.0,
++                "{:?} overlaps lower chrome (bottom {})",
++                row,
++                last_y + MENU_H as f32
++            );
+         }
+     }
+ 
+     #[test]
+     fn shorter_pages_remain_unscrolled_and_in_game_screen_keeps_three_rows() {
+-        let canvas=Canvas::FRAMED;
+-        assert_eq!(quick_window(canvas,QuickRow::WifiPower,&[]),(0,2));
+-        assert_eq!(quick_window(canvas,QuickRow::PlayScreen,&[]),(0,3));
+-        assert_eq!(quick_window(canvas,QuickRow::PlayContrast,&[]).1,3);
++        let canvas = Canvas::FRAMED;
++        assert_eq!(quick_window(canvas, QuickRow::WifiPower, &[]), (0, 2));
++        assert_eq!(quick_window(canvas, QuickRow::PlayScreen, &[]), (0, 3));
++        assert_eq!(quick_window(canvas, QuickRow::PlayContrast, &[]).1, 3);
+     }
+ }
+ 
+-
+ #[cfg(test)]
+ mod achievement_viewport_burst_tests {
+     use super::*;
+@@ -2807,7 +2951,7 @@ mod achievement_viewport_burst_tests {
+ 
+ #[cfg(test)]
+ mod fixed_shortcut_reference_tests {
+-    use super::{QuickRow, Canvas, quick_window};
++    use super::{quick_window, Canvas, QuickRow};
+     #[test]
+     fn every_fixed_shortcut_is_read_only_and_has_its_own_menu_route() {
+         for row in QuickRow::ALL {
+@@ -2821,8 +2965,14 @@ mod fixed_shortcut_reference_tests {
+             }
+         }
+         assert_eq!(QuickRow::FixedShortcuts.parent(), Some(QuickRow::Controls));
+-        assert_eq!(QuickRow::FixedGlobal.parent(), Some(QuickRow::FixedShortcuts));
+-        assert_eq!(QuickRow::FixMuteSelectUp.parent(), Some(QuickRow::FixedGlobal));
++        assert_eq!(
++            QuickRow::FixedGlobal.parent(),
++            Some(QuickRow::FixedShortcuts)
++        );
++        assert_eq!(
++            QuickRow::FixMuteSelectUp.parent(),
++            Some(QuickRow::FixedGlobal)
++        );
+         assert_eq!(QuickRow::FixLink.parent(), Some(QuickRow::FixedGame));
+     }
+ 
+@@ -2837,7 +2987,6 @@ mod fixed_shortcut_reference_tests {
+     }
+ }
+ 
+-
+ #[cfg(test)]
+ mod fixed_reference_plain_language_tests {
+     use super::QuickRow;
+@@ -2846,19 +2995,29 @@ mod fixed_reference_plain_language_tests {
+     fn the_fixed_guide_avoids_unexplained_key_abbreviations() {
+         for row in QuickRow::ALL {
+             let label = row.label();
+-            let Some(value) = row.fixed_keys() else { continue };
++            let Some(value) = row.fixed_keys() else {
++                continue;
++            };
+             for unclear in ["SEL+", "HOLD SEL", "VOL+", "VOL-", "2x", "FF KEY", "GB/C"] {
+-                assert!(!value.contains(unclear), "{row:?} has unclear value {value}");
+-                assert!(!label.contains(unclear), "{row:?} has unclear label {label}");
++                assert!(
++                    !value.contains(unclear),
++                    "{row:?} has unclear value {value}"
++                );
++                assert!(
++                    !label.contains(unclear),
++                    "{row:?} has unclear label {label}"
++                );
+             }
+         }
+-        assert_eq!(QuickRow::FixMuteSelectUp.fixed_keys(), Some("SELECT + VOLUME UP/DOWN"));
++        assert_eq!(
++            QuickRow::FixMuteSelectUp.fixed_keys(),
++            Some("SELECT + VOLUME UP/DOWN")
++        );
+         assert_eq!(QuickRow::FixMuteBoth.fixed_keys(), Some("VOLUME UP + DOWN"));
+         assert_eq!(QuickRow::FixStateSwitcher.fixed_keys(), Some("MENU TWICE"));
+     }
+ }
+ 
+-
+ #[cfg(test)]
+ mod source_verified_hotkey_guide_tests {
+     use super::QuickRow;
+@@ -2881,7 +3040,10 @@ mod source_verified_hotkey_guide_tests {
+     #[test]
+     fn recoveries_and_contextual_controls_are_reachable() {
+         assert!(QuickRow::FIXED_CATEGORIES.contains(&QuickRow::FixedRecovery));
+-        assert_eq!(QuickRow::FixedRecovery.parent(), Some(QuickRow::FixedShortcuts));
++        assert_eq!(
++            QuickRow::FixedRecovery.parent(),
++            Some(QuickRow::FixedShortcuts)
++        );
+         assert_eq!(QuickRow::FixRepair.parent(), Some(QuickRow::FixedRecovery));
+         assert_eq!(QuickRow::FixStudio.parent(), Some(QuickRow::FixedShelf));
+         assert_eq!(QuickRow::FixFastToggle.parent(), Some(QuickRow::FixedGame));
+@@ -2892,13 +3054,18 @@ mod source_verified_hotkey_guide_tests {
+     #[test]
+     fn physical_shortcuts_do_not_claim_the_wrong_feature() {
+         assert_eq!(QuickRow::FixStateSwitcher.label(), "Save states");
+-        assert_eq!(QuickRow::FixAboutRestart.fixed_keys(), Some("SELECT + START"));
++        assert_eq!(
++            QuickRow::FixAboutRestart.fixed_keys(),
++            Some("SELECT + START")
++        );
+         assert_eq!(QuickRow::FixRepair.fixed_keys(), Some("SELECT + START"));
+-        assert!(QuickRow::FixGbStretch.fixed_keys().unwrap().contains("IF FREE"));
++        assert!(QuickRow::FixGbStretch
++            .fixed_keys()
++            .unwrap()
++            .contains("IF FREE"));
+     }
+ }
+ 
+-
+ #[cfg(test)]
+ mod compact_guide_layout_tests {
+     use super::*;
+@@ -2911,16 +3078,22 @@ mod compact_guide_layout_tests {
+             let pad = MENU_PAD as f32;
+             let right = canvas_width - QUICK_EDGE;
+             let x = QUICK_LABEL_X - pad;
+-            for (label_ink, value_ink) in [(180.0, 340.0), (450.0, 380.0),
+-                                            (900.0, 650.0), (230.0, 590.0)] {
++            for (label_ink, value_ink) in [
++                (180.0, 340.0),
++                (450.0, 380.0),
++                (900.0, 650.0),
++                (230.0, 590.0),
++            ] {
+                 let label_texture = label_ink + 2.0 * pad;
+                 let scale = ((canvas_width * 0.35).min(240.0) / label_ink).min(0.8);
+                 let label_end = x + (label_texture - pad) * scale;
+                 let room = (right - label_end - QUICK_VALUE_GAP).max(0.0);
+                 let value_scale = (room / (value_ink + pad)).min(0.8);
+                 let value_left = right - (value_ink + pad) * value_scale;
+-                assert!(label_end + QUICK_VALUE_GAP <= value_left + 1.0,
+-                    "reference columns touch on {canvas_width}px");
++                assert!(
++                    label_end + QUICK_VALUE_GAP <= value_left + 1.0,
++                    "reference columns touch on {canvas_width}px"
++                );
+             }
+         }
+     }
+@@ -2940,7 +3113,10 @@ mod scrolling_name_tests {
+ 
+     #[test]
+     fn full_name_is_rasterized_beyond_the_row_width() {
+-        let face = cheat_name_face("A long cheat or achievement name with enough words to overflow", true);
++        let face = cheat_name_face(
++            "A long cheat or achievement name with enough words to overflow",
++            true,
++        );
+         assert!(face.w > 640);
+     }
+ 
+diff --git a/crates/slot-ui/src/shelf.rs b/crates/slot-ui/src/shelf.rs
+index 2277f91..155f1c8 100644
+--- a/crates/slot-ui/src/shelf.rs
++++ b/crates/slot-ui/src/shelf.rs
+@@ -44,7 +44,7 @@ pub fn box_size(platform: Platform) -> (u32, u32) {
+         Platform::Gba | Platform::Gbav => (318, 282),
+         #[cfg(feature = "nds")]
+         Platform::Nds => (318, 282),
+-        Platform::Gb | Platform::Gbc => (312, 277),
++        Platform::Gb | Platform::Gbc | Platform::Gg => (312, 277),
+     }
+ }
+ 
+@@ -75,9 +75,11 @@ pub struct Shelf {
+     shadow: Option<TexId>,
+     gb_shadow: Option<TexId>,
+     gbc_shadow: Option<TexId>,
++    gamegear_shadow: Option<TexId>,
+     backing: Option<TexId>,
+     gb_backing: Option<TexId>,
+     gbc_backing: Option<TexId>,
++    gamegear_backing: Option<TexId>,
+     hearted: Vec<bool>,
+     heart: Option<(TexId, f32, f32)>,
+     // Seconds since each cart was sealed, while its glint plays.
+@@ -105,9 +107,11 @@ impl Shelf {
+             shadow: None,
+             gb_shadow: None,
+             gbc_shadow: None,
++            gamegear_shadow: None,
+             backing: None,
+             gb_backing: None,
+             gbc_backing: None,
++            gamegear_backing: None,
+             ride: 0.0,
+             vel: 0.0,
+             held: None,
+@@ -162,9 +166,11 @@ impl Shelf {
+             shadow: self.shadow,
+             gb_shadow: self.gb_shadow,
+             gbc_shadow: self.gbc_shadow,
++            gamegear_shadow: self.gamegear_shadow,
+             backing: self.backing,
+             gb_backing: self.gb_backing,
+             gbc_backing: self.gbc_backing,
++            gamegear_backing: self.gamegear_backing,
+             heart: self.heart,
+             ..Shelf::new(Vec::new())
+         }
+@@ -237,6 +243,7 @@ impl Shelf {
+         match shell {
+             GbShell::Notched => self.gb_shadow = Some(face),
+             GbShell::Rounded => self.gbc_shadow = Some(face),
++            GbShell::GameGear => self.gamegear_shadow = Some(face),
+         }
+     }
+ 
+@@ -248,6 +255,7 @@ impl Shelf {
+         match shell {
+             GbShell::Notched => self.gb_backing = Some(face),
+             GbShell::Rounded => self.gbc_backing = Some(face),
++            GbShell::GameGear => self.gamegear_backing = Some(face),
+         }
+     }
+ 
+@@ -320,6 +328,7 @@ impl Shelf {
+             None => self.backing,
+             Some(GbShell::Notched) => self.gb_backing,
+             Some(GbShell::Rounded) => self.gbc_backing,
++            Some(GbShell::GameGear) => self.gamegear_backing,
+         };
+         [self.interiors.get(i).copied().flatten(), board]
+     }
+@@ -557,6 +566,7 @@ impl Shelf {
+                 None => self.backing,
+                 Some(GbShell::Notched) => self.gb_backing,
+                 Some(GbShell::Rounded) => self.gbc_backing,
++                Some(GbShell::GameGear) => self.gamegear_backing,
+             };
+             let gba = self.shell(i).is_none();
+             // A GBA cart's board and back shell fill the cart's box, exactly where the
+@@ -756,6 +766,7 @@ impl Shelf {
+                     None => self.shadow,
+                     Some(GbShell::Notched) => self.gb_shadow,
+                     Some(GbShell::Rounded) => self.gbc_shadow,
++                    Some(GbShell::GameGear) => self.gamegear_shadow,
+                 };
+                 if let Some(tex) = backing {
+                     out.push(Draw::Tex {
+diff --git a/crates/slot-ui/src/shell.rs b/crates/slot-ui/src/shell.rs
+index 6c7b92b..c9578d4 100644
+--- a/crates/slot-ui/src/shell.rs
++++ b/crates/slot-ui/src/shell.rs
+@@ -84,7 +84,7 @@ pub fn shell_for(cart: &Cart) -> Shell {
+         Platform::Gba | Platform::Gbav => gba_shell_for(&gba_code(cart)),
+         #[cfg(feature = "nds")]
+         Platform::Nds => gba_shell_for(""),
+-        Platform::Gb | Platform::Gbc => gb_shell_for(&cart.rom),
++        Platform::Gb | Platform::Gbc | Platform::Gg => gb_shell_for(&cart.rom),
+     }
+ }
+ 
+@@ -99,8 +99,10 @@ pub fn indexed_shell(cart: &Cart) -> Option<Shell> {
+         },
+         #[cfg(feature = "nds")]
+         Platform::Nds => None,
+-        Platform::Gb | Platform::Gbc => slot_store::header_index::peek_gb_header(&cart.rom)
+-            .map(|h| gb_shell_from(h.as_ref(), &cart.rom)),
++        Platform::Gb | Platform::Gbc | Platform::Gg => {
++            slot_store::header_index::peek_gb_header(&cart.rom)
++                .map(|h| gb_shell_from(h.as_ref(), &cart.rom))
++        }
+     }
+ }
+ 
+diff --git a/crates/slot-ui/src/silhouette.rs b/crates/slot-ui/src/silhouette.rs
+index 9595e26..f806d37 100644
+--- a/crates/slot-ui/src/silhouette.rs
++++ b/crates/slot-ui/src/silhouette.rs
+@@ -7,6 +7,7 @@ use crate::cart::{CART_H, CART_W, GB_CART_H, GB_CART_W};
+ pub enum GbShell {
+     Notched,
+     Rounded,
++    GameGear,
+ }
+ 
+ pub fn silhouette(w: u32, h: u32) -> Vec<u8> {
+@@ -14,9 +15,13 @@ pub fn silhouette(w: u32, h: u32) -> Vec<u8> {
+ }
+ 
+ pub fn gb_silhouette(shell: GbShell, w: u32, h: u32) -> Vec<u8> {
++    if shell == GbShell::GameGear {
++        return gamegear_silhouette(w, h);
++    }
+     let src = match shell {
+         GbShell::Notched => bitmaps::gb_cart(),
+         GbShell::Rounded => bitmaps::gbc_cart(),
++        GbShell::GameGear => unreachable!(),
+     };
+     alpha(src, w, h)
+ }
+@@ -37,6 +42,47 @@ pub(crate) fn gb_cart_mask(shell: GbShell) -> &'static [u8] {
+     let lock = match shell {
+         GbShell::Notched => &NOTCHED,
+         GbShell::Rounded => &ROUNDED,
++        GbShell::GameGear => {
++            static GAME_GEAR: OnceLock<Vec<u8>> = OnceLock::new();
++            return GAME_GEAR.get_or_init(|| gamegear_silhouette(GB_CART_W, GB_CART_H));
++        }
+     };
+     lock.get_or_init(|| gb_silhouette(shell, GB_CART_W, GB_CART_H))
+ }
++
++/// Game Gear carts have a squared body with clipped shoulders and a wider bottom lip. Keep
++/// this mask separate from the Game Boy pak so the GG shelf reads as its own cartridge system.
++fn gamegear_silhouette(w: u32, h: u32) -> Vec<u8> {
++    let mut mask = vec![0; (w * h) as usize];
++    let sx = w as f32 / GB_CART_W as f32;
++    let sy = h as f32 / GB_CART_H as f32;
++    const POLYGON: [(f32, f32); 8] = [
++        (22.0, 1.0),
++        (290.0, 1.0),
++        (311.0, 20.0),
++        (311.0, 305.0),
++        (296.0, 335.0),
++        (16.0, 335.0),
++        (1.0, 305.0),
++        (1.0, 20.0),
++    ];
++    for y in 0..h {
++        for x in 0..w {
++            let (px, py) = (x as f32 / sx, y as f32 / sy);
++            let mut inside = false;
++            let mut j = POLYGON.len() - 1;
++            for i in 0..POLYGON.len() {
++                let (xi, yi) = POLYGON[i];
++                let (xj, yj) = POLYGON[j];
++                if (yi > py) != (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi {
++                    inside = !inside;
++                }
++                j = i;
++            }
++            if inside {
++                mask[(y * w + x) as usize] = 255;
++            }
++        }
++    }
++    mask
++}
+diff --git a/crates/slot/src/app.rs b/crates/slot/src/app.rs
+index 52666c3..951f35d 100644
+--- a/crates/slot/src/app.rs
++++ b/crates/slot/src/app.rs
+@@ -662,7 +662,7 @@ pub struct App {
+     achievement_badges: Vec<Option<(TexId, u32, u32)>>,
+     achievement_badge_slots: Vec<Option<TexId>>,
+     achievement_header: Option<(TexId, u32, u32)>,
+-    achievement_description: Option<(TexId, u32, u32)> ,
++    achievement_description: Option<(TexId, u32, u32)>,
+     achievement_description_slot: Option<TexId>,
+     cleanup_preview: Option<crate::cleanup::Report>,
+     cleanup_confirm: bool,
+@@ -807,8 +807,8 @@ pub struct App {
+     kid_icon_faces: Option<[(TexId, u32, u32); 2]>,
+     pub romm: crate::romm::RommConf,
+     quick_palette_faces: Option<[(TexId, u32, u32); 2]>,
+-    quick_bezel_faces: [Option<[(TexId, u32, u32); 2]>; 3],
+-    quick_overlay_faces: [Option<[(TexId, u32, u32); 2]>; 4],
++    quick_bezel_faces: [Option<[(TexId, u32, u32); 2]>; 4 + cfg!(feature = "nds") as usize],
++    quick_overlay_faces: [Option<[(TexId, u32, u32); 2]>; 4 + cfg!(feature = "nds") as usize],
+     overlay_cache: std::sync::Mutex<Vec<OverlayScan>>,
+     game_bezel: Option<TexId>,
+     bezel_column: Vec<u8>,
+@@ -1378,8 +1378,8 @@ impl App {
+             kid_icon_faces: None,
+             romm: crate::romm::RommConf::default(),
+             quick_palette_faces: None,
+-            quick_bezel_faces: [None, None, None],
+-            quick_overlay_faces: [None; 4],
++            quick_bezel_faces: [None; 4 + cfg!(feature = "nds") as usize],
++            quick_overlay_faces: [None; 4 + cfg!(feature = "nds") as usize],
+             overlay_cache: std::sync::Mutex::new(Vec::new()),
+             game_bezel: None,
+             bezel_column: Vec::new(),
+@@ -2850,7 +2850,9 @@ impl App {
+     }
+ 
+     pub fn achievement_order(&self) -> Vec<usize> {
+-        let Some(v) = self.achievement_view.as_ref() else { return Vec::new() };
++        let Some(v) = self.achievement_view.as_ref() else {
++            return Vec::new();
++        };
+         let mut order: Vec<usize> = (0..v.entries.len()).collect();
+         if self.achievement_sort {
+             order.sort_by_key(|i| (v.entries[*i].unlocked, *i));
+@@ -2862,16 +2864,25 @@ impl App {
+         self.achievement_row
+     }
+ 
+-    pub fn achievement_reuse_faces(&self) -> (
++    pub fn achievement_reuse_faces(
++        &self,
++    ) -> (
+         &[[(TexId, u32, u32); 2]],
+         &[[(TexId, u32, u32); 2]],
+         &[Option<TexId>],
+     ) {
+-        (&self.achievement_names, &self.achievement_values, &self.achievement_badge_slots)
++        (
++            &self.achievement_names,
++            &self.achievement_values,
++            &self.achievement_badge_slots,
++        )
+     }
+ 
+     pub fn achievement_faces_ready(&self) -> bool {
+-        let total = self.achievement_view.as_ref().map_or(0, |v| v.entries.len());
++        let total = self
++            .achievement_view
++            .as_ref()
++            .map_or(0, |v| v.entries.len());
+         let (start, len) = slot_ui::achievement_page_window(self.achievement_row, total);
+         !self.achievement_faces_dirty
+             && self.achievement_header.is_some()
+@@ -2966,8 +2977,13 @@ impl App {
+         let view = self.achievement_view.as_deref()?;
+         let index = *self.achievement_order().get(self.achievement_row)?;
+         let a = &view.entries[index];
+-        Some(format!("{}: {} ({} points) {}",
+-            a.title, a.description, a.points, if a.unlocked { "Unlocked" } else { "Locked" }))
++        Some(format!(
++            "{}: {} ({} points) {}",
++            a.title,
++            a.description,
++            a.points,
++            if a.unlocked { "Unlocked" } else { "Locked" }
++        ))
+     }
+ 
+     pub fn achievement_description_ready(&self) -> bool {
+@@ -3143,18 +3159,21 @@ impl App {
+             (QuickRow::Shader, Platform::Gba) => QuickRow::GbaShader,
+             (QuickRow::Shader, Platform::Gb) => QuickRow::GbShader,
+             (QuickRow::Shader, Platform::Gbc) => QuickRow::GbcShader,
++            (QuickRow::Shader, Platform::Gg) => QuickRow::GgShader,
+             (QuickRow::ColourCorrection, Platform::Gba) => QuickRow::GbaColourCorrection,
+             (QuickRow::ColourCorrection, Platform::Gb) => QuickRow::GbColourCorrection,
+             (QuickRow::ColourCorrection, Platform::Gbc) => QuickRow::GbcColourCorrection,
+             (QuickRow::Bezel, Platform::Gba) => QuickRow::GbaBezel,
+             (QuickRow::Bezel, Platform::Gb) => QuickRow::GbBezel,
+             (QuickRow::Bezel, Platform::Gbc) => QuickRow::GbcBezel,
++            (QuickRow::Bezel, Platform::Gg) => QuickRow::GgBezel,
+             (QuickRow::Reflection, Platform::Gba) => QuickRow::GbaReflection,
+             (QuickRow::Reflection, Platform::Gb) => QuickRow::GbReflection,
+             (QuickRow::Reflection, Platform::Gbc) => QuickRow::GbcReflection,
+             (QuickRow::Scale, Platform::Gba) => QuickRow::GbaScale,
+             (QuickRow::Scale, Platform::Gb) => QuickRow::GbScale,
+             (QuickRow::Scale, Platform::Gbc) => QuickRow::GbcScale,
++            (QuickRow::Scale, Platform::Gg) => QuickRow::GgScale,
+             (QuickRow::Stretch, Platform::Gb) => QuickRow::GbStretch,
+             (QuickRow::Stretch, Platform::Gbc) => QuickRow::GbcStretch,
+             (QuickRow::PlayBrightness, _) => QuickRow::Brightness,
+@@ -3193,11 +3212,13 @@ impl App {
+             QuickRow::GbaScale => Some(scale_value(self.resolved_scale(Platform::Gba))),
+             QuickRow::GbScale => Some(scale_value(self.resolved_scale(Platform::Gb))),
+             QuickRow::GbcScale => Some(scale_value(self.resolved_scale(Platform::Gbc))),
++            QuickRow::GgScale => Some(scale_value(self.resolved_scale(Platform::Gg))),
+             QuickRow::GbStretch => Some(stretch_value(self.resolved_stretch(Platform::Gb))),
+             QuickRow::GbcStretch => Some(stretch_value(self.resolved_stretch(Platform::Gbc))),
+             QuickRow::GbaBlending => Some(blending_value(self.state.blending_gba)),
+             QuickRow::GbcBlending => Some(blending_value(self.state.blending_gbc)),
+             QuickRow::GbBlending => Some(blending_value(self.state.blending_gb)),
++            QuickRow::GgBlending => Some(blending_value(self.state.blending_gg)),
+             QuickRow::Blending => Some(blending_value(self.blending_in_play())),
+             QuickRow::Brightness => Some(QuickValue::level(self.brightness_level())),
+             QuickRow::BlueLight => Some(match self.state.blue_light {
+@@ -3218,13 +3239,16 @@ impl App {
+             QuickRow::GbaColourCorrection => {
+                 Some(QuickValue::flag(self.colour_correction_for(Platform::Gba)))
+             }
+-            QuickRow::GbColourCorrection => Some(QuickValue::flag(self.colour_correction_for(Platform::Gb))),
++            QuickRow::GbColourCorrection => {
++                Some(QuickValue::flag(self.colour_correction_for(Platform::Gb)))
++            }
+             QuickRow::GbcColourCorrection => {
+                 Some(QuickValue::flag(self.colour_correction_for(Platform::Gbc)))
+             }
+             QuickRow::GbaShader => Some(shader_value(self.gba_shader())),
+             QuickRow::GbShader => Some(shader_value(self.gb_shader())),
+             QuickRow::GbcShader => Some(shader_value(self.state.shader_gbc)),
++            QuickRow::GgShader => Some(shader_value(self.state.shader_gg)),
+             QuickRow::Rumble => Some(QuickValue::flag(self.state.rumble)),
+             QuickRow::LeftStick => Some(QuickValue::flag(self.state.left_stick_dpad)),
+             QuickRow::ResumeInsert => Some(QuickValue::flag(self.state.resume_insert)),
+@@ -3286,7 +3310,7 @@ impl App {
+             }),
+             QuickRow::WifiPower => Some(QuickValue::flag(!self.state.wifi_off)),
+             QuickRow::RaBackground => Some(QuickValue::flag(
+-                self.ra_overview.is_some_and(|status| status.index_library)
++                self.ra_overview.is_some_and(|status| status.index_library),
+             )),
+             QuickRow::RommProtocol => Some(match self.romm.protocol {
+                 crate::romm::Protocol::Https => QuickValue::Https,
+@@ -3342,6 +3366,7 @@ impl App {
+             | QuickRow::ScreenGba
+             | QuickRow::ScreenGbc
+             | QuickRow::ScreenGb
++            | QuickRow::ScreenGg
+             | QuickRow::GbBezel
+             | QuickRow::GbcBezel
+             | QuickRow::GbaOverlay
+@@ -3436,7 +3461,9 @@ impl App {
+             | QuickRow::Controls
+             | QuickRow::ControlsShelf
+             | QuickRow::ControlsCollections
+-            | QuickRow::ControlsInGame => None,
++            | QuickRow::ControlsInGame
++            | QuickRow::GgOverlay
++            | QuickRow::GgBezel => None,
+             #[cfg(feature = "nds")]
+             QuickRow::FetchBoxArt => None,
+         }
+@@ -3508,7 +3535,8 @@ impl App {
+         fn known(value: &str) -> Option<&'static str> {
+             // Accept target IDs (rg35xxh) and display labels (RG35XX H),
+             // including a possible "Anbernic" prefix.
+-            let cleaned: String = value.chars()
++            let cleaned: String = value
++                .chars()
+                 .filter(|ch| ch.is_ascii_alphanumeric())
+                 .map(|ch| ch.to_ascii_lowercase())
+                 .collect();
+@@ -3789,6 +3817,7 @@ impl App {
+             Platform::Nds => &mut self.state.bezel_gba,
+             Platform::Gb => &mut self.state.bezel_gb,
+             Platform::Gbc => &mut self.state.bezel_gbc,
++            Platform::Gg => &mut self.state.bezel_gg,
+         }
+     }
+ 
+@@ -3799,6 +3828,7 @@ impl App {
+             Platform::Nds => &self.state.bezel_gba,
+             Platform::Gb => &self.state.bezel_gb,
+             Platform::Gbc => &self.state.bezel_gbc,
++            Platform::Gg => &self.state.bezel_gg,
+         };
+         let choices = self.bezel_choices(platform);
+         if choices.contains(pick) {
+@@ -3855,6 +3885,7 @@ impl App {
+             Platform::Nds => &mut self.state.overlay_nds,
+             Platform::Gb => &mut self.state.overlay_gb,
+             Platform::Gbc => &mut self.state.overlay_gbc,
++            Platform::Gg => &mut self.state.overlay_gg,
+         }
+     }
+ 
+@@ -3865,6 +3896,7 @@ impl App {
+             Platform::Nds => &self.state.overlay_nds,
+             Platform::Gb => &self.state.overlay_gb,
+             Platform::Gbc => &self.state.overlay_gbc,
++            Platform::Gg => &self.state.overlay_gg,
+         };
+         let name = pick.as_deref()?;
+         self.overlay_entries(platform)
+@@ -4264,20 +4296,11 @@ impl App {
+             hidden.push(QuickRow::GbaBezel);
+         }
+         for (platform, rows) in [
+-            (
+-                Platform::Gba,
+-                &[QuickRow::GbaBlending][..],
+-            ),
+-            (
+-                Platform::Gbc,
+-                &[QuickRow::GbcBlending][..],
+-            ),
++            (Platform::Gba, &[QuickRow::GbaBlending][..]),
++            (Platform::Gbc, &[QuickRow::GbcBlending][..]),
+             (
+                 Platform::Gb,
+-                &[
+-                    QuickRow::GbBlending,
+-                    QuickRow::GbPalette,
+-                ][..],
++                &[QuickRow::GbBlending, QuickRow::GbPalette][..],
+             ),
+         ] {
+             if self.authentic(platform) {
+@@ -4285,7 +4308,9 @@ impl App {
+             }
+         }
+         // A GB cartridge on the GBC Authentic screen may use real GBC colour palettes.
+-        if self.authentic(Platform::Gb) && matches!(self.gb_model(), GbModel::Gbc | GbModel::PocketColor) {
++        if self.authentic(Platform::Gb)
++            && matches!(self.gb_model(), GbModel::Gbc | GbModel::PocketColor)
++        {
+             hidden.retain(|row| *row != QuickRow::GbPalette);
+         }
+         if !self.authentic(Platform::Gb) {
+@@ -4304,6 +4329,7 @@ impl App {
+             (QuickRow::GbaOverlay, Platform::Gba),
+             (QuickRow::GbOverlay, Platform::Gb),
+             (QuickRow::GbcOverlay, Platform::Gbc),
++            (QuickRow::GgOverlay, Platform::Gg),
+         ] {
+             if self.overlay_entries(platform).is_empty() {
+                 hidden.push(row);
+@@ -4313,6 +4339,7 @@ impl App {
+             (QuickRow::GbaScale, Platform::Gba),
+             (QuickRow::GbScale, Platform::Gb),
+             (QuickRow::GbcScale, Platform::Gbc),
++            (QuickRow::GgScale, Platform::Gg),
+         ] {
+             if self.scale_choices(platform).len() < 2 {
+                 hidden.push(row);
+@@ -4436,6 +4463,12 @@ impl App {
+         }
+     }
+ 
++    pub fn set_gamegear_cart_shadow(&mut self, face: TexId) {
++        for (_, shelf) in &mut self.shelves {
++            shelf.set_gb_shadow(GbShell::GameGear, face);
++        }
++    }
++
+     pub fn set_cart_backing(&mut self, face: TexId) {
+         for (_, shelf) in &mut self.shelves {
+             shelf.set_backing(face);
+@@ -4449,6 +4482,12 @@ impl App {
+         }
+     }
+ 
++    pub fn set_gamegear_cart_backing(&mut self, face: TexId) {
++        for (_, shelf) in &mut self.shelves {
++            shelf.set_gb_backing(GbShell::GameGear, face);
++        }
++    }
++
+     pub fn set_ground(&mut self, face: TexId) {
+         self.ground = Some(face);
+     }
+@@ -4779,6 +4818,7 @@ impl App {
+             Platform::Nds => self.state.scale_gba,
+             Platform::Gb => self.state.scale_gb,
+             Platform::Gbc => self.state.scale_gbc,
++            Platform::Gg => self.state.scale_gg,
+         }
+     }
+ 
+@@ -4786,6 +4826,8 @@ impl App {
+         match platform {
+             Platform::Gb => self.state.stretch_gb,
+             Platform::Gbc => self.state.stretch_gbc,
++            Platform::Gg => Stretch::Classic,
++
+             Platform::Gba | Platform::Gbav => Stretch::Classic,
+             #[cfg(feature = "nds")]
+             Platform::Nds => Stretch::Classic,
+@@ -4928,6 +4970,7 @@ impl App {
+             Platform::Nds => self.state.scale_gba = to,
+             Platform::Gb => self.state.scale_gb = to,
+             Platform::Gbc => self.state.scale_gbc = to,
++            Platform::Gg => self.state.scale_gg = to,
+         }
+     }
+ 
+@@ -5209,19 +5252,31 @@ impl App {
+     fn fixed_reference_text(&self, row: QuickRow) -> Option<String> {
+         match row {
+             QuickRow::FixFastLatch => Some(fixed_fast_forward_text(
+-                self.shortcuts.get(slot_store::Shortcut::FastForward), true)),
++                self.shortcuts.get(slot_store::Shortcut::FastForward),
++                true,
++            )),
+             QuickRow::FixFastRelease => Some(fixed_key_with_prefix(
+-                self.shortcuts.get(slot_store::Shortcut::FastForward), "HOLD ")),
++                self.shortcuts.get(slot_store::Shortcut::FastForward),
++                "HOLD ",
++            )),
+             QuickRow::FixFastUnlatch => Some(fixed_key_with_prefix(
+-                self.shortcuts.get(slot_store::Shortcut::FastForward), "TAP ")),
++                self.shortcuts.get(slot_store::Shortcut::FastForward),
++                "TAP ",
++            )),
+             QuickRow::FixFastToggle => Some(fixed_key_with_prefix(
+-                self.shortcuts.get(slot_store::Shortcut::FastForwardToggle), "PRESS ")),
++                self.shortcuts.get(slot_store::Shortcut::FastForwardToggle),
++                "PRESS ",
++            )),
+             QuickRow::FixAddCollection | QuickRow::FixRemoveFromCollection => Some(
+-                fixed_holdable_shelf_key(self.carousel.get(slot_store::CarouselAction::Favorite))),
++                fixed_holdable_shelf_key(self.carousel.get(slot_store::CarouselAction::Favorite)),
++            ),
+             QuickRow::FixMoveCollection => Some(fixed_holdable_shelf_key(
+-                self.carousel.get(slot_store::CarouselAction::ForgetRecent))),
++                self.carousel.get(slot_store::CarouselAction::ForgetRecent),
++            )),
+             QuickRow::FixMoveInCollection => Some(fixed_fast_forward_text(
+-                self.carousel.get(slot_store::CarouselAction::ForgetRecent), false)),
++                self.carousel.get(slot_store::CarouselAction::ForgetRecent),
++                false,
++            )),
+             _ => row.fixed_keys().map(str::to_owned),
+         }
+     }
+@@ -5644,6 +5699,7 @@ impl App {
+             Platform::Nds => Shader::Off,
+             Platform::Gb => self.gb_shader(),
+             Platform::Gbc => self.state.shader_gbc,
++            Platform::Gg => self.state.shader_gg,
+         }
+     }
+ 
+@@ -5679,8 +5735,10 @@ impl App {
+                         self.state.authentic_gb_correction
+                     };
+                     (bits & (1 << (self.gb_model() as u32))) != 0
+-                },
++                }
+                 Platform::Gbc => self.state.authentic_gbc_correction,
++                Platform::Gg => false,
++
+                 #[cfg(feature = "nds")]
+                 Platform::Nds => false,
+             };
+@@ -5691,6 +5749,7 @@ impl App {
+             Platform::Nds => false,
+             Platform::Gb => self.state.colour_correction_gb,
+             Platform::Gbc => self.state.colour_correction_gbc,
++            Platform::Gg => false,
+         }
+     }
+ 
+@@ -5702,6 +5761,7 @@ impl App {
+             Platform::Gba | Platform::Gbav => self.state.reflection_gba,
+             Platform::Gb => self.state.reflection_gb,
+             Platform::Gbc => self.state.reflection_gbc,
++            Platform::Gg => false,
+         }
+     }
+ 
+@@ -5712,6 +5772,7 @@ impl App {
+             Platform::Gba | Platform::Gbav => self.state.shader_gba,
+             Platform::Gb => self.gb_shader(),
+             Platform::Gbc => self.state.shader_gbc,
++            Platform::Gg => self.state.shader_gg,
+         };
+         shader == Shader::Authentic
+     }
+@@ -5753,6 +5814,7 @@ impl App {
+             Platform::Nds => Blending::Off,
+             Platform::Gb => self.state.blending_gb,
+             Platform::Gbc => self.state.blending_gbc,
++            Platform::Gg => self.state.blending_gg,
+         }
+     }
+ 
+@@ -5787,14 +5849,14 @@ impl App {
+         // light menu theme is selected. Black clock glyphs disappear on that
+         // background. Keep clock ink white for those built-in backgrounds;
+         // leave user-supplied wallpaper theming unchanged.
+-        let builtin_dark = self.collection_wallpaper.is_none() && match &self.state.wallpaper {
+-            WallpaperPick::None | WallpaperPick::Default | WallpaperPick::Blur => true,
+-            WallpaperPick::File(name) => {
+-                name == crate::wallpaper::SLOT_FILE
+-                    || name == crate::wallpaper::SLOT_BLUR_FILE
+-            }
+-            _ => false,
+-        };
++        let builtin_dark = self.collection_wallpaper.is_none()
++            && match &self.state.wallpaper {
++                WallpaperPick::None | WallpaperPick::Default | WallpaperPick::Blur => true,
++                WallpaperPick::File(name) => {
++                    name == crate::wallpaper::SLOT_FILE || name == crate::wallpaper::SLOT_BLUR_FILE
++                }
++                _ => false,
++            };
+         match self.phase {
+             Phase::Playing { .. } | Phase::Polaroids { .. } => footer_ink(false),
+             _ if builtin_dark => footer_ink(false),
+@@ -5944,8 +6006,13 @@ impl App {
+             // User-selected fixed palettes still retain their existing meaning.
+             Shader::Authentic
+                 if matches!(self.gb_model(), GbModel::Gbc | GbModel::PocketColor)
+-                    && self.state.gb_colors() == GbColors::Auto => GbColors::GbcAuto,
+-            Shader::Authentic if !matches!(self.gb_model(), GbModel::Gbc | GbModel::PocketColor) => {
++                    && self.state.gb_colors() == GbColors::Auto =>
++            {
++                GbColors::GbcAuto
++            }
++            Shader::Authentic
++                if !matches!(self.gb_model(), GbModel::Gbc | GbModel::PocketColor) =>
++            {
+                 GbColors::Palette(slot_store::GbPalette::GRAYSCALE)
+             }
+             _ => self.state.gb_colors(),
+@@ -6800,7 +6867,10 @@ impl App {
+     /// Return true if this input only wakes the inactive menu's blank display.
+     fn menu_idle_input(&mut self, action: Action) -> bool {
+         // Release signals are not intentional wake actions.
+-        if matches!(action, Action::GbaUp(_) | Action::MenuChordUp(_) | Action::PowerOff) {
++        if matches!(
++            action,
++            Action::GbaUp(_) | Action::MenuChordUp(_) | Action::PowerOff
++        ) {
+             return false;
+         }
+         let woke = self.menu_idle.input(self.now());
+@@ -6819,7 +6889,11 @@ impl App {
+         }
+         !matches!(
+             action,
+-            Action::LidClose | Action::LidOpen | Action::PowerHold | Action::Restart | Action::RepairCard
++            Action::LidClose
++                | Action::LidOpen
++                | Action::PowerHold
++                | Action::Restart
++                | Action::RepairCard
+         )
+     }
+ 
+@@ -7389,7 +7463,11 @@ impl App {
+         };
+         self.cleanup_preview = Some(crate::cleanup::scan(root));
+         self.cleanup_confirm = false;
+-        let notice = if self.cleanup_preview.as_ref().is_some_and(|r|r.files.is_empty()) {
++        let notice = if self
++            .cleanup_preview
++            .as_ref()
++            .is_some_and(|r| r.files.is_empty())
++        {
+             NetNotice::CleanupEmpty
+         } else {
+             NetNotice::CleanupScanned
+@@ -7408,7 +7486,9 @@ impl App {
+             self.cleanup_confirm = true;
+             return self.set_update(Some(UpdateState::Notice(NetNotice::CleanupConfirm)));
+         }
+-        let result = self.root.as_ref()
++        let result = self
++            .root
++            .as_ref()
+             .map(|r| crate::cleanup::clean(r, report))
+             .unwrap_or_else(|| Err("Missing SD card".into()));
+         self.cleanup_confirm = false;
+@@ -7444,7 +7524,9 @@ impl App {
+             QuickRow::WifiPower => self.set_wifi_off(!self.state.wifi_off),
+             QuickRow::Networks => self.open_networks(),
+             QuickRow::RaAccount => {
+-                let user = self.root.as_deref()
++                let user = self
++                    .root
++                    .as_deref()
+                     .and_then(slot_achievements::configured_username)
+                     .unwrap_or_default();
+                 self.open_keyboard(
+@@ -7454,7 +7536,7 @@ impl App {
+                     slot_ui::Layout::General,
+                     &user,
+                 );
+-            },
++            }
+             QuickRow::RommProtocol | QuickRow::RommSelfSigned => self.change_setting(row, true),
+             QuickRow::Nickname => {
+                 let text = self.state.nickname.clone();
+@@ -7493,7 +7575,10 @@ impl App {
+             QuickRow::RommStatus | QuickRow::RommPairedServer => {}
+             QuickRow::RaStatus => self.set_update(Some(UpdateState::Notice(NetNotice::RaStatus))),
+             QuickRow::RaPrepare => {
+-                if self.ra_overview.is_some_and(|status| status.state != slot_achievements::SyncStatus::Disabled) {
++                if self
++                    .ra_overview
++                    .is_some_and(|status| status.state != slot_achievements::SyncStatus::Disabled)
++                {
+                     self.ra_action = Some(slot_achievements::LibraryAction::Prepare);
+                     self.set_update(Some(UpdateState::Notice(NetNotice::RaQueued)));
+                 } else {
+@@ -7501,7 +7586,10 @@ impl App {
+                 }
+             }
+             QuickRow::RaRetry => {
+-                if self.ra_overview.is_some_and(|status| status.failed_roms > 0) {
++                if self
++                    .ra_overview
++                    .is_some_and(|status| status.failed_roms > 0)
++                {
+                     self.ra_action = Some(slot_achievements::LibraryAction::RetryFailed);
+                     self.set_update(Some(UpdateState::Notice(NetNotice::RaRetryQueued)));
+                 } else {
+@@ -7509,12 +7597,18 @@ impl App {
+                 }
+             }
+             QuickRow::RaBackground => self.toggle_ra_index(),
++            QuickRow::GgShader
++            | QuickRow::GgOverlay
++            | QuickRow::GgBezel
++            | QuickRow::GgScale
++            | QuickRow::GgBlending => self.change_setting(row, true),
+             QuickRow::Screen
+             | QuickRow::ScreenGeneral
+             | QuickRow::Game
+             | QuickRow::ScreenGba
+             | QuickRow::ScreenGbc
+             | QuickRow::ScreenGb
++            | QuickRow::ScreenGg
+             | QuickRow::Shortcuts
+             | QuickRow::FixedShortcuts
+             | QuickRow::FixedGlobal
+@@ -7694,7 +7788,9 @@ impl App {
+ 
+     fn toggle_ra_index(&mut self) {
+         let enabled = !self.ra_overview.is_some_and(|status| status.index_library);
+-        let result = self.root.as_deref()
++        let result = self
++            .root
++            .as_deref()
+             .ok_or("Missing SD card")
+             .and_then(|root| slot_achievements::set_library_index(root, enabled));
+         match result {
+@@ -7788,11 +7884,13 @@ impl App {
+             self.persist();
+             return;
+         }
+-        if let QuickRow::GbaScale | QuickRow::GbScale | QuickRow::GbcScale = row {
++        if let QuickRow::GbaScale | QuickRow::GbScale | QuickRow::GbcScale | QuickRow::GgScale = row
++        {
+             let platform = match row {
+                 QuickRow::GbaScale => Platform::Gba,
+                 QuickRow::GbScale => Platform::Gb,
+-                _ => Platform::Gbc,
++                QuickRow::GbcScale => Platform::Gbc,
++                _ => Platform::Gg,
+             };
+             self.cycle_scale(platform, right);
+             self.persist();
+@@ -7807,21 +7905,28 @@ impl App {
+             self.persist();
+             return;
+         }
+-        if let QuickRow::GbaOverlay | QuickRow::GbOverlay | QuickRow::GbcOverlay = row {
++        if let QuickRow::GbaOverlay
++        | QuickRow::GbOverlay
++        | QuickRow::GbcOverlay
++        | QuickRow::GgOverlay = row
++        {
+             let platform = match row {
+                 QuickRow::GbaOverlay => Platform::Gba,
+                 QuickRow::GbOverlay => Platform::Gb,
+-                _ => Platform::Gbc,
++                QuickRow::GbcOverlay => Platform::Gbc,
++                _ => Platform::Gg,
+             };
+             self.cycle_overlay(platform, right);
+             self.persist();
+             return;
+         }
+-        if let QuickRow::GbaBezel | QuickRow::GbBezel | QuickRow::GbcBezel = row {
++        if let QuickRow::GbaBezel | QuickRow::GbBezel | QuickRow::GbcBezel | QuickRow::GgBezel = row
++        {
+             let platform = match row {
+                 QuickRow::GbaBezel => Platform::Gba,
+                 QuickRow::GbBezel => Platform::Gb,
+-                _ => Platform::Gbc,
++                QuickRow::GbcBezel => Platform::Gbc,
++                _ => Platform::Gg,
+             };
+             self.cycle_bezel(platform, right);
+             self.persist();
+@@ -7878,9 +7983,16 @@ impl App {
+             } else {
+                 self.state.menu_power_off_min
+             };
+-            let at = MENU_IDLE_MINUTES.iter().position(|m| *m == current).unwrap_or(0);
++            let at = MENU_IDLE_MINUTES
++                .iter()
++                .position(|m| *m == current)
++                .unwrap_or(0);
+             let len = MENU_IDLE_MINUTES.len();
+-            let next = MENU_IDLE_MINUTES[if right { (at + 1) % len } else { (at + len - 1) % len }];
++            let next = MENU_IDLE_MINUTES[if right {
++                (at + 1) % len
++            } else {
++                (at + len - 1) % len
++            }];
+             if row == QuickRow::MenuScreenOff {
+                 self.state.menu_screen_off_min = next;
+             } else {
+@@ -7910,9 +8022,17 @@ impl App {
+                 self.colour_pending = Some(self.colour_correction());
+             }
+             QuickRow::GbColourCorrection => {
+-                let active = if self.core == Core::Sameboy || self.core == Core::Mgba { s.shader_gb_mgba } else { s.shader_gb };
++                let active = if self.core == Core::Sameboy || self.core == Core::Mgba {
++                    s.shader_gb_mgba
++                } else {
++                    s.shader_gb
++                };
+                 if active == Shader::Authentic {
+-                    let model = if self.core == Core::Sameboy || self.core == Core::Mgba { s.gb_model_mgba } else { s.gb_model };
++                    let model = if self.core == Core::Sameboy || self.core == Core::Mgba {
++                        s.gb_model_mgba
++                    } else {
++                        s.gb_model
++                    };
+                     if matches!(self.core, Core::Sameboy | Core::Mgba) {
+                         s.authentic_gb_correction_sameboy ^= 1 << (model as u32);
+                     } else {
+@@ -7952,6 +8072,14 @@ impl App {
+                 *slot = to;
+                 self.core_options_pending();
+             }
++            QuickRow::GgShader => {
++                let to = s.shader_gg.step(&Shader::GG, right);
++                if to == s.shader_gg {
++                    return;
++                }
++                s.shader_gg = to;
++                self.core_options_pending();
++            }
+             QuickRow::GbcShader => {
+                 let to = s.shader_gbc.step(&Shader::GB, right);
+                 if to == s.shader_gbc {
+@@ -7977,6 +8105,9 @@ impl App {
+             QuickRow::GbBlending => {
+                 s.blending_gb = s.blending_gb.step(&Blending::ALL, right);
+             }
++            QuickRow::GgBlending => {
++                s.blending_gg = s.blending_gg.step(&Blending::ALL, right);
++            }
+             QuickRow::Theme => s.appearance = s.appearance.toggle(),
+             QuickRow::BatteryDisplay => s.battery_display = s.battery_display.step(right),
+             QuickRow::WallpaperTint => s.wallpaper_tint = s.wallpaper_tint.step(right),
+@@ -8021,6 +8152,7 @@ impl App {
+             | QuickRow::ScreenGba
+             | QuickRow::ScreenGbc
+             | QuickRow::ScreenGb
++            | QuickRow::ScreenGg
+             | QuickRow::GbBezel
+             | QuickRow::GbcBezel
+             | QuickRow::GbaOverlay
+@@ -8031,6 +8163,9 @@ impl App {
+             | QuickRow::GbaScale
+             | QuickRow::GbScale
+             | QuickRow::GbcScale
++            | QuickRow::GgScale
++            | QuickRow::GgBezel
++            | QuickRow::GgOverlay
+             | QuickRow::GbStretch
+             | QuickRow::GbcStretch
+             | QuickRow::Blending
+@@ -8193,6 +8328,7 @@ impl App {
+                 &Shader::GB[..],
+             ),
+             Platform::Gbc => (&mut self.state.shader_gbc, &Shader::GB[..]),
++            Platform::Gg => (&mut self.state.shader_gg, &Shader::GG[..]),
+         };
+         *shader = shader.step(choices, right);
+         let said = match *shader {
+@@ -8260,6 +8396,9 @@ impl App {
+             return true;
+         }
+         if action == Action::ColourCorrectionToggle {
++            if self.playing_platform() == Platform::Gg {
++                return true;
++            }
+             if self.authentic(self.playing_platform()) {
+                 return true;
+             }
+@@ -8269,6 +8408,7 @@ impl App {
+                 Platform::Nds => QuickRow::GbaColourCorrection,
+                 Platform::Gb => QuickRow::GbColourCorrection,
+                 Platform::Gbc => QuickRow::GbcColourCorrection,
++                Platform::Gg => return true,
+             };
+             self.change_setting(row, true);
+             let said = match self.colour_correction() {
+@@ -8860,8 +9000,10 @@ impl App {
+             return;
+         }
+         // Only the shelf and its menus, never gameplay. Do not interrupt background tasks.
+-        let allowed = matches!(self.phase, Phase::Shelf | Phase::QuickMenu { .. } | Phase::About)
+-            && self.seated().is_none()
++        let allowed = matches!(
++            self.phase,
++            Phase::Shelf | Phase::QuickMenu { .. } | Phase::About
++        ) && self.seated().is_none()
+             && self.update.is_none()
+             && self.keyboard.is_none()
+             && self.fetch_art.is_none()
+@@ -9709,10 +9851,12 @@ impl App {
+                     gba_bezel: self.quick_bezel_faces[bezel_slot(Platform::Gba)],
+                     gb_bezel: self.quick_bezel_faces[bezel_slot(Platform::Gb)],
+                     gbc_bezel: self.quick_bezel_faces[bezel_slot(Platform::Gbc)],
++                    gg_bezel: self.quick_bezel_faces[bezel_slot(Platform::Gg)],
+                     bezel: None,
+                     gba_overlay: self.quick_overlay_faces[overlay_slot(Platform::Gba)],
+                     gb_overlay: self.quick_overlay_faces[overlay_slot(Platform::Gb)],
+                     gbc_overlay: self.quick_overlay_faces[overlay_slot(Platform::Gbc)],
++                    gg_overlay: self.quick_overlay_faces[overlay_slot(Platform::Gg)],
+                     overlay: None,
+                     over_game: false,
+                     footer_top: self.canvas().h,
+@@ -9921,16 +10065,24 @@ impl App {
+                 slot_ui::AchievementPage {
+                     selected: self.achievement_row,
+                     selected_elapsed_ms: self.now().saturating_sub(self.list_name_selected_at),
+-                    total: self.achievement_view.as_ref().map_or(0, |v| v.entries.len()),
++                    total: self
++                        .achievement_view
++                        .as_ref()
++                        .map_or(0, |v| v.entries.len()),
+                     names: &self.achievement_names,
+                     values: &self.achievement_values,
+                     badges: &self.achievement_badges,
+                     header: self.achievement_header,
+-                    detail: if self.achievement_detail { self.achievement_description } else { None },
++                    detail: if self.achievement_detail {
++                        self.achievement_description
++                    } else {
++                        None
++                    },
+                     faces: self.quick_menu_faces.as_ref(),
+                     footer_top,
+                     canvas: self.canvas(),
+-                }.draw(out);
++                }
++                .draw(out);
+             } else if row == QuickRow::CheatList {
+                 let on: Vec<bool> = self.cheats.iter().map(|c| c.on).collect();
+                 slot_ui::CheatPage {
+@@ -9959,6 +10111,7 @@ impl App {
+                     gba_overlay: None,
+                     gb_overlay: None,
+                     gbc_overlay: None,
++                    gg_overlay: None,
+                     overlay: self.quick_overlay_faces[overlay_slot(self.playing_platform())],
+                     faces: self.quick_menu_faces.as_ref(),
+                     ground: None,
+@@ -9966,6 +10119,7 @@ impl App {
+                     gba_bezel: None,
+                     gb_bezel: None,
+                     gbc_bezel: None,
++                    gg_bezel: None,
+                     bezel: self.quick_bezel_faces[bezel_slot(self.playing_platform())],
+                     over_game: true,
+                     footer_top,
+@@ -12287,10 +12441,14 @@ impl App {
+         let Some(cart) = self.shelf().carts.get(self.shelf().index) else {
+             return;
+         };
++        let pair = Core::pair(cart.platform);
++        if pair[0] == pair[1] {
++            return;
++        }
+         let seat =
+             slot_store::core_for_platform(&root, &cart.stem, cart.platform, self.state.gb_core);
+         let now = self.now();
+-        let mut picker = CorePicker::open(Core::pair(cart.platform), seat, now);
++        let mut picker = CorePicker::open(pair, seat, now);
+         if self.core_faces_ready() {
+             picker.start(now);
+         }
+@@ -14450,6 +14608,15 @@ impl App {
+                     slot_ui::GBC_LABEL_H,
+                 ],
+             ),
++            Platform::Gg => (
++                0.72,
++                [
++                    slot_ui::GG_LABEL_X,
++                    slot_ui::GG_LABEL_Y,
++                    slot_ui::GG_LABEL_W,
++                    slot_ui::GG_LABEL_H,
++                ],
++            ),
+         };
+         let (fw, fh) = (tex.w as f32, tex.h as f32);
+         let (w, h) = (fw * scale, fh * scale);
+@@ -15471,15 +15638,18 @@ impl App {
+                 self.open_keyboard(
+                     "RetroAchievements Password",
+                     Some("Leave blank for a saved account"),
+-                    KeyboardFor::RaPassword { username: username.into() },
++                    KeyboardFor::RaPassword {
++                        username: username.into(),
++                    },
+                     slot_ui::Layout::General,
+                     "",
+                 );
+             }
+             KeyboardFor::RaPassword { username } => {
+-                let result = self.root.as_deref()
+-                    .ok_or("No card root")
+-                    .and_then(|root| slot_achievements::configure_login(root, &username, &text));
++                let result =
++                    self.root.as_deref().ok_or("No card root").and_then(|root| {
++                        slot_achievements::configure_login(root, &username, &text)
++                    });
+                 self.keyboard = None;
+                 let notice = match result {
+                     Ok(()) => NetNotice::RaRestart,
+@@ -15490,7 +15660,7 @@ impl App {
+                     Err(_) => NetNotice::RaSaveFailed,
+                 };
+                 self.set_update(Some(UpdateState::Notice(notice)));
+-            },
++            }
+             KeyboardFor::RommServer => {
+                 self.romm.server = text.trim().to_string();
+                 self.keyboard = None;
+@@ -15892,9 +16062,13 @@ impl App {
+                             slot_achievements::SyncStatus::Offline => "Offline / retrying",
+                             slot_achievements::SyncStatus::Attention => "Needs attention",
+                         };
+-                        format!("{state}; {} failed ROMs; {}",
++                        format!(
++                            "{state}; {} failed ROMs; {}",
+                             status.failed_roms,
+-                            status.progress.map_or("No scan".into(), |p| format!("{p}%")))
++                            status
++                                .progress
++                                .map_or("No scan".into(), |p| format!("{p}%"))
++                        )
+                     }
+                     None => "Checking service".into(),
+                 };
+@@ -15914,24 +16088,31 @@ impl App {
+             ),
+             UpdateState::Notice(NetNotice::CleanupScanned) => {
+                 let report = self.cleanup_preview.as_ref();
+-                let files = report.map_or(0,|r|r.files.len());
+-                let bytes = report.map_or(0,|r|r.bytes);
+-                ("Cleanup scan complete".into(),
+-                 format!("{files} old files; {:.2} MiB. Select Clean Detected Files.",
+-                          bytes as f64 / 1_048_576.0))
++                let files = report.map_or(0, |r| r.files.len());
++                let bytes = report.map_or(0, |r| r.bytes);
++                (
++                    "Cleanup scan complete".into(),
++                    format!(
++                        "{files} old files; {:.2} MiB. Select Clean Detected Files.",
++                        bytes as f64 / 1_048_576.0
++                    ),
++                )
+             }
+             UpdateState::Notice(NetNotice::CleanupConfirm) => (
+                 "Confirm cleanup".into(),
+                 "Select Clean Detected Files again to delete scanned items.".into(),
+             ),
+             UpdateState::Notice(NetNotice::CleanupDone) => (
+-                "Cleanup complete".into(), "Verified obsolete files were removed.".into(),
++                "Cleanup complete".into(),
++                "Verified obsolete files were removed.".into(),
+             ),
+             UpdateState::Notice(NetNotice::CleanupEmpty) => (
+-                "Nothing to clean".into(), "No eligible old temporary or rotated log files.".into(),
++                "Nothing to clean".into(),
++                "No eligible old temporary or rotated log files.".into(),
+             ),
+             UpdateState::Notice(NetNotice::CleanupError) => (
+-                "Cleanup failed".into(), "No unsafe files were intentionally removed.".into(),
++                "Cleanup failed".into(),
++                "No unsafe files were intentionally removed.".into(),
+             ),
+             UpdateState::Notice(NetNotice::RaNotConfigured) => (
+                 "RetroAchievements disabled".into(),
+@@ -16464,10 +16645,12 @@ impl App {
+             | UpdateState::Closing(r) => Some(r),
+             _ => None,
+         }
+-        .map(|r| (
+-            crate::update::display_version(r.kind, &r.running),
+-            crate::update::display_version(r.kind, &r.version),
+-        ))
++        .map(|r| {
++            (
++                crate::update::display_version(r.kind, &r.running),
++                crate::update::display_version(r.kind, &r.version),
++            )
++        })
+     }
+ 
+     pub fn update_chosen(&self) -> Option<Kind> {
+@@ -17728,8 +17911,9 @@ pub fn overlay_slot(platform: Platform) -> usize {
+         Platform::Gba | Platform::Gbav => 0,
+         Platform::Gb => 1,
+         Platform::Gbc => 2,
++        Platform::Gg => 3,
+         #[cfg(feature = "nds")]
+-        Platform::Nds => 3,
++        Platform::Nds => 4,
+     }
+ }
+ 
+@@ -17803,6 +17987,7 @@ fn bezel_slot(platform: Platform) -> usize {
+         Platform::Nds => 0,
+         Platform::Gb => 1,
+         Platform::Gbc => 2,
++        Platform::Gg => 3,
+     }
+ }
+ 
+@@ -17913,13 +18098,15 @@ mod eject_wifi_policy_regression {
+             t: 0.0,
+         };
+         app.wifi_held = true;
+-        assert!(app.wifi_wanted(), "ejection must preserve held WLAN even with no DHCP address");
++        assert!(
++            app.wifi_wanted(),
++            "ejection must preserve held WLAN even with no DHCP address"
++        );
+         app.state.wifi_off = true;
+         assert!(!app.wifi_wanted(), "explicit Wi-Fi Off must still win");
+     }
+ }
+ 
+-
+ #[cfg(test)]
+ mod hardware_nickname_regression {
+     use super::App;
+@@ -17927,8 +18114,14 @@ mod hardware_nickname_regression {
+     #[test]
+     fn rg35xx_h_and_sp_same_resolution_get_different_names() {
+         let panel = (640, 480);
+-        assert_eq!(App::device_name_for(panel, Some("rg35xxh"), None), "RG35XX H");
+-        assert_eq!(App::device_name_for(panel, Some("rg35xxsp"), None), "RG35XXSP");
++        assert_eq!(
++            App::device_name_for(panel, Some("rg35xxh"), None),
++            "RG35XX H"
++        );
++        assert_eq!(
++            App::device_name_for(panel, Some("rg35xxsp"), None),
++            "RG35XXSP"
++        );
+         assert_eq!(
+             App::device_name_for(panel, Some("rg35xxh"), Some("RG35XX SP")),
+             "RG35XX H",
+@@ -17954,14 +18147,16 @@ mod hardware_nickname_regression {
+ 
+     #[test]
+     fn unknown_named_device_is_not_misrepresented_as_sp() {
+-        assert_eq!(App::device_name_for((640, 480), Some("unknown-h700"), None), "slot");
++        assert_eq!(
++            App::device_name_for((640, 480), Some("unknown-h700"), None),
++            "slot"
++        );
+         assert_eq!(App::device_name_for((640, 480), None, None), "RG35XXSP");
+         assert_eq!(App::device_name_for((720, 480), None, None), "RG SP");
+         assert_eq!(App::device_name_for((800, 600), None, None), "slot");
+     }
+ }
+ 
+-
+ /// Only used by the informational fixed-shortcut guide; does not affect input.
+ fn fixed_fast_forward_text(binding: Option<Binding>, twice: bool) -> String {
+     let Some(binding) = binding else {
+@@ -17975,7 +18170,11 @@ fn fixed_fast_forward_text(binding: Option<Binding>, twice: bool) -> String {
+     } else {
+         key.replace('+', " + ")
+     };
+-    if twice { format!("{key} TWICE") } else { key }
++    if twice {
++        format!("{key} TWICE")
++    } else {
++        key
++    }
+ }
+ 
+ #[cfg(test)]
+@@ -17983,17 +18182,22 @@ mod fixed_fast_forward_reference_tests {
+     use super::*;
+     #[test]
+     fn current_mapping_is_explained_without_changing_its_binding() {
+-        let base = Some(Binding { modifier: None, button: Device::R2 });
++        let base = Some(Binding {
++            modifier: None,
++            button: Device::R2,
++        });
+         assert_eq!(fixed_fast_forward_text(base, true), "R2 TWICE");
+         assert_eq!(fixed_fast_forward_text(base, false), "R2");
+         assert_eq!(fixed_fast_forward_text(None, true), "NOT ASSIGNED");
+-        let custom = Some(Binding { modifier: Some(Modifier::Select), button: Device::L1 });
++        let custom = Some(Binding {
++            modifier: Some(Modifier::Select),
++            button: Device::L1,
++        });
+         assert_eq!(fixed_fast_forward_text(custom, true), "SELECT + L1 TWICE");
+         assert_eq!(fixed_fast_forward_text(custom, false), "SELECT + L1");
+     }
+ }
+ 
+-
+ /// Display helpers for the read-only reference menu. Never used by input.
+ fn fixed_key_with_prefix(binding: Option<Binding>, prefix: &str) -> String {
+     let Some(binding) = binding else {
+@@ -18008,7 +18212,9 @@ fn fixed_key_with_prefix(binding: Option<Binding>, prefix: &str) -> String {
+ fn fixed_holdable_shelf_key(binding: Option<Binding>) -> String {
+     match binding {
+         None => "NOT ASSIGNED".to_owned(),
+-        Some(Binding { modifier: Some(_), .. }) => "SINGLE KEY ONLY".to_owned(),
++        Some(Binding {
++            modifier: Some(_), ..
++        }) => "SINGLE KEY ONLY".to_owned(),
+         Some(binding) => fixed_key_with_prefix(Some(binding), "HOLD "),
+     }
+ }
+@@ -18019,12 +18225,18 @@ mod source_verified_hotkey_guide_display_tests {
+ 
+     #[test]
+     fn display_uses_effective_fast_forward_and_shelf_buttons() {
+-        let plain = Some(Binding { modifier: None, button: Device::R2 });
++        let plain = Some(Binding {
++            modifier: None,
++            button: Device::R2,
++        });
+         assert_eq!(fixed_key_with_prefix(plain, "HOLD "), "HOLD R2");
+         assert_eq!(fixed_key_with_prefix(plain, "TAP "), "TAP R2");
+         assert_eq!(fixed_key_with_prefix(None, "TAP "), "NOT ASSIGNED");
+ 
+-        let custom = Some(Binding { modifier: None, button: Device::L1 });
++        let custom = Some(Binding {
++            modifier: None,
++            button: Device::L1,
++        });
+         assert_eq!(fixed_holdable_shelf_key(custom), "HOLD L1");
+         assert_eq!(fixed_holdable_shelf_key(None), "NOT ASSIGNED");
+         let chord = Some(Binding {
+diff --git a/crates/slot/src/core.rs b/crates/slot/src/core.rs
+index 13c0f45..22b6b89 100644
+--- a/crates/slot/src/core.rs
++++ b/crates/slot/src/core.rs
+@@ -198,6 +198,7 @@ pub fn colour_option(
+     match which {
+         #[cfg(feature = "nds")]
+         Core::Dsperate => None,
++        Core::Picodrive => None,
+         Core::Mgba => Some((
+             "mgba_color_correction",
+             if on && platform == Platform::Gb {
+@@ -258,14 +259,20 @@ pub fn blending_off(which: Core) -> (&'static str, &'static str) {
+         Core::Gpsp => ("gpsp_frame_mixing", "disabled"),
+         Core::Gambatte => ("gambatte_mix_frames", "disabled"),
+         Core::Sameboy => ("sameboy_interframe_blending", "off"),
++        Core::Picodrive => ("", ""),
+         #[cfg(feature = "nds")]
+         Core::Dsperate => ("dsperate_blending", "off"),
+     }
+ }
+ 
+ pub fn apply_blending_off(core: &mut LibretroCore, which: Core) {
++    if which == Core::Picodrive {
++        return;
++    }
+     // SameBoy has no interframe-blending core option.
+-    if which == Core::Sameboy { return; }
++    if which == Core::Sameboy {
++        return;
++    }
+     let (key, value) = blending_off(which);
+     core.set_option(key, value);
+ }
+@@ -285,7 +292,9 @@ pub fn palette_options(which: Core, colors: GbColors) -> Vec<(&'static str, &'st
+             ("gambatte_gb_colorization", "internal"),
+             ("gambatte_gb_internal_palette", p.gambatte_name()),
+         ],
+-        (Core::Gambatte, GbColors::Auto | GbColors::GbcAuto) => vec![("gambatte_gb_colorization", "GBC")],
++        (Core::Gambatte, GbColors::Auto | GbColors::GbcAuto) => {
++            vec![("gambatte_gb_colorization", "GBC")]
++        }
+         (Core::Gambatte, GbColors::SgbAuto) => vec![("gambatte_gb_colorization", "SGB")],
+         (Core::Sameboy, _) => Vec::new(),
+         (Core::Mgba, GbColors::GbcAuto) => vec![
+@@ -359,12 +368,20 @@ pub fn apply_core_options(
+     if which == Core::Sameboy {
+         // Real SGB hardware handles games such as Pokemon Yellow dynamically.
+         // Without Pocket SGB choose the normal GB/GBC autodetection.
+-        core.set_option("sameboy_model", if matches!(palette, Some(GbColors::SgbAuto)) {
+-            "Super Game Boy"
+-        } else { "Auto" });
++        core.set_option(
++            "sameboy_model",
++            if matches!(palette, Some(GbColors::SgbAuto)) {
++                "Super Game Boy"
++            } else {
++                "Auto"
++            },
++        );
+         core.set_option("sameboy_border", "never");
+         core.set_option("sameboy_mono_palette", "greyscale");
+-        core.set_option("sameboy_color_correction_mode", if colour { "emulate hardware" } else { "off" });
++        core.set_option(
++            "sameboy_color_correction_mode",
++            if colour { "emulate hardware" } else { "off" },
++        );
+     }
+     if which == Core::Gambatte {
+         core.set_option("gambatte_gb_hwmode", "Auto");
+@@ -373,11 +390,12 @@ pub fn apply_core_options(
+         }
+         // SGB colors target a TV, not the GBC LCD. In particular, Gambatte's
+         // 'always' correction distorts SGB palettes. Includes SGB presets.
+-        let sgb_palette = platform == Platform::Gb && palette.is_some_and(|p| match p {
+-            GbColors::SgbAuto => true,
+-            GbColors::Palette(choice) => choice.core_name().starts_with("SGB "),
+-            GbColors::Auto | GbColors::GbcAuto => false,
+-        });
++        let sgb_palette = platform == Platform::Gb
++            && palette.is_some_and(|p| match p {
++                GbColors::SgbAuto => true,
++                GbColors::Palette(choice) => choice.core_name().starts_with("SGB "),
++                GbColors::Auto | GbColors::GbcAuto => false,
++            });
+         if let Some((key, value)) = colour_option(which, platform, colour) {
+             core.set_option(key, if sgb_palette { "disabled" } else { value });
+         }
+diff --git a/crates/slot/src/frontend.rs b/crates/slot/src/frontend.rs
+index 3755e5c..5ecbc72 100644
+--- a/crates/slot/src/frontend.rs
++++ b/crates/slot/src/frontend.rs
+@@ -824,6 +824,9 @@ impl Frontend {
+         let rounded = gb_cart_shadow(GbShell::Rounded);
+         let rounded = compositor.create_texture(rounded.w, rounded.h, &rounded.rgba);
+         self.session.app_mut().set_gb_cart_shadows(notched, rounded);
++        let gamegear = slot_ui::gb_cart_shadow(GbShell::GameGear);
++        let gamegear = compositor.create_texture(gamegear.w, gamegear.h, &gamegear.rgba);
++        self.session.app_mut().set_gamegear_cart_shadow(gamegear);
+         let board = slot_ui::cart_backing(None);
+         let board = compositor.create_texture(board.w, board.h, &board.rgba);
+         self.session.app_mut().set_cart_backing(board);
+@@ -834,6 +837,9 @@ impl Frontend {
+         self.session
+             .app_mut()
+             .set_gb_cart_backings(notched, rounded);
++        let gamegear = slot_ui::cart_backing(Some(GbShell::GameGear));
++        let gamegear = compositor.create_texture(gamegear.w, gamegear.h, &gamegear.rgba);
++        self.session.app_mut().set_gamegear_cart_backing(gamegear);
+         let slot = {
+             let mut upload =
+                 |bytes: &[u8]| compositor.create_texture(slot_ui::SLOT_W, slot_ui::SLOT_H, bytes);
+@@ -1153,18 +1159,18 @@ impl Frontend {
+         // bezel, only the bottom wordmark differs. Load both at boot
+         // so changing GBA → Bezel takes effect immediately, no reboot.
+         if panel == (640, 480) {
+-        let original = self.session.app().root().map(|root| {
+-            root.join(crate::bezel::BEZELS)
+-                .join("640x480-gba-original.png")
+-        });
+-        if let Some(path) = original {
+-            if let Some(rgba) = bezel_face(&path, w, h) {
+-                let tex = compositor.create_texture(w, h, &rgba);
+-                self.session.app_mut().set_gba_original_strip(Some(tex));
+-                eprintln!("slot: bezel {}", path.display());
++            let original = self.session.app().root().map(|root| {
++                root.join(crate::bezel::BEZELS)
++                    .join("640x480-gba-original.png")
++            });
++            if let Some(path) = original {
++                if let Some(rgba) = bezel_face(&path, w, h) {
++                    let tex = compositor.create_texture(w, h, &rgba);
++                    self.session.app_mut().set_gba_original_strip(Some(tex));
++                    eprintln!("slot: bezel {}", path.display());
++                }
+             }
+         }
+-        }
+     }
+ 
+     pub fn render(&mut self, compositor: &mut Compositor, window: (u32, u32)) {
+@@ -1318,7 +1324,8 @@ impl Frontend {
+             !bezel_has_glass && app.reflection(platform),
+             !bezel_has_glass,
+         );
+-        compositor.set_authentic_colour_correction(self.session.app().authentic_colour_correction());
++        compositor
++            .set_authentic_colour_correction(self.session.app().authentic_colour_correction());
+         compositor.set_frame_blend(self.session.app().frame_blend());
+         // Authentic uses its regular LCD response except while fast-forwarding.
+         compositor.set_authentic_fast_forward(self.session.fast_forwarding());
+@@ -1758,6 +1765,7 @@ fn authentic_screen(app: &App) -> slot_gfx::Screen {
+         },
+         Console::Gbc => slot_gfx::Screen::Gbc,
+         Console::Gba | Console::Gbav => slot_gfx::Screen::Gba,
++        Console::Gg => slot_gfx::Screen::Gba,
+         #[cfg(feature = "nds")]
+         Console::Nds => slot_gfx::Screen::Gba,
+     }
+@@ -2696,8 +2704,11 @@ fn sync_quick_clock(app: &mut App, compositor: &mut Compositor, state: &mut Quic
+ }
+ 
+ fn achievement_upload(
+-    compositor: &mut Compositor, previous: Option<TexId>,
+-    w: u32, h: u32, rgba: &[u8],
++    compositor: &mut Compositor,
++    previous: Option<TexId>,
++    w: u32,
++    h: u32,
++    rgba: &[u8],
+ ) -> TexId {
+     if let Some(tex) = previous {
+         compositor.update_texture(tex, w, h, rgba);
+@@ -2727,7 +2738,11 @@ fn sync_achievement_view(app: &mut App, compositor: &mut Compositor) {
+                 let name = [false, true].map(|lit| {
+                     let f = cheat_name_face(&a.title, lit);
+                     let previous = old_names.get(slot).map(|pair| pair[lit as usize].0);
+-                    (achievement_upload(compositor, previous, f.w, f.h, &f.rgba), f.w, f.h)
++                    (
++                        achievement_upload(compositor, previous, f.w, f.h, &f.rgba),
++                        f.w,
++                        f.h,
++                    )
+                 });
+                 let value = [false, true].map(|lit| {
+                     let label = if !a.unlocked {
+@@ -2741,14 +2756,20 @@ fn sync_achievement_view(app: &mut App, compositor: &mut Compositor) {
+                     };
+                     let f = quick_value_face(&label, lit);
+                     let previous = old_values.get(slot).map(|pair| pair[lit as usize].0);
+-                    (achievement_upload(compositor, previous, f.w, f.h, &f.rgba), f.w, f.h)
++                    (
++                        achievement_upload(compositor, previous, f.w, f.h, &f.rgba),
++                        f.w,
++                        f.h,
++                    )
+                 });
+-                let badge = a.badge.as_ref()
++                let badge = a
++                    .badge
++                    .as_ref()
+                     .and_then(|path| slot_achievements::load_badge(path))
+                     .map(|pic| {
+                         let previous = old_badges.get(slot).copied().flatten();
+                         let tex = achievement_upload(
+-                            compositor, previous, pic.width, pic.height, &pic.rgba
++                            compositor, previous, pic.width, pic.height, &pic.rgba,
+                         );
+                         (tex, pic.width, pic.height)
+                     });
+@@ -2764,16 +2785,32 @@ fn sync_achievement_view(app: &mut App, compositor: &mut Compositor) {
+             Some(v) => {
+                 let earned = v.entries.iter().filter(|a| a.unlocked).count();
+                 let total: u32 = v.entries.iter().map(|a| a.points).sum();
+-                let received: u32 = v.entries.iter().filter(|a| a.unlocked)
+-                    .map(|a| a.points).sum();
+-                format!("{} — {}/{} ({}%) · {}/{} pts",
+-                    v.title, earned, v.entries.len(),
+-                    if v.entries.is_empty() { 0 } else { earned * 100 / v.entries.len() },
+-                    received, total)
++                let received: u32 = v
++                    .entries
++                    .iter()
++                    .filter(|a| a.unlocked)
++                    .map(|a| a.points)
++                    .sum();
++                format!(
++                    "{} — {}/{} ({}%) · {}/{} pts",
++                    v.title,
++                    earned,
++                    v.entries.len(),
++                    if v.entries.is_empty() {
++                        0
++                    } else {
++                        earned * 100 / v.entries.len()
++                    },
++                    received,
++                    total
++                )
+             }
+             None => "Achievements — connecting or no offline cache".into(),
+         };
+-        let state = format!("{} | Y Refresh | X Sort", app.achievement_connection_label());
++        let state = format!(
++            "{} | Y Refresh | X Sort",
++            app.achievement_connection_label()
++        );
+         let f = quick_description_face(&[&title, &state]);
+         let previous = app.achievement_header_texture().map(|(tex, _, _)| tex);
+         let tex = achievement_upload(compositor, previous, f.w, f.h, &f.rgba);
+diff --git a/crates/slot/src/invite.rs b/crates/slot/src/invite.rs
+index d9fb032..d48d5fb 100644
+--- a/crates/slot/src/invite.rs
++++ b/crates/slot/src/invite.rs
+@@ -41,6 +41,7 @@ fn core_byte(core: Core) -> u8 {
+         Core::Mgba => 1,
+         Core::Gpsp => 2,
+         Core::Gambatte => 3,
++        Core::Picodrive => 4,
+         // SameBoy was removed from select. slot.'s bundled emulator choices.
+         // Do not incorrectly announce it as a playable link core.
+         Core::Sameboy => 0,
+@@ -54,6 +55,7 @@ fn core_from(byte: u8) -> Option<Core> {
+         1 => Some(Core::Mgba),
+         2 => Some(Core::Gpsp),
+         3 => Some(Core::Gambatte),
++        4 => Some(Core::Picodrive),
+         _ => None,
+     }
+ }
+@@ -63,6 +65,7 @@ fn platform_byte(platform: Platform) -> u8 {
+         Platform::Gb => 1,
+         Platform::Gbc => 2,
+         Platform::Gba | Platform::Gbav => 3,
++        Platform::Gg => 4,
+         #[cfg(feature = "nds")]
+         Platform::Nds => 0,
+     }
+@@ -73,6 +76,7 @@ fn platform_from(byte: u8) -> Option<Platform> {
+         1 => Some(Platform::Gb),
+         2 => Some(Platform::Gbc),
+         3 => Some(Platform::Gba),
++        4 => Some(Platform::Gg),
+         _ => None,
+     }
+ }
+diff --git a/crates/slot/src/session.rs b/crates/slot/src/session.rs
+index 925ae57..fdcd633 100644
+--- a/crates/slot/src/session.rs
++++ b/crates/slot/src/session.rs
+@@ -402,7 +402,8 @@ impl Session {
+ 
+     pub fn update(&mut self, dt: f32) {
+         if self.app.in_game_menu() == Some(slot_ui::QuickRow::AchievementList) {
+-            self.app.set_achievement_view(self.achievements.achievement_view());
++            self.app
++                .set_achievement_view(self.achievements.achievement_view());
+             self.app.set_achievement_connection(
+                 self.achievements.game_connection(),
+                 self.achievements.game_connection_detail(),
+@@ -416,7 +417,8 @@ impl Session {
+                 );
+             }
+         }
+-        self.app.set_achievement_overview(self.achievements.overview());
++        self.app
++            .set_achievement_overview(self.achievements.overview());
+         self.bridge_link(|app| app.update(dt));
+         if let Some(action) = self.app.take_achievement_action() {
+             self.achievements.request_library(action);
+@@ -725,7 +727,7 @@ impl Session {
+                 // cheats are not wired up yet.
+                 let cheats = match core {
+                     Core::Mgba => crate::cheats::load(&root, platform, &stem, &rom),
+-                    Core::Gpsp | Core::Gambatte | Core::Sameboy => Vec::new(),
++                    Core::Gpsp | Core::Gambatte | Core::Sameboy | Core::Picodrive => Vec::new(),
+                     #[cfg(feature = "nds")]
+                     Core::Dsperate => Vec::new(),
+                 };
+diff --git a/crates/slot/src/studio_view.rs b/crates/slot/src/studio_view.rs
+index aed872f..18f60f8 100644
+--- a/crates/slot/src/studio_view.rs
++++ b/crates/slot/src/studio_view.rs
+@@ -104,12 +104,16 @@ pub fn layout(canvas_w: f32, platform: Platform) -> Layout {
+             if narrow { 248.0 } else { GB_CART_W as f32 },
+             GB_CART_H as f32 / GB_CART_W as f32,
+         ),
++        Platform::Gg => (
++            if narrow { 248.0 } else { GB_CART_W as f32 },
++            GB_CART_H as f32 / GB_CART_W as f32,
++        ),
+     };
+     let inset = match platform {
+         Platform::Gba | Platform::Gbav => 0.0,
+         #[cfg(feature = "nds")]
+         Platform::Nds => 0.0,
+-        Platform::Gb | Platform::Gbc => w * GB_ART_INSET / GB_CART_W as f32,
++        Platform::Gb | Platform::Gbc | Platform::Gg => w * GB_ART_INSET / GB_CART_W as f32,
+     };
+     let h = w * ratio;
+     let (sin, cos) = CART_TILT.to_radians().abs().sin_cos();
+@@ -118,7 +122,9 @@ pub fn layout(canvas_w: f32, platform: Platform) -> Layout {
+         Platform::Gba | Platform::Gbav => slot_ui::LABEL_W as f32 / slot_ui::CART_W as f32,
+         #[cfg(feature = "nds")]
+         Platform::Nds => slot_ui::DS_LABEL_W as f32 / slot_ui::DS_CART_W as f32,
+-        Platform::Gb | Platform::Gbc => slot_ui::GB_LABEL_W as f32 / GB_CART_W as f32,
++        Platform::Gb | Platform::Gbc | Platform::Gg => {
++            slot_ui::GB_LABEL_W as f32 / GB_CART_W as f32
++        }
+     };
+     let printer = w * sticker + 2.0 * (SLIP_PAD + PRINTER_LIP);
+     let margin = ((canvas_w - wide - printer) / 3.0).floor().max(EDGE);
+@@ -606,7 +612,7 @@ pub fn marker_rest(canvas_w: f32, cart: &slot_store::Cart) -> MarkerRest {
+     let cap_len = cap_end - cap_top;
+     let reach = (units + CAP_GAP + cap_len) / units;
+     let inset = match cart.platform {
+-        Platform::Gb | Platform::Gbc => l.cart_w * GB_ART_INSET / GB_CART_W as f32,
++        Platform::Gb | Platform::Gbc | Platform::Gg => l.cart_w * GB_ART_INSET / GB_CART_W as f32,
+         _ => 0.0,
+     };
+     let (sin, cos) = CART_TILT.to_radians().abs().sin_cos();
+@@ -710,6 +716,12 @@ pub fn well_of(cart: &slot_store::Cart) -> [u32; 4] {
+             slot_ui::GBC_LABEL_W,
+             slot_ui::GBC_LABEL_H,
+         ],
++        Some(slot_ui::GbShell::GameGear) => [
++            slot_ui::GG_LABEL_X,
++            slot_ui::GG_LABEL_Y,
++            slot_ui::GG_LABEL_W,
++            slot_ui::GG_LABEL_H,
++        ],
+     }
+ }
+ 
+@@ -718,7 +730,7 @@ pub fn shelf_rect(canvas: slot_gfx::Canvas, cart: &slot_store::Cart) -> [f32; 4]
+         Platform::Gba | Platform::Gbav => (slot_ui::CART_W as f32, slot_ui::CART_H as f32),
+         #[cfg(feature = "nds")]
+         Platform::Nds => (slot_ui::DS_CART_W as f32, slot_ui::DS_CART_H as f32),
+-        Platform::Gb | Platform::Gbc => (GB_CART_W as f32, GB_CART_H as f32),
++        Platform::Gb | Platform::Gbc | Platform::Gg => (GB_CART_W as f32, GB_CART_H as f32),
+     };
+     [(canvas.w - w) / 2.0, slot_ui::rest_y(canvas, h), w, h]
+ }
+diff --git a/crates/slot/src/update.rs b/crates/slot/src/update.rs
+index f0b587c..dce7c9b 100644
+--- a/crates/slot/src/update.rs
++++ b/crates/slot/src/update.rs
+@@ -146,13 +146,15 @@ fn parts(v: &str) -> Option<Vec<u64>> {
+     v.split('.').map(|p| p.parse().ok()).collect()
+ }
+ 
+-/// select. slot. releases outrank earlier custom, RGSP and pvaibhav builds of the same upstream version.
+-/// Keep parsing previous release suffixes so OTA works when migrating existing installations.
++/// more. slot. test builds use an isolated feed and rank after select. slot. revisions so they can
++/// update within their own testing channel without changing the stable release feed.
+ fn fork_version(v: &str) -> Option<(Vec<u64>, u64)> {
+     let (base, fork) = match v.split_once('-') {
+         None => (v, 0),
+         Some((base, suffix)) => {
