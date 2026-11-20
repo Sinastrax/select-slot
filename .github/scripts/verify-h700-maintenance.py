@@ -66,6 +66,8 @@ assert "python3 .github/scripts/verify-h700-maintenance.py" in build
 assert "cargo test -p slot-achievements -- --nocapture" in build
 assert "cargo test -p slot-ui --lib menu_viewport_tests" in build
 assert "cargo test -p slot --no-default-features --features device --lib hardware_nickname_regression" in build
+assert "cargo test -p slot-gfx --lib authentic_blending_tests" in build
+assert "cargo test -p slot --no-default-features --features device --test app authentic_trades_the_game_boys_colour_and_palette_rows_for_a_model" in build
 assert "check-gles2-shader.py" in build
 assert "verify-ota-publisher.py" in build
 assert "needs: build-h700" in build

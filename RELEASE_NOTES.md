@@ -1,4 +1,4 @@
-# select. slot. 1.16.0 Ver. 49
+# select. slot. 1.16.0 Ver. 50
 
-- Fixed Pocket Color and SGB color routing when Game Boy cartridges run through armGBA.
-- Restored the separate per-system Frame Blending option under Authentic.
+- Made Authentic Frame Blending available and adjustable from the in-game Screen menu and each system's Screen settings.
+- Authentic Frame Blending is forced off while fast-forwarding; German displays the option as "Bildmischung".
