@@ -18,10 +18,10 @@ if 'say() {' in source:
     source = source.replace('say() {', '''say() {
     if [ -r "$SD/Config/language.txt" ] && [ "$(cat "$SD/Config/language.txt")" = de ]; then
         case "$1" in
-            "UPDATING SELECT. SLOT.") set -- "SELECT. SLOT. WIRD AKTUALISIERT" ;;
-            "UPDATE FAILED") set -- "UPDATE FEHLGESCHLAGEN" ;;
-            "UPDATE COMPLETE") set -- "UPDATE ABGESCHLOSSEN" ;;
-            "INSTALLING BOOT LOGO") set -- "STARTLOGO WIRD INSTALLIERT" ;;
+            "UPDATING SELECT. SLOT."|"UPDATING MORE. SLOT.") set -- "SLOT-UPDATE" ;;
+            "UPDATE FAILED") set -- "UPDATE FEHLER" ;;
+            "UPDATE COMPLETE") set -- "UPDATE FERTIG" ;;
+            "INSTALLING BOOT LOGO") set -- "BOOTLOGO INSTALL" ;;
         esac
     fi''')
 path.write_text(source)

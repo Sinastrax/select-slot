@@ -13,12 +13,7 @@ on:
       - "branding/**"
   push:
     branches:
-      - main
-      - integration/slot-1.16.0
       - more-slot
-    tags:
-      - "v*-custom.*"
-      - "v*-rgsp.*"
     paths:
       - "handheld-i18n/**"
       - "patches/**"
@@ -117,6 +112,8 @@ jobs:
         working-directory: upstream
         shell: bash
         run: |
+          cargo test -p slot-gfx --lib authentic_blending_tests -- --nocapture
+          cargo test -p slot --no-default-features --features device --test app authentic_trades_the_game_boys_colour_and_palette_rows_for_a_model -- --nocapture
           cargo test -p slot --no-default-features --features device --test update -- --nocapture
           cargo test -p slot --no-default-features --features device --lib menu_idle::tests -- --nocapture
           cargo test -p slot --no-default-features --features device --test boot -- --nocapture
@@ -243,6 +240,8 @@ jobs:
           test -s source-release/mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz
           test ! -e select-slot-h700/System/licenses/mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz
           test -s select-slot-h700/System/licenses/mgba-source-notice.txt
+          cp select-slot-h700/System/licenses/armgba-*.tar.gz source-release/
+          ls -l source-release/armgba-*.tar.gz
 
       - name: Build Game Gear PicoDrive core and retain corresponding source
         working-directory: upstream
@@ -278,6 +277,9 @@ jobs:
           test -s source-release/picodrive-emu2413-src.tar.gz
           test -s source-release/picodrive-dr_libs-src.tar.gz
           test -s source-release/picodrive-libpicofe-src.tar.gz
+          test -s select-slot-h700/System/armgba_libretro.so
+          test -s select-slot-h700/System/licenses/armgba-src.tar.gz || \
+            compgen -G 'select-slot-h700/System/licenses/armgba-*.tar.gz' > /dev/null
           test -s select-slot-h700/System/bezels/640x480.png
           test -s select-slot-h700/System/bezels/640x480-gba-original.png
           test -s select-slot-h700/System/licenses/gba-original-bezel-credits.txt
@@ -313,82 +315,10 @@ jobs:
             slot-v*-h700.zip
             versions.json
             upstream/source-release/mgba-*-source.tar.gz
-            upstream/source-release/picodrive-*-src.tar.gz
+            upstream/source-release/picodrive*src.tar.gz
             upstream/source-release/picodrive-src.meta
+            upstream/source-release/armgba-*.tar.gz
           if-no-files-found: error
-
-  release-h700:
-    name: Publish complete custom firmware for online updates
-    # Only a successful push on main may publish. Tag builds still validate
-    # firmware but must never move the latest channel backwards.
-    # If this tag already has a public release, leave it unchanged.
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: build-h700
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: write
-    steps:
-      # Checkout first: checkout's default clean mode deletes untracked artifacts.
-      - uses: actions/checkout@v4
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: select-slot-complete-h700
-          path: release
-
-      - name: Verify version and archive checksum before publication
-        env:
-          RELEASE_REF: ${{ github.ref }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import hashlib, json, os, pathlib
-          root = pathlib.Path("release")
-          d = json.loads((root / "versions.json").read_text())["stable"]
-          ref = os.environ["RELEASE_REF"]
-          if ref.startswith("refs/tags/"):
-              assert d["tag"] == ref.removeprefix("refs/tags/"), (d["tag"], ref)
-          else:
-              assert ref == "refs/heads/main", ref
-          # The verified manifest is the single source of truth for this release.
-          with open(os.environ["GITHUB_ENV"], "a") as env:
-              env.write("RELEASE_TAG=" + d["tag"] + "\n")
-          archive = root / d["zip"]
-          assert archive.is_file(), d["zip"]
-          assert archive.stat().st_size == d["size"]
-          assert hashlib.sha256(archive.read_bytes()).hexdigest() == d["sha256"]
-          print("Validated", archive.name, d["sha256"])
-          PY
-
-      - name: Publish update assets on GitHub Releases
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          zip="release/slot-${RELEASE_TAG}-h700.zip"
-          test -s "$zip"
-          TAG="$RELEASE_TAG"
-          if [[ "$TAG" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)-(rgsp|custom|select)\.([0-9]+)$ ]]; then
-            DISPLAY_VERSION="${BASH_REMATCH[1]} Ver. ${BASH_REMATCH[3]}"
-          else
-            DISPLAY_VERSION="${TAG#v}"
-          fi
-          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "Release $RELEASE_TAG already published; leaving it unchanged."
-            exit 0
-          fi
-          test -s release/upstream/source-release/mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz
-          test -s release/upstream/source-release/picodrive-src.tar.gz
-          gh release create "$RELEASE_TAG" "$zip" release/versions.json \
-            release/upstream/source-release/mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz \
-            release/upstream/source-release/picodrive-*-src.tar.gz \
-            release/upstream/source-release/picodrive-src.meta \
-            --repo "$GITHUB_REPOSITORY" \
-            --target "$GITHUB_SHA" --latest \
-            --title "more. slot. $DISPLAY_VERSION" \
-            --notes-file RELEASE_NOTES.md
 
   release-more-slot-test:
     name: Publish isolated more. slot. test build and OTA feed
@@ -440,13 +370,14 @@ jobs:
             "release/slot-$tag-h700.zip" \
             release/versions.json \
             release/upstream/source-release/mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz \
-            release/upstream/source-release/picodrive-*-src.tar.gz \
+            release/upstream/source-release/picodrive*src.tar.gz \
+            release/upstream/source-release/armgba-*.tar.gz \
             release/upstream/source-release/picodrive-src.meta \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --prerelease \
             --title "more. slot. $version (test build)" \
-            --notes "Testing build for more. slot. on H700 handhelds. This prerelease is isolated from the stable select. slot. update feed. Install this first test build manually; only more. slot. builds use the test OTA feed."
+            --notes-file RELEASE_NOTES.md
 
       - name: Update only the more. slot. test OTA manifest
         env:

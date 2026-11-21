@@ -88,33 +88,27 @@ shader = replace_once(
 )
 shader_path.write_text(shader)
 
-# Slot already has GamePass::set_glass and Compositor::set_authentic_glass,
-# but the frontend never passed the in-game Reflection option to either.
-# A default Authentic bezel contains its OWN glass texture; the shader must
-# not double-apply sheen/shade there. With any other bezel, the shader draws
-# the shade regardless, but draws the sheen only while Reflection is enabled.
+# Slot v1.16.0-pvaibhav.2 now wires the in-game Reflection option into the
+# Authentic glass uniforms. Keep the original fork's rendering implementation:
+# it checks the bezel that was actually drawn and separately removes the baked
+# sheen from Authentic bezel artwork when Reflection is off. Do not add a second
+# frontend setter here. Assert those upstream guarantees so a later upstream
+# change cannot silently restore the always-on shader sheen.
 fbo = Path("crates/slot-gfx/src/fbo.rs").read_text()
 if "pub fn set_authentic_glass(&mut self, sheen: bool, shade: bool)" not in fbo:
     raise AssertionError("Expected upstream Authentic glass compositor API missing")
 
 frontend_path = Path("crates/slot/src/frontend.rs")
 frontend = frontend_path.read_text()
-if "compositor.set_authentic_glass(" in frontend:
-    raise AssertionError("Frontend already controls Authentic glass: review upstream changes")
-glass_old = "        compositor.set_authentic_screen(authentic_screen(self.session.app()));"
-glass_new = """        compositor.set_authentic_screen(authentic_screen(self.session.app()));
-        // Reflection is separate from the LCD colour correction and pixel grid.
-        // Default Authentic bezel art already draws its own glass. Otherwise,
-        // keep the bezel shade but only show the shader sheen when requested.
-        let app = self.session.app();
-        let platform = app.playing_platform();
-        let bezel_has_glass = app.resolved_bezel(platform) == BezelPick::Default
-            && app.bezel_art().is_some_and(BezelArt::authentic);
-        compositor.set_authentic_glass(
-            !bezel_has_glass && app.reflection(platform),
-            !bezel_has_glass,
-        );"""
-frontend = replace_once(frontend, glass_old, glass_new, "Reflection setting wiring")
-frontend_path.write_text(frontend)
+glass_wiring = """        let bezel_glass = bezel.is_some()
+            && self.game_bezel.image.as_ref().is_some_and(|image| {
+                image.1 == BezelPick::Default && image.2.is_some_and(BezelArt::authentic)
+            });
+        let reflection = app.reflection(app.playing_platform());
+        compositor.set_authentic_glass(!bezel_glass && reflection, !bezel_glass);"""
+if frontend.count("compositor.set_authentic_glass(") != 1 or glass_wiring not in frontend:
+    raise AssertionError("Upstream Authentic Reflection frontend wiring changed")
+if "if own_shadow && !shown.5 {\n                clear_glass_reflection(&mut rgba, w, h);" not in frontend:
+    raise AssertionError("Authentic bezel sheen no longer follows the Reflection setting")
 
-print("Restored measured Authentic panel colour correction, neutral OFF mode and per-platform Reflection control")
+print("Restored measured Authentic colour controls; verified upstream per-platform Reflection wiring")

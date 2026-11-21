@@ -8,7 +8,7 @@ curl -fsSL --retry 5 --retry-all-errors \
   "https://github.com/pvaibhav/slot/archive/refs/tags/v1.15.3-pvaibhav.1.tar.gz" \
   -o /tmp/base-slot.tar.gz
 curl -fsSL --retry 5 --retry-all-errors \
-  "https://github.com/pvaibhav/slot/archive/refs/tags/v1.16.0-pvaibhav.1.tar.gz" \
+  "https://github.com/pvaibhav/slot/archive/refs/tags/v1.16.0-pvaibhav.2.tar.gz" \
   -o /tmp/new-slot.tar.gz
 mkdir upstream
 tar -xzf /tmp/base-slot.tar.gz --strip-components=1 -C upstream
@@ -76,6 +76,10 @@ git show upstream-1.16:CHANGELOG.md | grep -q '1.16.0'
 git diff --stat HEAD~1 HEAD | tail -25
 echo "Merged latest upstream with our previous complete custom modifications"
 python3 ../.github/scripts/merge-1.16-fixes.py
+python3 ../.github/scripts/verify-armgba-authentic-gb-colour.py
+python3 ../.github/scripts/fix-authentic-frame-blending-visible.py
+python3 ../.github/scripts/restore-known-good-authentic-texture-filter.py
+python3 ../.github/scripts/verify-authentic-frame-blending-visible.py
 python3 ../.github/scripts/fix-authentic-colour-reflection.py
 python3 ../.github/scripts/fix-fit-lcd-sampling.py
 python3 ../.github/scripts/verify-fit-lcd-sampling.py
@@ -135,6 +139,9 @@ python3 ../.github/scripts/verify-gba-fit-lcd-intersections.py
 # Separate image with original alpha and SP placement. No shader edits.
 python3 ../.github/scripts/add-h700-original-gba-bezel.py
 python3 ../.github/scripts/verify-h700-original-gba-bezel.py
+# Run only after the shader's byte-exact Ver. 17 regression guard.
+python3 ../.github/scripts/optimize-authentic-pocket-sampling.py
+python3 ../.github/scripts/verify-authentic-pocket-sampling.py
 # Preserve the connection when pulling a cart, present branded OTA
 # versions, and keep the shelf clock legible over the built-in dark
 # wallpaper. Leave archive names, checksums and shaders unchanged.
@@ -202,5 +209,14 @@ git apply ../patches/keyboard-caps-indicator.patch
 git apply ../patches/scroll-cheat-achievement-names.patch
 # Reserve top chrome and header space in the in-game achievement list.
 git apply ../patches/achievement-header-viewport.patch
+# mGBA GB/GBC only: use a restrained 1% drift correction to reduce
+# ring overflow skips. Every other core keeps the original 0.5% correction.
+git apply --check ../patches/mgba-gb-audio-gentle-drc.patch
+git apply ../patches/mgba-gb-audio-gentle-drc.patch
+# Preserve continuous mGBA GB/GBC audio when the ring reaches capacity.
+git apply --check ../patches/mgba-gb-audio-backpressure.patch
+git apply ../patches/mgba-gb-audio-backpressure.patch
+git apply --check ../patches/pocket-color-table.patch
+git apply ../patches/pocket-color-table.patch
 git apply --check ../patches/gamegear-picodrive.patch
 git apply ../patches/gamegear-picodrive.patch

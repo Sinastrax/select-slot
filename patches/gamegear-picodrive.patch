@@ -72,13 +72,13 @@ index 8638626..b843ef1 100644
              Platform::Nds => &GameButton::ALL,
          }
 diff --git a/crates/slot-store/src/core.rs b/crates/slot-store/src/core.rs
-index a68bf65..9f95405 100644
+index ff69b93..0ea372e 100644
 --- a/crates/slot-store/src/core.rs
 +++ b/crates/slot-store/src/core.rs
-@@ -12,15 +12,22 @@ pub enum Core {
+@@ -12,19 +12,21 @@ pub enum Core {
      Gpsp,
      Gambatte,
-     Sameboy,
+     Armgba,
 +    Picodrive,
      #[cfg(feature = "nds")]
      Dsperate,
@@ -86,70 +86,68 @@ index a68bf65..9f95405 100644
  
  impl Core {
      #[cfg(not(feature = "nds"))]
--    pub const ALL: [Core; 3] = [Core::Mgba, Core::Gpsp, Core::Gambatte];
-+    pub const ALL: [Core; 4] = [Core::Mgba, Core::Gpsp, Core::Gambatte, Core::Picodrive];
+-    pub const ALL: [Core; 4] = [Core::Mgba, Core::Gpsp, Core::Gambatte, Core::Armgba];
++    pub const ALL: [Core; 5] = [Core::Mgba, Core::Gpsp, Core::Gambatte, Core::Armgba, Core::Picodrive];
      #[cfg(feature = "nds")]
--    pub const ALL: [Core; 4] = [Core::Mgba, Core::Gpsp, Core::Gambatte, Core::Dsperate];
-+    pub const ALL: [Core; 5] = [
-+        Core::Mgba,
-+        Core::Gpsp,
-+        Core::Gambatte,
+-    pub const ALL: [Core; 5] = [
++    pub const ALL: [Core; 6] = [
+         Core::Mgba,
+         Core::Gpsp,
+         Core::Gambatte,
+         Core::Armgba,
 +        Core::Picodrive,
-+        Core::Dsperate,
-+    ];
+         Core::Dsperate,
+     ];
  
-     pub fn as_str(&self) -> &'static str {
-         match self {
-@@ -28,6 +35,7 @@ impl Core {
+@@ -34,6 +36,7 @@ impl Core {
              Core::Gpsp => "gpsp",
              Core::Gambatte => "gambatte",
-             Core::Sameboy => "sameboy",
+             Core::Armgba => "armgba",
 +            Core::Picodrive => "picodrive",
              #[cfg(feature = "nds")]
              Core::Dsperate => "dsperate",
          }
-@@ -43,6 +51,7 @@ impl Core {
+@@ -49,6 +52,7 @@ impl Core {
              Core::Gpsp => "gpSP",
              Core::Gambatte => "Gambatte",
-             Core::Sameboy => "SameBoy",
+             Core::Armgba => "armGBA",
 +            Core::Picodrive => "PicoDrive",
              #[cfg(feature = "nds")]
              Core::Dsperate => "DSperate",
          }
-@@ -55,6 +64,7 @@ impl Core {
-             "gambatte" => Some(Core::Gambatte),
+@@ -62,6 +66,7 @@ impl Core {
+             "armgba" => Some(Core::Armgba),
              // Migrate cartridge choices made while SameBoy was the alternate core.
              "sameboy" => Some(Core::Mgba),
 +            "picodrive" => Some(Core::Picodrive),
              #[cfg(feature = "nds")]
              "dsperate" => Some(Core::Dsperate),
              _ => None,
-@@ -68,6 +78,7 @@ impl Core {
-             Core::Mgba => true,
+@@ -72,9 +77,10 @@ impl Core {
+         match self {
+             #[cfg(feature = "nds")]
+             _ if platform == Platform::Nds => self == Core::Dsperate,
+-            Core::Mgba | Core::Armgba => true,
++            Core::Mgba | Core::Armgba => platform != Platform::Gg,
              Core::Gpsp => platform.hardware() == Platform::Gba,
-             Core::Gambatte | Core::Sameboy => matches!(platform, Platform::Gb | Platform::Gbc),
+             Core::Gambatte => matches!(platform, Platform::Gb | Platform::Gbc),
 +            Core::Picodrive => platform == Platform::Gg,
              #[cfg(feature = "nds")]
              Core::Dsperate => false,
          }
-@@ -77,6 +88,7 @@ impl Core {
+@@ -85,6 +91,7 @@ impl Core {
          match platform {
-             Platform::Gba | Platform::Gbav => [Core::Mgba, Core::Gpsp],
-             Platform::Gb | Platform::Gbc => [Core::Mgba, Core::Gambatte],
-+            Platform::Gg => [Core::Picodrive, Core::Picodrive],
+             Platform::Gba | Platform::Gbav => &[Core::Mgba, Core::Armgba, Core::Gpsp],
+             Platform::Gb | Platform::Gbc => &[Core::Mgba, Core::Armgba, Core::Gambatte],
++            Platform::Gg => &[Core::Picodrive],
              #[cfg(feature = "nds")]
-             Platform::Nds => [Core::Dsperate, Core::Dsperate],
+             Platform::Nds => &[Core::Dsperate],
          }
-@@ -99,8 +111,11 @@ pub fn core_for_platform(root: &Path, stem: &str, platform: Platform, gb_core: C
-         .and_then(Core::parse)
-         .filter(|core| core.runs(platform))
-         .unwrap_or_else(|| match platform {
-+            Platform::Gg => Core::Picodrive,
+@@ -111,6 +118,7 @@ pub fn core_for_platform(root: &Path, stem: &str, platform: Platform, gb_core: C
+             Platform::Gbav => Core::Mgba,
              Platform::Gb | Platform::Gbc if gb_core == Core::Gambatte => Core::Gambatte,
--            Platform::Gb | Platform::Gbc if matches!(gb_core, Core::Mgba | Core::Sameboy) => Core::Mgba,
-+            Platform::Gb | Platform::Gbc if matches!(gb_core, Core::Mgba | Core::Sameboy) => {
-+                Core::Mgba
-+            }
+             Platform::Gb | Platform::Gbc if gb_core == Core::Mgba => Core::Mgba,
++            Platform::Gg => Core::Picodrive,
              Platform::Gb | Platform::Gbc => Core::Gambatte,
              #[cfg(feature = "nds")]
              Platform::Nds => Core::Dsperate,
@@ -221,7 +219,7 @@ index d04ad8d..d690ac2 100644
              Platform::Nds => (256, 192),
          }
 diff --git a/crates/slot-store/src/slot_state.rs b/crates/slot-store/src/slot_state.rs
-index f66eb6a..9915d9f 100644
+index 2d801b5..dee6199 100644
 --- a/crates/slot-store/src/slot_state.rs
 +++ b/crates/slot-store/src/slot_state.rs
 @@ -408,8 +408,12 @@ pub enum GbModel {
@@ -239,18 +237,16 @@ index f66eb6a..9915d9f 100644
      ];
  
      pub fn key(self) -> &'static str {
-@@ -448,7 +452,9 @@ impl Blending {
+@@ -448,7 +452,7 @@ impl Blending {
      /// Slot blends frames on the GPU, so every Game Boy and GBA core offers every choice.
      pub fn choices(core: Core) -> &'static [Blending] {
          match core {
--            Core::Mgba | Core::Gpsp | Core::Gambatte | Core::Sameboy => &Blending::ALL,
-+            Core::Mgba | Core::Gpsp | Core::Gambatte | Core::Sameboy | Core::Picodrive => {
-+                &Blending::ALL
-+            }
+-            Core::Mgba | Core::Gpsp | Core::Gambatte | Core::Armgba => &Blending::ALL,
++            Core::Mgba | Core::Gpsp | Core::Gambatte | Core::Armgba | Core::Picodrive => &Blending::ALL,
              #[cfg(feature = "nds")]
              Core::Dsperate => &[Blending::Off],
          }
-@@ -511,6 +517,7 @@ pub struct SlotState {
+@@ -511,6 +515,7 @@ pub struct SlotState {
      /// Independently selectable GB shader for games running in mGBA.
      pub shader_gb_mgba: Shader,
      pub shader_gbc: Shader,
@@ -258,7 +254,7 @@ index f66eb6a..9915d9f 100644
      pub resume_insert: bool,
      pub resume_power_on: bool,
      pub rewind: bool,
-@@ -536,6 +543,7 @@ pub struct SlotState {
+@@ -536,6 +541,7 @@ pub struct SlotState {
      pub bezel_gba: BezelPick,
      pub bezel_gb: BezelPick,
      pub bezel_gbc: BezelPick,
@@ -266,7 +262,7 @@ index f66eb6a..9915d9f 100644
      /// Whether Authentic lays the glass's reflection over each console's screen.
      pub reflection_gba: bool,
      pub reflection_gb: bool,
-@@ -543,11 +551,13 @@ pub struct SlotState {
+@@ -543,11 +549,13 @@ pub struct SlotState {
      pub overlay_gba: Option<String>,
      pub overlay_gb: Option<String>,
      pub overlay_gbc: Option<String>,
@@ -280,15 +276,15 @@ index f66eb6a..9915d9f 100644
      pub stretch_gb: Stretch,
      pub stretch_gbc: Stretch,
      pub blending_gba: Blending,
-@@ -557,6 +567,7 @@ pub struct SlotState {
-     /// Independently selected Authentic model for mGBA GB games.
-     pub gb_model_mgba: GbModel,
-     pub blending_gbc: Blending,
+@@ -560,6 +568,7 @@ pub struct SlotState {
+     pub authentic_blending_gba: Blending,
+     pub authentic_blending_gb: Blending,
+     pub authentic_blending_gbc: Blending,
 +    pub blending_gg: Blending,
      pub recents: Vec<Recent>,
      pub favorites: Vec<Recent>,
      pub shelf: Option<String>,
-@@ -659,6 +670,14 @@ impl Shader {
+@@ -662,6 +671,14 @@ impl Shader {
          Shader::Shimmerless,
          Shader::Authentic,
      ];
@@ -303,7 +299,7 @@ index f66eb6a..9915d9f 100644
  
      pub fn name(self) -> &'static str {
          match self {
-@@ -731,6 +750,7 @@ impl Default for SlotState {
+@@ -734,6 +751,7 @@ impl Default for SlotState {
              shader_gb: Shader::Simpletex,
              shader_gb_mgba: Shader::Simpletex,
              shader_gbc: Shader::Simpletex,
@@ -311,7 +307,7 @@ index f66eb6a..9915d9f 100644
              resume_insert: true,
              resume_power_on: true,
              rewind: true,
-@@ -754,17 +774,20 @@ impl Default for SlotState {
+@@ -757,17 +775,20 @@ impl Default for SlotState {
              bezel_gba: BezelPick::Ags102,
              bezel_gb: BezelPick::Ags102,
              bezel_gbc: BezelPick::Ags102,
@@ -332,15 +328,15 @@ index f66eb6a..9915d9f 100644
              stretch_gb: Stretch::Classic,
              stretch_gbc: Stretch::Classic,
              blending_gba: Blending::Off,
-@@ -772,6 +795,7 @@ impl Default for SlotState {
-             gb_model: GbModel::Pocket,
-             gb_model_mgba: GbModel::PocketSgb,
-             blending_gbc: Blending::Off,
+@@ -778,6 +799,7 @@ impl Default for SlotState {
+             authentic_blending_gba: Blending::Ghosting,
+             authentic_blending_gb: Blending::Ghosting,
+             authentic_blending_gbc: Blending::Ghosting,
 +            blending_gg: Blending::Off,
              recents: Vec::new(),
              favorites: Vec::new(),
              shelf: None,
-@@ -873,10 +897,23 @@ pub fn write_slot_state(root: &Path, s: &SlotState) -> std::io::Result<()> {
+@@ -879,10 +901,23 @@ pub fn write_slot_state(root: &Path, s: &SlotState) -> std::io::Result<()> {
          s.colour_correction_gbc as u8
      ));
      text.push_str(&format!("shader_gbc={}\n", s.shader_gbc.name()));
@@ -368,7 +364,7 @@ index f66eb6a..9915d9f 100644
      text.push_str(&format!("shader_gb_mgba={}\n", s.shader_gb_mgba.name()));
      text.push_str(&format!("dim={}\n", s.dim));
      text.push_str(&format!("saturation={}\n", s.saturation));
-@@ -904,6 +941,7 @@ pub fn write_slot_state(root: &Path, s: &SlotState) -> std::io::Result<()> {
+@@ -910,6 +945,7 @@ pub fn write_slot_state(root: &Path, s: &SlotState) -> std::io::Result<()> {
      text.push_str(&format!("bezel_gba={}\n", s.bezel_gba.key()));
      text.push_str(&format!("bezel_gb={}\n", s.bezel_gb.key()));
      text.push_str(&format!("bezel_gbc={}\n", s.bezel_gbc.key()));
@@ -376,7 +372,7 @@ index f66eb6a..9915d9f 100644
      text.push_str(&format!("reflection_gba={}\n", s.reflection_gba as u8));
      text.push_str(&format!("reflection_gb={}\n", s.reflection_gb as u8));
      text.push_str(&format!("reflection_gbc={}\n", s.reflection_gbc as u8));
-@@ -919,6 +957,10 @@ pub fn write_slot_state(root: &Path, s: &SlotState) -> std::io::Result<()> {
+@@ -925,6 +961,10 @@ pub fn write_slot_state(root: &Path, s: &SlotState) -> std::io::Result<()> {
          "overlay_gbc={}\n",
          s.overlay_gbc.as_deref().unwrap_or_default()
      ));
@@ -387,7 +383,7 @@ index f66eb6a..9915d9f 100644
      #[cfg(feature = "nds")]
      text.push_str(&format!(
          "overlay_nds={}\n",
-@@ -927,6 +969,7 @@ pub fn write_slot_state(root: &Path, s: &SlotState) -> std::io::Result<()> {
+@@ -933,6 +973,7 @@ pub fn write_slot_state(root: &Path, s: &SlotState) -> std::io::Result<()> {
      text.push_str(&format!("scale_gba={}\n", s.scale_gba.name()));
      text.push_str(&format!("scale_gb={}\n", s.scale_gb.name()));
      text.push_str(&format!("scale_gbc={}\n", s.scale_gbc.name()));
@@ -395,15 +391,15 @@ index f66eb6a..9915d9f 100644
      text.push_str(&format!("stretch_gb={}\n", s.stretch_gb.name()));
      text.push_str(&format!("stretch_gbc={}\n", s.stretch_gbc.name()));
      text.push_str(&format!("blending_gba={}\n", s.blending_gba.key()));
-@@ -934,6 +977,7 @@ pub fn write_slot_state(root: &Path, s: &SlotState) -> std::io::Result<()> {
-     text.push_str(&format!("gb_model={}\n", s.gb_model.key()));
-     text.push_str(&format!("gb_model_mgba={}\n", s.gb_model_mgba.key()));
-     text.push_str(&format!("blending_gbc={}\n", s.blending_gbc.key()));
+@@ -946,6 +987,7 @@ pub fn write_slot_state(root: &Path, s: &SlotState) -> std::io::Result<()> {
+         s.authentic_blending_gb.key(),
+         s.authentic_blending_gbc.key(),
+     ));
 +    text.push_str(&format!("blending_gg={}\n", s.blending_gg.key()));
      text.push_str(&format!("shelf={}\n", s.shelf.as_deref().unwrap_or("")));
      text.push_str(&format!(
          "shelf_cart={}\n",
-@@ -1000,6 +1044,7 @@ fn parse(text: &str) -> Option<SlotState> {
+@@ -1012,6 +1054,7 @@ fn parse(text: &str) -> Option<SlotState> {
      let mut shader_gb = None;
      let mut shader_gb_mgba = None;
      let mut shader_gbc = None;
@@ -411,7 +407,7 @@ index f66eb6a..9915d9f 100644
      let mut auto_load = None;
      let mut resume_insert = None;
      let mut resume_power_on = None;
-@@ -1024,17 +1069,20 @@ fn parse(text: &str) -> Option<SlotState> {
+@@ -1036,17 +1079,20 @@ fn parse(text: &str) -> Option<SlotState> {
      let mut bezel_gba = None;
      let mut bezel_gb = None;
      let mut bezel_gbc = None;
@@ -432,15 +428,15 @@ index f66eb6a..9915d9f 100644
      let mut stretch_gb = None;
      let mut stretch_gbc = None;
      let mut blending_gba = None;
-@@ -1042,6 +1090,7 @@ fn parse(text: &str) -> Option<SlotState> {
-     let mut gb_model = None;
-     let mut gb_model_mgba = None;
-     let mut blending_gbc = None;
+@@ -1057,6 +1103,7 @@ fn parse(text: &str) -> Option<SlotState> {
+     let mut authentic_blending_gba = None;
+     let mut authentic_blending_gb = None;
+     let mut authentic_blending_gbc = None;
 +    let mut blending_gg = None;
      let mut shelf = None;
      let mut shelf_cart = None;
      let mut shelf_mode = None;
-@@ -1109,17 +1158,20 @@ fn parse(text: &str) -> Option<SlotState> {
+@@ -1124,17 +1171,20 @@ fn parse(text: &str) -> Option<SlotState> {
              "bezel_gba" => bezel_gba = Some(BezelPick::parse(value)),
              "bezel_gb" => bezel_gb = Some(BezelPick::parse(value)),
              "bezel_gbc" => bezel_gbc = Some(BezelPick::parse(value)),
@@ -461,15 +457,15 @@ index f66eb6a..9915d9f 100644
              "stretch_gb" => stretch_gb = Stretch::parse(value),
              "stretch_gbc" => stretch_gbc = Stretch::parse(value),
              "blending_gba" => blending_gba = Some(Blending::parse(value).unwrap_or_default()),
-@@ -1127,6 +1179,7 @@ fn parse(text: &str) -> Option<SlotState> {
-             "gb_model" => gb_model = GbModel::parse(value),
-             "gb_model_mgba" => gb_model_mgba = GbModel::parse(value),
-             "blending_gbc" => blending_gbc = Some(Blending::parse(value).unwrap_or_default()),
+@@ -1145,6 +1195,7 @@ fn parse(text: &str) -> Option<SlotState> {
+             "authentic_blending_gba" => authentic_blending_gba = Blending::parse(value),
+             "authentic_blending_gb" => authentic_blending_gb = Blending::parse(value),
+             "authentic_blending_gbc" => authentic_blending_gbc = Blending::parse(value),
 +            "blending_gg" => blending_gg = Some(Blending::parse(value).unwrap_or_default()),
              "shelf" => shelf = Some(value.to_string()).filter(|v| !v.is_empty()),
              "shelf_cart" => shelf_cart = recent_value(value),
              "shelf_mode" => shelf_mode = ShelfMode::parse(value),
-@@ -1135,10 +1188,17 @@ fn parse(text: &str) -> Option<SlotState> {
+@@ -1153,10 +1204,17 @@ fn parse(text: &str) -> Option<SlotState> {
              "collection" => collection = Some(value.to_string()).filter(|v| !v.is_empty()),
              "gba_video" => gba_video = flag(value),
              "shader_gb" => shader_gb = Shader::parse(value).filter(|s| Shader::GB.contains(s)),
@@ -490,7 +486,7 @@ index f66eb6a..9915d9f 100644
              "authentic_gbc_correction" => authentic_gbc_correction = flag(value),
              "authentic_gba_correction" => authentic_gba_correction = flag(value),
              _ => {}
-@@ -1179,14 +1239,22 @@ fn parse(text: &str) -> Option<SlotState> {
+@@ -1197,14 +1255,22 @@ fn parse(text: &str) -> Option<SlotState> {
              .or(colour_correction_gb)
              .or(colour_correction)
              .unwrap_or(fallback.colour_correction_gbc),
@@ -518,7 +514,7 @@ index f66eb6a..9915d9f 100644
          resume_insert: resume_insert
              .or(auto_load.map(|(insert, _)| insert))
              .unwrap_or(fallback.resume_insert),
-@@ -1214,17 +1282,20 @@ fn parse(text: &str) -> Option<SlotState> {
+@@ -1232,17 +1298,20 @@ fn parse(text: &str) -> Option<SlotState> {
          bezel_gba: bezel_gba.unwrap_or(fallback.bezel_gba),
          bezel_gb: bezel_gb.unwrap_or(fallback.bezel_gb),
          bezel_gbc: bezel_gbc.unwrap_or(fallback.bezel_gbc),
@@ -539,15 +535,15 @@ index f66eb6a..9915d9f 100644
          stretch_gb: stretch_gb.unwrap_or(fallback.stretch_gb),
          stretch_gbc: stretch_gbc.unwrap_or(fallback.stretch_gbc),
          blending_gba: blending_gba
-@@ -1238,6 +1309,7 @@ fn parse(text: &str) -> Option<SlotState> {
-         blending_gbc: blending_gbc
-             .or_else(|| legacy_blending(ghosting_gbc))
-             .unwrap_or(fallback.blending_gbc),
+@@ -1259,6 +1328,7 @@ fn parse(text: &str) -> Option<SlotState> {
+         authentic_blending_gba: authentic_blending_gba.unwrap_or(fallback.authentic_blending_gba),
+         authentic_blending_gb: authentic_blending_gb.unwrap_or(fallback.authentic_blending_gb),
+         authentic_blending_gbc: authentic_blending_gbc.unwrap_or(fallback.authentic_blending_gbc),
 +        blending_gg: blending_gg.unwrap_or(fallback.blending_gg),
          recents: Vec::new(),
          favorites: Vec::new(),
          shelf,
-@@ -1341,7 +1413,9 @@ mod core_screen_profiles_tests {
+@@ -1362,7 +1432,9 @@ mod core_screen_profiles_tests {
          let original = std::fs::read_to_string(&path).unwrap();
          let old = original
              .lines()
@@ -558,8 +554,39 @@ index f66eb6a..9915d9f 100644
              .collect::<Vec<_>>()
              .join("\n");
          std::fs::write(&path, old).unwrap();
+diff --git a/crates/slot-store/tests/core.rs b/crates/slot-store/tests/core.rs
+index 8100577..c675950 100644
+--- a/crates/slot-store/tests/core.rs
++++ b/crates/slot-store/tests/core.rs
+@@ -336,10 +336,10 @@ fn writing_a_core_moves_a_line_without_a_system_onto_one_with() {
+ 
+ #[cfg(not(feature = "nds"))]
+ #[test]
+-fn the_core_list_has_four_entries() {
++fn the_core_list_includes_picodrive() {
+     assert_eq!(
+         Core::ALL,
+-        [Core::Mgba, Core::Gpsp, Core::Gambatte, Core::Armgba]
++        [Core::Mgba, Core::Gpsp, Core::Gambatte, Core::Armgba, Core::Picodrive]
+     );
+ }
+ 
+@@ -361,3 +361,13 @@ fn nds_games_always_run_dsperate() {
+     assert_eq!(Core::parse("dsperate"), Some(Core::Dsperate));
+     assert_eq!(Core::row(Platform::Nds), [Core::Dsperate]);
+ }
++
++#[test]
++fn game_gear_uses_only_picodrive_even_with_a_stale_core_choice() {
++    let d = root_with(Some("x=armgba\n"));
++    assert_eq!(Core::row(Platform::Gg), &[Core::Picodrive]);
++    assert_eq!(core_for_platform(d.path(), "x", Platform::Gg, Core::Mgba), Core::Picodrive);
++    for core in Core::ALL {
++        assert_eq!(core.runs(Platform::Gg), core == Core::Picodrive);
++    }
++}
 diff --git a/crates/slot-ui/src/bitmaps.rs b/crates/slot-ui/src/bitmaps.rs
-index e9967a8..e32008d 100644
+index ec0681b..8b33584 100644
 --- a/crates/slot-ui/src/bitmaps.rs
 +++ b/crates/slot-ui/src/bitmaps.rs
 @@ -9,6 +9,7 @@ pub enum Mould {
@@ -570,7 +597,7 @@ index e9967a8..e32008d 100644
      #[cfg(feature = "nds")]
      Ds,
  }
-@@ -398,13 +399,17 @@ pub fn shell_asset(mould: Mould, clear: bool) -> &'static [u8] {
+@@ -406,13 +407,17 @@ pub fn shell_asset(mould: Mould, clear: bool) -> &'static [u8] {
      static GBA_CLEAR: OnceLock<Vec<u8>> = OnceLock::new();
      static GB_CLEAR: OnceLock<Vec<u8>> = OnceLock::new();
      static GBC_CLEAR: OnceLock<Vec<u8>> = OnceLock::new();
@@ -774,7 +801,7 @@ index 1fbc389..b36d5fb 100644
              let white_arrow = face(&kb, true);
              assert!(idle != white_arrow);
 diff --git a/crates/slot-ui/src/lib.rs b/crates/slot-ui/src/lib.rs
-index 8289a16..03da096 100644
+index 027cea6..6469a6f 100644
 --- a/crates/slot-ui/src/lib.rs
 +++ b/crates/slot-ui/src/lib.rs
 @@ -78,7 +78,8 @@ pub use cart::{
@@ -1722,7 +1749,7 @@ index 9595e26..f806d37 100644
 +    mask
 +}
 diff --git a/crates/slot/src/app.rs b/crates/slot/src/app.rs
-index 52666c3..951f35d 100644
+index e36dafa..1c8c926 100644
 --- a/crates/slot/src/app.rs
 +++ b/crates/slot/src/app.rs
 @@ -662,7 +662,7 @@ pub struct App {
@@ -1812,7 +1839,7 @@ index 52666c3..951f35d 100644
      }
  
      pub fn achievement_description_ready(&self) -> bool {
-@@ -3143,18 +3159,21 @@ impl App {
+@@ -3142,18 +3158,21 @@ impl App {
              (QuickRow::Shader, Platform::Gba) => QuickRow::GbaShader,
              (QuickRow::Shader, Platform::Gb) => QuickRow::GbShader,
              (QuickRow::Shader, Platform::Gbc) => QuickRow::GbcShader,
@@ -1834,21 +1861,21 @@ index 52666c3..951f35d 100644
              (QuickRow::Stretch, Platform::Gb) => QuickRow::GbStretch,
              (QuickRow::Stretch, Platform::Gbc) => QuickRow::GbcStretch,
              (QuickRow::PlayBrightness, _) => QuickRow::Brightness,
-@@ -3193,11 +3212,13 @@ impl App {
+@@ -3192,11 +3211,13 @@ impl App {
              QuickRow::GbaScale => Some(scale_value(self.resolved_scale(Platform::Gba))),
              QuickRow::GbScale => Some(scale_value(self.resolved_scale(Platform::Gb))),
              QuickRow::GbcScale => Some(scale_value(self.resolved_scale(Platform::Gbc))),
 +            QuickRow::GgScale => Some(scale_value(self.resolved_scale(Platform::Gg))),
              QuickRow::GbStretch => Some(stretch_value(self.resolved_stretch(Platform::Gb))),
              QuickRow::GbcStretch => Some(stretch_value(self.resolved_stretch(Platform::Gbc))),
-             QuickRow::GbaBlending => Some(blending_value(self.state.blending_gba)),
-             QuickRow::GbcBlending => Some(blending_value(self.state.blending_gbc)),
-             QuickRow::GbBlending => Some(blending_value(self.state.blending_gb)),
+             QuickRow::GbaBlending => Some(blending_value(self.blending_for(Platform::Gba))),
+             QuickRow::GbcBlending => Some(blending_value(self.blending_for(Platform::Gbc))),
+             QuickRow::GbBlending => Some(blending_value(self.blending_for(Platform::Gb))),
 +            QuickRow::GgBlending => Some(blending_value(self.state.blending_gg)),
              QuickRow::Blending => Some(blending_value(self.blending_in_play())),
              QuickRow::Brightness => Some(QuickValue::level(self.brightness_level())),
              QuickRow::BlueLight => Some(match self.state.blue_light {
-@@ -3218,13 +3239,16 @@ impl App {
+@@ -3217,13 +3238,16 @@ impl App {
              QuickRow::GbaColourCorrection => {
                  Some(QuickValue::flag(self.colour_correction_for(Platform::Gba)))
              }
@@ -1866,7 +1893,7 @@ index 52666c3..951f35d 100644
              QuickRow::Rumble => Some(QuickValue::flag(self.state.rumble)),
              QuickRow::LeftStick => Some(QuickValue::flag(self.state.left_stick_dpad)),
              QuickRow::ResumeInsert => Some(QuickValue::flag(self.state.resume_insert)),
-@@ -3286,7 +3310,7 @@ impl App {
+@@ -3285,7 +3309,7 @@ impl App {
              }),
              QuickRow::WifiPower => Some(QuickValue::flag(!self.state.wifi_off)),
              QuickRow::RaBackground => Some(QuickValue::flag(
@@ -1875,7 +1902,7 @@ index 52666c3..951f35d 100644
              )),
              QuickRow::RommProtocol => Some(match self.romm.protocol {
                  crate::romm::Protocol::Https => QuickValue::Https,
-@@ -3342,6 +3366,7 @@ impl App {
+@@ -3341,6 +3365,7 @@ impl App {
              | QuickRow::ScreenGba
              | QuickRow::ScreenGbc
              | QuickRow::ScreenGb
@@ -1883,7 +1910,7 @@ index 52666c3..951f35d 100644
              | QuickRow::GbBezel
              | QuickRow::GbcBezel
              | QuickRow::GbaOverlay
-@@ -3436,7 +3461,9 @@ impl App {
+@@ -3435,7 +3460,9 @@ impl App {
              | QuickRow::Controls
              | QuickRow::ControlsShelf
              | QuickRow::ControlsCollections
@@ -1894,7 +1921,7 @@ index 52666c3..951f35d 100644
              #[cfg(feature = "nds")]
              QuickRow::FetchBoxArt => None,
          }
-@@ -3508,7 +3535,8 @@ impl App {
+@@ -3507,7 +3534,8 @@ impl App {
          fn known(value: &str) -> Option<&'static str> {
              // Accept target IDs (rg35xxh) and display labels (RG35XX H),
              // including a possible "Anbernic" prefix.
@@ -1904,7 +1931,7 @@ index 52666c3..951f35d 100644
                  .filter(|ch| ch.is_ascii_alphanumeric())
                  .map(|ch| ch.to_ascii_lowercase())
                  .collect();
-@@ -3789,6 +3817,7 @@ impl App {
+@@ -3788,6 +3816,7 @@ impl App {
              Platform::Nds => &mut self.state.bezel_gba,
              Platform::Gb => &mut self.state.bezel_gb,
              Platform::Gbc => &mut self.state.bezel_gbc,
@@ -1912,7 +1939,7 @@ index 52666c3..951f35d 100644
          }
      }
  
-@@ -3799,6 +3828,7 @@ impl App {
+@@ -3798,6 +3827,7 @@ impl App {
              Platform::Nds => &self.state.bezel_gba,
              Platform::Gb => &self.state.bezel_gb,
              Platform::Gbc => &self.state.bezel_gbc,
@@ -1920,7 +1947,7 @@ index 52666c3..951f35d 100644
          };
          let choices = self.bezel_choices(platform);
          if choices.contains(pick) {
-@@ -3855,6 +3885,7 @@ impl App {
+@@ -3854,6 +3884,7 @@ impl App {
              Platform::Nds => &mut self.state.overlay_nds,
              Platform::Gb => &mut self.state.overlay_gb,
              Platform::Gbc => &mut self.state.overlay_gbc,
@@ -1928,7 +1955,7 @@ index 52666c3..951f35d 100644
          }
      }
  
-@@ -3865,6 +3896,7 @@ impl App {
+@@ -3864,6 +3895,7 @@ impl App {
              Platform::Nds => &self.state.overlay_nds,
              Platform::Gb => &self.state.overlay_gb,
              Platform::Gbc => &self.state.overlay_gbc,
@@ -1936,32 +1963,8 @@ index 52666c3..951f35d 100644
          };
          let name = pick.as_deref()?;
          self.overlay_entries(platform)
-@@ -4264,20 +4296,11 @@ impl App {
-             hidden.push(QuickRow::GbaBezel);
-         }
-         for (platform, rows) in [
--            (
--                Platform::Gba,
--                &[QuickRow::GbaBlending][..],
--            ),
--            (
--                Platform::Gbc,
--                &[QuickRow::GbcBlending][..],
--            ),
-+            (Platform::Gba, &[QuickRow::GbaBlending][..]),
-+            (Platform::Gbc, &[QuickRow::GbcBlending][..]),
-             (
-                 Platform::Gb,
--                &[
--                    QuickRow::GbBlending,
--                    QuickRow::GbPalette,
--                ][..],
-+                &[QuickRow::GbBlending, QuickRow::GbPalette][..],
-             ),
-         ] {
-             if self.authentic(platform) {
-@@ -4285,7 +4308,9 @@ impl App {
-             }
+@@ -4269,7 +4301,9 @@ impl App {
+             hidden.push(QuickRow::GbPalette);
          }
          // A GB cartridge on the GBC Authentic screen may use real GBC colour palettes.
 -        if self.authentic(Platform::Gb) && matches!(self.gb_model(), GbModel::Gbc | GbModel::PocketColor) {
@@ -1971,7 +1974,7 @@ index 52666c3..951f35d 100644
              hidden.retain(|row| *row != QuickRow::GbPalette);
          }
          if !self.authentic(Platform::Gb) {
-@@ -4304,6 +4329,7 @@ impl App {
+@@ -4288,6 +4322,7 @@ impl App {
              (QuickRow::GbaOverlay, Platform::Gba),
              (QuickRow::GbOverlay, Platform::Gb),
              (QuickRow::GbcOverlay, Platform::Gbc),
@@ -1979,7 +1982,7 @@ index 52666c3..951f35d 100644
          ] {
              if self.overlay_entries(platform).is_empty() {
                  hidden.push(row);
-@@ -4313,6 +4339,7 @@ impl App {
+@@ -4297,6 +4332,7 @@ impl App {
              (QuickRow::GbaScale, Platform::Gba),
              (QuickRow::GbScale, Platform::Gb),
              (QuickRow::GbcScale, Platform::Gbc),
@@ -1987,7 +1990,7 @@ index 52666c3..951f35d 100644
          ] {
              if self.scale_choices(platform).len() < 2 {
                  hidden.push(row);
-@@ -4436,6 +4463,12 @@ impl App {
+@@ -4420,6 +4456,12 @@ impl App {
          }
      }
  
@@ -2000,7 +2003,7 @@ index 52666c3..951f35d 100644
      pub fn set_cart_backing(&mut self, face: TexId) {
          for (_, shelf) in &mut self.shelves {
              shelf.set_backing(face);
-@@ -4449,6 +4482,12 @@ impl App {
+@@ -4433,6 +4475,12 @@ impl App {
          }
      }
  
@@ -2013,7 +2016,7 @@ index 52666c3..951f35d 100644
      pub fn set_ground(&mut self, face: TexId) {
          self.ground = Some(face);
      }
-@@ -4779,6 +4818,7 @@ impl App {
+@@ -4763,6 +4811,7 @@ impl App {
              Platform::Nds => self.state.scale_gba,
              Platform::Gb => self.state.scale_gb,
              Platform::Gbc => self.state.scale_gbc,
@@ -2021,7 +2024,7 @@ index 52666c3..951f35d 100644
          }
      }
  
-@@ -4786,6 +4826,8 @@ impl App {
+@@ -4770,6 +4819,8 @@ impl App {
          match platform {
              Platform::Gb => self.state.stretch_gb,
              Platform::Gbc => self.state.stretch_gbc,
@@ -2030,7 +2033,7 @@ index 52666c3..951f35d 100644
              Platform::Gba | Platform::Gbav => Stretch::Classic,
              #[cfg(feature = "nds")]
              Platform::Nds => Stretch::Classic,
-@@ -4928,6 +4970,7 @@ impl App {
+@@ -4912,6 +4963,7 @@ impl App {
              Platform::Nds => self.state.scale_gba = to,
              Platform::Gb => self.state.scale_gb = to,
              Platform::Gbc => self.state.scale_gbc = to,
@@ -2038,7 +2041,7 @@ index 52666c3..951f35d 100644
          }
      }
  
-@@ -5209,19 +5252,31 @@ impl App {
+@@ -5193,19 +5245,31 @@ impl App {
      fn fixed_reference_text(&self, row: QuickRow) -> Option<String> {
          match row {
              QuickRow::FixFastLatch => Some(fixed_fast_forward_text(
@@ -2077,7 +2080,15 @@ index 52666c3..951f35d 100644
              _ => row.fixed_keys().map(str::to_owned),
          }
      }
-@@ -5644,6 +5699,7 @@ impl App {
+@@ -5330,6 +5394,7 @@ impl App {
+ 
+     fn retire_switched_resume(&mut self) {
+         let plays_own_save = match self.link_core {
++            Some(Core::Picodrive) => false,
+             Some(Core::Gpsp | Core::Armgba) => true,
+             Some(Core::Mgba | Core::Gambatte) | None => false,
+             #[cfg(feature = "nds")]
+@@ -5631,6 +5696,7 @@ impl App {
              Platform::Nds => Shader::Off,
              Platform::Gb => self.gb_shader(),
              Platform::Gbc => self.state.shader_gbc,
@@ -2085,7 +2096,7 @@ index 52666c3..951f35d 100644
          }
      }
  
-@@ -5679,8 +5735,10 @@ impl App {
+@@ -5666,8 +5732,10 @@ impl App {
                          self.state.authentic_gb_correction
                      };
                      (bits & (1 << (self.gb_model() as u32))) != 0
@@ -2097,7 +2108,7 @@ index 52666c3..951f35d 100644
                  #[cfg(feature = "nds")]
                  Platform::Nds => false,
              };
-@@ -5691,6 +5749,7 @@ impl App {
+@@ -5678,6 +5746,7 @@ impl App {
              Platform::Nds => false,
              Platform::Gb => self.state.colour_correction_gb,
              Platform::Gbc => self.state.colour_correction_gbc,
@@ -2105,7 +2116,7 @@ index 52666c3..951f35d 100644
          }
      }
  
-@@ -5702,6 +5761,7 @@ impl App {
+@@ -5689,6 +5758,7 @@ impl App {
              Platform::Gba | Platform::Gbav => self.state.reflection_gba,
              Platform::Gb => self.state.reflection_gb,
              Platform::Gbc => self.state.reflection_gbc,
@@ -2113,7 +2124,7 @@ index 52666c3..951f35d 100644
          }
      }
  
-@@ -5712,6 +5772,7 @@ impl App {
+@@ -5699,6 +5769,7 @@ impl App {
              Platform::Gba | Platform::Gbav => self.state.shader_gba,
              Platform::Gb => self.gb_shader(),
              Platform::Gbc => self.state.shader_gbc,
@@ -2121,15 +2132,23 @@ index 52666c3..951f35d 100644
          };
          shader == Shader::Authentic
      }
-@@ -5753,6 +5814,7 @@ impl App {
-             Platform::Nds => Blending::Off,
-             Platform::Gb => self.state.blending_gb,
-             Platform::Gbc => self.state.blending_gbc,
-+            Platform::Gg => self.state.blending_gg,
+@@ -5744,6 +5815,7 @@ impl App {
+             (Platform::Gbc, false) => s.blending_gbc,
+             #[cfg(feature = "nds")]
+             (Platform::Nds, _) => Blending::Off,
++            (Platform::Gg, _) => s.blending_gg,
          }
      }
  
-@@ -5787,14 +5849,14 @@ impl App {
+@@ -5759,6 +5831,7 @@ impl App {
+             (Platform::Gbc, false) => &mut s.blending_gbc,
+             #[cfg(feature = "nds")]
+             (Platform::Nds, _) => return,
++            (Platform::Gg, _) => &mut s.blending_gg,
+         };
+         *blending = blending.step(choices, right);
+         self.persist();
+@@ -5793,14 +5866,14 @@ impl App {
          // light menu theme is selected. Black clock glyphs disappear on that
          // background. Keep clock ink white for those built-in backgrounds;
          // leave user-supplied wallpaper theming unchanged.
@@ -2152,7 +2171,7 @@ index 52666c3..951f35d 100644
          match self.phase {
              Phase::Playing { .. } | Phase::Polaroids { .. } => footer_ink(false),
              _ if builtin_dark => footer_ink(false),
-@@ -5944,8 +6006,13 @@ impl App {
+@@ -5950,8 +6023,13 @@ impl App {
              // User-selected fixed palettes still retain their existing meaning.
              Shader::Authentic
                  if matches!(self.gb_model(), GbModel::Gbc | GbModel::PocketColor)
@@ -2168,7 +2187,7 @@ index 52666c3..951f35d 100644
                  GbColors::Palette(slot_store::GbPalette::GRAYSCALE)
              }
              _ => self.state.gb_colors(),
-@@ -6800,7 +6867,10 @@ impl App {
+@@ -6806,7 +6884,10 @@ impl App {
      /// Return true if this input only wakes the inactive menu's blank display.
      fn menu_idle_input(&mut self, action: Action) -> bool {
          // Release signals are not intentional wake actions.
@@ -2180,7 +2199,7 @@ index 52666c3..951f35d 100644
              return false;
          }
          let woke = self.menu_idle.input(self.now());
-@@ -6819,7 +6889,11 @@ impl App {
+@@ -6825,7 +6906,11 @@ impl App {
          }
          !matches!(
              action,
@@ -2193,7 +2212,7 @@ index 52666c3..951f35d 100644
          )
      }
  
-@@ -7389,7 +7463,11 @@ impl App {
+@@ -7395,7 +7480,11 @@ impl App {
          };
          self.cleanup_preview = Some(crate::cleanup::scan(root));
          self.cleanup_confirm = false;
@@ -2206,7 +2225,7 @@ index 52666c3..951f35d 100644
              NetNotice::CleanupEmpty
          } else {
              NetNotice::CleanupScanned
-@@ -7408,7 +7486,9 @@ impl App {
+@@ -7414,7 +7503,9 @@ impl App {
              self.cleanup_confirm = true;
              return self.set_update(Some(UpdateState::Notice(NetNotice::CleanupConfirm)));
          }
@@ -2217,7 +2236,7 @@ index 52666c3..951f35d 100644
              .map(|r| crate::cleanup::clean(r, report))
              .unwrap_or_else(|| Err("Missing SD card".into()));
          self.cleanup_confirm = false;
-@@ -7444,7 +7524,9 @@ impl App {
+@@ -7450,7 +7541,9 @@ impl App {
              QuickRow::WifiPower => self.set_wifi_off(!self.state.wifi_off),
              QuickRow::Networks => self.open_networks(),
              QuickRow::RaAccount => {
@@ -2228,7 +2247,7 @@ index 52666c3..951f35d 100644
                      .and_then(slot_achievements::configured_username)
                      .unwrap_or_default();
                  self.open_keyboard(
-@@ -7454,7 +7536,7 @@ impl App {
+@@ -7460,7 +7553,7 @@ impl App {
                      slot_ui::Layout::General,
                      &user,
                  );
@@ -2237,7 +2256,7 @@ index 52666c3..951f35d 100644
              QuickRow::RommProtocol | QuickRow::RommSelfSigned => self.change_setting(row, true),
              QuickRow::Nickname => {
                  let text = self.state.nickname.clone();
-@@ -7493,7 +7575,10 @@ impl App {
+@@ -7499,7 +7592,10 @@ impl App {
              QuickRow::RommStatus | QuickRow::RommPairedServer => {}
              QuickRow::RaStatus => self.set_update(Some(UpdateState::Notice(NetNotice::RaStatus))),
              QuickRow::RaPrepare => {
@@ -2249,7 +2268,7 @@ index 52666c3..951f35d 100644
                      self.ra_action = Some(slot_achievements::LibraryAction::Prepare);
                      self.set_update(Some(UpdateState::Notice(NetNotice::RaQueued)));
                  } else {
-@@ -7501,7 +7586,10 @@ impl App {
+@@ -7507,7 +7603,10 @@ impl App {
                  }
              }
              QuickRow::RaRetry => {
@@ -2261,7 +2280,7 @@ index 52666c3..951f35d 100644
                      self.ra_action = Some(slot_achievements::LibraryAction::RetryFailed);
                      self.set_update(Some(UpdateState::Notice(NetNotice::RaRetryQueued)));
                  } else {
-@@ -7509,12 +7597,18 @@ impl App {
+@@ -7515,12 +7614,18 @@ impl App {
                  }
              }
              QuickRow::RaBackground => self.toggle_ra_index(),
@@ -2280,7 +2299,7 @@ index 52666c3..951f35d 100644
              | QuickRow::Shortcuts
              | QuickRow::FixedShortcuts
              | QuickRow::FixedGlobal
-@@ -7694,7 +7788,9 @@ impl App {
+@@ -7700,7 +7805,9 @@ impl App {
  
      fn toggle_ra_index(&mut self) {
          let enabled = !self.ra_overview.is_some_and(|status| status.index_library);
@@ -2291,7 +2310,7 @@ index 52666c3..951f35d 100644
              .ok_or("Missing SD card")
              .and_then(|root| slot_achievements::set_library_index(root, enabled));
          match result {
-@@ -7788,11 +7884,13 @@ impl App {
+@@ -7796,11 +7903,13 @@ impl App {
              self.persist();
              return;
          }
@@ -2307,7 +2326,7 @@ index 52666c3..951f35d 100644
              };
              self.cycle_scale(platform, right);
              self.persist();
-@@ -7807,21 +7905,28 @@ impl App {
+@@ -7815,21 +7924,28 @@ impl App {
              self.persist();
              return;
          }
@@ -2340,7 +2359,7 @@ index 52666c3..951f35d 100644
              };
              self.cycle_bezel(platform, right);
              self.persist();
-@@ -7878,9 +7983,16 @@ impl App {
+@@ -7886,9 +8002,16 @@ impl App {
              } else {
                  self.state.menu_power_off_min
              };
@@ -2359,27 +2378,7 @@ index 52666c3..951f35d 100644
              if row == QuickRow::MenuScreenOff {
                  self.state.menu_screen_off_min = next;
              } else {
-@@ -7910,9 +8022,17 @@ impl App {
-                 self.colour_pending = Some(self.colour_correction());
-             }
-             QuickRow::GbColourCorrection => {
--                let active = if self.core == Core::Sameboy || self.core == Core::Mgba { s.shader_gb_mgba } else { s.shader_gb };
-+                let active = if self.core == Core::Sameboy || self.core == Core::Mgba {
-+                    s.shader_gb_mgba
-+                } else {
-+                    s.shader_gb
-+                };
-                 if active == Shader::Authentic {
--                    let model = if self.core == Core::Sameboy || self.core == Core::Mgba { s.gb_model_mgba } else { s.gb_model };
-+                    let model = if self.core == Core::Sameboy || self.core == Core::Mgba {
-+                        s.gb_model_mgba
-+                    } else {
-+                        s.gb_model
-+                    };
-                     if matches!(self.core, Core::Sameboy | Core::Mgba) {
-                         s.authentic_gb_correction_sameboy ^= 1 << (model as u32);
-                     } else {
-@@ -7952,6 +8072,14 @@ impl App {
+@@ -7960,6 +8083,14 @@ impl App {
                  *slot = to;
                  self.core_options_pending();
              }
@@ -2394,17 +2393,17 @@ index 52666c3..951f35d 100644
              QuickRow::GbcShader => {
                  let to = s.shader_gbc.step(&Shader::GB, right);
                  if to == s.shader_gbc {
-@@ -7977,6 +8105,9 @@ impl App {
-             QuickRow::GbBlending => {
-                 s.blending_gb = s.blending_gb.step(&Blending::ALL, right);
-             }
+@@ -7976,6 +8107,9 @@ impl App {
+             QuickRow::ResumeInsert => s.resume_insert = !s.resume_insert,
+             QuickRow::ResumePowerOn => s.resume_power_on = !s.resume_power_on,
+             QuickRow::Rewind => s.rewind = !s.rewind,
 +            QuickRow::GgBlending => {
 +                s.blending_gg = s.blending_gg.step(&Blending::ALL, right);
 +            }
              QuickRow::Theme => s.appearance = s.appearance.toggle(),
              QuickRow::BatteryDisplay => s.battery_display = s.battery_display.step(right),
              QuickRow::WallpaperTint => s.wallpaper_tint = s.wallpaper_tint.step(right),
-@@ -8021,6 +8152,7 @@ impl App {
+@@ -8020,6 +8154,7 @@ impl App {
              | QuickRow::ScreenGba
              | QuickRow::ScreenGbc
              | QuickRow::ScreenGb
@@ -2412,7 +2411,7 @@ index 52666c3..951f35d 100644
              | QuickRow::GbBezel
              | QuickRow::GbcBezel
              | QuickRow::GbaOverlay
-@@ -8031,6 +8163,9 @@ impl App {
+@@ -8030,6 +8165,9 @@ impl App {
              | QuickRow::GbaScale
              | QuickRow::GbScale
              | QuickRow::GbcScale
@@ -2421,8 +2420,8 @@ index 52666c3..951f35d 100644
 +            | QuickRow::GgOverlay
              | QuickRow::GbStretch
              | QuickRow::GbcStretch
-             | QuickRow::Blending
-@@ -8193,6 +8328,7 @@ impl App {
+             | QuickRow::GbaBlending
+@@ -8195,6 +8333,7 @@ impl App {
                  &Shader::GB[..],
              ),
              Platform::Gbc => (&mut self.state.shader_gbc, &Shader::GB[..]),
@@ -2430,7 +2429,7 @@ index 52666c3..951f35d 100644
          };
          *shader = shader.step(choices, right);
          let said = match *shader {
-@@ -8260,6 +8396,9 @@ impl App {
+@@ -8262,6 +8401,9 @@ impl App {
              return true;
          }
          if action == Action::ColourCorrectionToggle {
@@ -2440,7 +2439,7 @@ index 52666c3..951f35d 100644
              if self.authentic(self.playing_platform()) {
                  return true;
              }
-@@ -8269,6 +8408,7 @@ impl App {
+@@ -8271,6 +8413,7 @@ impl App {
                  Platform::Nds => QuickRow::GbaColourCorrection,
                  Platform::Gb => QuickRow::GbColourCorrection,
                  Platform::Gbc => QuickRow::GbcColourCorrection,
@@ -2448,7 +2447,7 @@ index 52666c3..951f35d 100644
              };
              self.change_setting(row, true);
              let said = match self.colour_correction() {
-@@ -8860,8 +9000,10 @@ impl App {
+@@ -8862,8 +9005,10 @@ impl App {
              return;
          }
          // Only the shelf and its menus, never gameplay. Do not interrupt background tasks.
@@ -2461,7 +2460,7 @@ index 52666c3..951f35d 100644
              && self.update.is_none()
              && self.keyboard.is_none()
              && self.fetch_art.is_none()
-@@ -9709,10 +9851,12 @@ impl App {
+@@ -9711,10 +9856,12 @@ impl App {
                      gba_bezel: self.quick_bezel_faces[bezel_slot(Platform::Gba)],
                      gb_bezel: self.quick_bezel_faces[bezel_slot(Platform::Gb)],
                      gbc_bezel: self.quick_bezel_faces[bezel_slot(Platform::Gbc)],
@@ -2474,7 +2473,7 @@ index 52666c3..951f35d 100644
                      overlay: None,
                      over_game: false,
                      footer_top: self.canvas().h,
-@@ -9921,16 +10065,24 @@ impl App {
+@@ -9923,16 +10070,24 @@ impl App {
                  slot_ui::AchievementPage {
                      selected: self.achievement_row,
                      selected_elapsed_ms: self.now().saturating_sub(self.list_name_selected_at),
@@ -2502,7 +2501,7 @@ index 52666c3..951f35d 100644
              } else if row == QuickRow::CheatList {
                  let on: Vec<bool> = self.cheats.iter().map(|c| c.on).collect();
                  slot_ui::CheatPage {
-@@ -9959,6 +10111,7 @@ impl App {
+@@ -9961,6 +10116,7 @@ impl App {
                      gba_overlay: None,
                      gb_overlay: None,
                      gbc_overlay: None,
@@ -2510,7 +2509,7 @@ index 52666c3..951f35d 100644
                      overlay: self.quick_overlay_faces[overlay_slot(self.playing_platform())],
                      faces: self.quick_menu_faces.as_ref(),
                      ground: None,
-@@ -9966,6 +10119,7 @@ impl App {
+@@ -9968,6 +10124,7 @@ impl App {
                      gba_bezel: None,
                      gb_bezel: None,
                      gbc_bezel: None,
@@ -2518,23 +2517,43 @@ index 52666c3..951f35d 100644
                      bezel: self.quick_bezel_faces[bezel_slot(self.playing_platform())],
                      over_game: true,
                      footer_top,
-@@ -12287,10 +12441,14 @@ impl App {
+@@ -12291,10 +12448,14 @@ impl App {
          let Some(cart) = self.shelf().carts.get(self.shelf().index) else {
              return;
          };
-+        let pair = Core::pair(cart.platform);
-+        if pair[0] == pair[1] {
++        let row = Core::row(cart.platform);
++        if row.len() < 2 {
 +            return;
 +        }
          let seat =
              slot_store::core_for_platform(&root, &cart.stem, cart.platform, self.state.gb_core);
          let now = self.now();
--        let mut picker = CorePicker::open(Core::pair(cart.platform), seat, now);
-+        let mut picker = CorePicker::open(pair, seat, now);
+-        let mut picker = CorePicker::open(Core::row(cart.platform), seat, now);
++        let mut picker = CorePicker::open(row, seat, now);
          if self.core_faces_ready() {
              picker.start(now);
          }
-@@ -14450,6 +14608,15 @@ impl App {
+@@ -12345,6 +12506,10 @@ impl App {
+                 .is_some_and(|stem| self.link_mode(stem).0 == LinkKind::Wireless)
+         };
+         match self.core {
++            Core::Picodrive => {
++                self.hud.toast(Toast::NoLink, self.now());
++                return;
++            }
+             Core::Gambatte => {
+                 self.hud.toast(Toast::NeedsMgba, self.now());
+                 return;
+@@ -12354,7 +12519,7 @@ impl App {
+                     Platform::Gba if self.wireless_only() => Some(Toast::NeedsGpsp),
+                     Platform::Gba => None,
+                     Platform::Gb | Platform::Gbc => Some(Toast::NeedsMgba),
+-                    Platform::Gbav => Some(Toast::NoLink),
++                    Platform::Gbav | Platform::Gg => Some(Toast::NoLink),
+                     #[cfg(feature = "nds")]
+                     Platform::Nds => Some(Toast::NoLink),
+                 };
+@@ -14487,6 +14652,15 @@ impl App {
                      slot_ui::GBC_LABEL_H,
                  ],
              ),
@@ -2550,7 +2569,7 @@ index 52666c3..951f35d 100644
          };
          let (fw, fh) = (tex.w as f32, tex.h as f32);
          let (w, h) = (fw * scale, fh * scale);
-@@ -15471,15 +15638,18 @@ impl App {
+@@ -15508,15 +15682,18 @@ impl App {
                  self.open_keyboard(
                      "RetroAchievements Password",
                      Some("Leave blank for a saved account"),
@@ -2573,7 +2592,7 @@ index 52666c3..951f35d 100644
                  self.keyboard = None;
                  let notice = match result {
                      Ok(()) => NetNotice::RaRestart,
-@@ -15490,7 +15660,7 @@ impl App {
+@@ -15527,7 +15704,7 @@ impl App {
                      Err(_) => NetNotice::RaSaveFailed,
                  };
                  self.set_update(Some(UpdateState::Notice(notice)));
@@ -2582,7 +2601,7 @@ index 52666c3..951f35d 100644
              KeyboardFor::RommServer => {
                  self.romm.server = text.trim().to_string();
                  self.keyboard = None;
-@@ -15892,9 +16062,13 @@ impl App {
+@@ -15929,9 +16106,13 @@ impl App {
                              slot_achievements::SyncStatus::Offline => "Offline / retrying",
                              slot_achievements::SyncStatus::Attention => "Needs attention",
                          };
@@ -2598,7 +2617,7 @@ index 52666c3..951f35d 100644
                      }
                      None => "Checking service".into(),
                  };
-@@ -15914,24 +16088,31 @@ impl App {
+@@ -15951,24 +16132,31 @@ impl App {
              ),
              UpdateState::Notice(NetNotice::CleanupScanned) => {
                  let report = self.cleanup_preview.as_ref();
@@ -2638,7 +2657,7 @@ index 52666c3..951f35d 100644
              ),
              UpdateState::Notice(NetNotice::RaNotConfigured) => (
                  "RetroAchievements disabled".into(),
-@@ -16464,10 +16645,12 @@ impl App {
+@@ -16501,10 +16689,12 @@ impl App {
              | UpdateState::Closing(r) => Some(r),
              _ => None,
          }
@@ -2655,7 +2674,15 @@ index 52666c3..951f35d 100644
      }
  
      pub fn update_chosen(&self) -> Option<Kind> {
-@@ -17728,8 +17911,9 @@ pub fn overlay_slot(platform: Platform) -> usize {
+@@ -16661,6 +16851,7 @@ impl App {
+                 });
+                 return;
+             }
++            Core::Picodrive => return self.refuse_join(join),
+             Core::Armgba | Core::Gpsp | Core::Gambatte => {}
+             #[cfg(feature = "nds")]
+             Core::Dsperate => {}
+@@ -17788,8 +17979,9 @@ pub fn overlay_slot(platform: Platform) -> usize {
          Platform::Gba | Platform::Gbav => 0,
          Platform::Gb => 1,
          Platform::Gbc => 2,
@@ -2666,7 +2693,7 @@ index 52666c3..951f35d 100644
      }
  }
  
-@@ -17803,6 +17987,7 @@ fn bezel_slot(platform: Platform) -> usize {
+@@ -17863,6 +18055,7 @@ fn bezel_slot(platform: Platform) -> usize {
          Platform::Nds => 0,
          Platform::Gb => 1,
          Platform::Gbc => 2,
@@ -2674,7 +2701,7 @@ index 52666c3..951f35d 100644
      }
  }
  
-@@ -17913,13 +18098,15 @@ mod eject_wifi_policy_regression {
+@@ -17973,13 +18166,15 @@ mod eject_wifi_policy_regression {
              t: 0.0,
          };
          app.wifi_held = true;
@@ -2692,7 +2719,7 @@ index 52666c3..951f35d 100644
  #[cfg(test)]
  mod hardware_nickname_regression {
      use super::App;
-@@ -17927,8 +18114,14 @@ mod hardware_nickname_regression {
+@@ -17987,8 +18182,14 @@ mod hardware_nickname_regression {
      #[test]
      fn rg35xx_h_and_sp_same_resolution_get_different_names() {
          let panel = (640, 480);
@@ -2709,7 +2736,7 @@ index 52666c3..951f35d 100644
          assert_eq!(
              App::device_name_for(panel, Some("rg35xxh"), Some("RG35XX SP")),
              "RG35XX H",
-@@ -17954,14 +18147,16 @@ mod hardware_nickname_regression {
+@@ -18014,14 +18215,16 @@ mod hardware_nickname_regression {
  
      #[test]
      fn unknown_named_device_is_not_misrepresented_as_sp() {
@@ -2728,7 +2755,7 @@ index 52666c3..951f35d 100644
  /// Only used by the informational fixed-shortcut guide; does not affect input.
  fn fixed_fast_forward_text(binding: Option<Binding>, twice: bool) -> String {
      let Some(binding) = binding else {
-@@ -17975,7 +18170,11 @@ fn fixed_fast_forward_text(binding: Option<Binding>, twice: bool) -> String {
+@@ -18035,7 +18238,11 @@ fn fixed_fast_forward_text(binding: Option<Binding>, twice: bool) -> String {
      } else {
          key.replace('+', " + ")
      };
@@ -2741,7 +2768,7 @@ index 52666c3..951f35d 100644
  }
  
  #[cfg(test)]
-@@ -17983,17 +18182,22 @@ mod fixed_fast_forward_reference_tests {
+@@ -18043,17 +18250,22 @@ mod fixed_fast_forward_reference_tests {
      use super::*;
      #[test]
      fn current_mapping_is_explained_without_changing_its_binding() {
@@ -2767,7 +2794,7 @@ index 52666c3..951f35d 100644
  /// Display helpers for the read-only reference menu. Never used by input.
  fn fixed_key_with_prefix(binding: Option<Binding>, prefix: &str) -> String {
      let Some(binding) = binding else {
-@@ -18008,7 +18212,9 @@ fn fixed_key_with_prefix(binding: Option<Binding>, prefix: &str) -> String {
+@@ -18068,7 +18280,9 @@ fn fixed_key_with_prefix(binding: Option<Binding>, prefix: &str) -> String {
  fn fixed_holdable_shelf_key(binding: Option<Binding>) -> String {
      match binding {
          None => "NOT ASSIGNED".to_owned(),
@@ -2778,7 +2805,7 @@ index 52666c3..951f35d 100644
          Some(binding) => fixed_key_with_prefix(Some(binding), "HOLD "),
      }
  }
-@@ -18019,12 +18225,18 @@ mod source_verified_hotkey_guide_display_tests {
+@@ -18079,12 +18293,18 @@ mod source_verified_hotkey_guide_display_tests {
  
      #[test]
      fn display_uses_effective_fast_forward_and_shelf_buttons() {
@@ -2800,10 +2827,10 @@ index 52666c3..951f35d 100644
          assert_eq!(fixed_holdable_shelf_key(None), "NOT ASSIGNED");
          let chord = Some(Binding {
 diff --git a/crates/slot/src/core.rs b/crates/slot/src/core.rs
-index 13c0f45..22b6b89 100644
+index 131a8ba..b2f7fbe 100644
 --- a/crates/slot/src/core.rs
 +++ b/crates/slot/src/core.rs
-@@ -198,6 +198,7 @@ pub fn colour_option(
+@@ -204,6 +204,7 @@ pub fn colour_option(
      match which {
          #[cfg(feature = "nds")]
          Core::Dsperate => None,
@@ -2811,10 +2838,19 @@ index 13c0f45..22b6b89 100644
          Core::Mgba => Some((
              "mgba_color_correction",
              if on && platform == Platform::Gb {
-@@ -258,14 +259,20 @@ pub fn blending_off(which: Core) -> (&'static str, &'static str) {
+@@ -259,7 +260,7 @@ pub fn sunlight_option(which: Core) -> Option<&'static str> {
+     match which {
+         Core::Mgba => Some("mgba_solar_sensor_level"),
+         Core::Armgba => Some("armgba_solar_sensor"),
+-        Core::Gpsp | Core::Gambatte => None,
++        Core::Gpsp | Core::Gambatte | Core::Picodrive => None,
+         #[cfg(feature = "nds")]
+         Core::Dsperate => None,
+     }
+@@ -277,12 +278,16 @@ pub fn blending_off(which: Core) -> (&'static str, &'static str) {
          Core::Gpsp => ("gpsp_frame_mixing", "disabled"),
          Core::Gambatte => ("gambatte_mix_frames", "disabled"),
-         Core::Sameboy => ("sameboy_interframe_blending", "off"),
+         Core::Armgba => ("armgba_lcd_effects", "disabled"),
 +        Core::Picodrive => ("", ""),
          #[cfg(feature = "nds")]
          Core::Dsperate => ("dsperate_blending", "off"),
@@ -2825,15 +2861,19 @@ index 13c0f45..22b6b89 100644
 +    if which == Core::Picodrive {
 +        return;
 +    }
-     // SameBoy has no interframe-blending core option.
--    if which == Core::Sameboy { return; }
-+    if which == Core::Sameboy {
-+        return;
-+    }
      let (key, value) = blending_off(which);
      core.set_option(key, value);
  }
-@@ -285,7 +292,9 @@ pub fn palette_options(which: Core, colors: GbColors) -> Vec<(&'static str, &'st
+@@ -302,7 +307,7 @@ pub fn apply_link_options(core: &mut LibretroCore, which: Core, player: u8) {
+ pub fn links_live(which: Core) -> bool {
+     match which {
+         Core::Armgba => true,
+-        Core::Mgba | Core::Gpsp | Core::Gambatte => false,
++        Core::Mgba | Core::Gpsp | Core::Gambatte | Core::Picodrive => false,
+         #[cfg(feature = "nds")]
+         Core::Dsperate => false,
+     }
+@@ -314,7 +319,9 @@ pub fn palette_options(which: Core, colors: GbColors) -> Vec<(&'static str, &'st
              ("gambatte_gb_colorization", "internal"),
              ("gambatte_gb_internal_palette", p.gambatte_name()),
          ],
@@ -2842,53 +2882,18 @@ index 13c0f45..22b6b89 100644
 +            vec![("gambatte_gb_colorization", "GBC")]
 +        }
          (Core::Gambatte, GbColors::SgbAuto) => vec![("gambatte_gb_colorization", "SGB")],
-         (Core::Sameboy, _) => Vec::new(),
          (Core::Mgba, GbColors::GbcAuto) => vec![
-@@ -359,12 +368,20 @@ pub fn apply_core_options(
-     if which == Core::Sameboy {
-         // Real SGB hardware handles games such as Pokemon Yellow dynamically.
-         // Without Pocket SGB choose the normal GB/GBC autodetection.
--        core.set_option("sameboy_model", if matches!(palette, Some(GbColors::SgbAuto)) {
--            "Super Game Boy"
--        } else { "Auto" });
-+        core.set_option(
-+            "sameboy_model",
-+            if matches!(palette, Some(GbColors::SgbAuto)) {
-+                "Super Game Boy"
-+            } else {
-+                "Auto"
-+            },
-+        );
-         core.set_option("sameboy_border", "never");
-         core.set_option("sameboy_mono_palette", "greyscale");
--        core.set_option("sameboy_color_correction_mode", if colour { "emulate hardware" } else { "off" });
-+        core.set_option(
-+            "sameboy_color_correction_mode",
-+            if colour { "emulate hardware" } else { "off" },
-+        );
+             ("mgba_gb_model", "Game Boy Color"),
+@@ -469,6 +476,7 @@ pub fn apply_core_options(
+         }
+         #[cfg(feature = "nds")]
+         Core::Dsperate => {}
++        Core::Picodrive => {}
      }
-     if which == Core::Gambatte {
-         core.set_option("gambatte_gb_hwmode", "Auto");
-@@ -373,11 +390,12 @@ pub fn apply_core_options(
-         }
-         // SGB colors target a TV, not the GBC LCD. In particular, Gambatte's
-         // 'always' correction distorts SGB palettes. Includes SGB presets.
--        let sgb_palette = platform == Platform::Gb && palette.is_some_and(|p| match p {
--            GbColors::SgbAuto => true,
--            GbColors::Palette(choice) => choice.core_name().starts_with("SGB "),
--            GbColors::Auto | GbColors::GbcAuto => false,
--        });
-+        let sgb_palette = platform == Platform::Gb
-+            && palette.is_some_and(|p| match p {
-+                GbColors::SgbAuto => true,
-+                GbColors::Palette(choice) => choice.core_name().starts_with("SGB "),
-+                GbColors::Auto | GbColors::GbcAuto => false,
-+            });
-         if let Some((key, value)) = colour_option(which, platform, colour) {
-             core.set_option(key, if sgb_palette { "disabled" } else { value });
-         }
+ }
+ 
 diff --git a/crates/slot/src/frontend.rs b/crates/slot/src/frontend.rs
-index 3755e5c..5ecbc72 100644
+index c255ed7..3fa6661 100644
 --- a/crates/slot/src/frontend.rs
 +++ b/crates/slot/src/frontend.rs
 @@ -824,6 +824,9 @@ impl Frontend {
@@ -2940,17 +2945,7 @@ index 3755e5c..5ecbc72 100644
      }
  
      pub fn render(&mut self, compositor: &mut Compositor, window: (u32, u32)) {
-@@ -1318,7 +1324,8 @@ impl Frontend {
-             !bezel_has_glass && app.reflection(platform),
-             !bezel_has_glass,
-         );
--        compositor.set_authentic_colour_correction(self.session.app().authentic_colour_correction());
-+        compositor
-+            .set_authentic_colour_correction(self.session.app().authentic_colour_correction());
-         compositor.set_frame_blend(self.session.app().frame_blend());
-         // Authentic uses its regular LCD response except while fast-forwarding.
-         compositor.set_authentic_fast_forward(self.session.fast_forwarding());
-@@ -1758,6 +1765,7 @@ fn authentic_screen(app: &App) -> slot_gfx::Screen {
+@@ -1755,6 +1761,7 @@ fn authentic_screen(app: &App) -> slot_gfx::Screen {
          },
          Console::Gbc => slot_gfx::Screen::Gbc,
          Console::Gba | Console::Gbav => slot_gfx::Screen::Gba,
@@ -2958,7 +2953,7 @@ index 3755e5c..5ecbc72 100644
          #[cfg(feature = "nds")]
          Console::Nds => slot_gfx::Screen::Gba,
      }
-@@ -2696,8 +2704,11 @@ fn sync_quick_clock(app: &mut App, compositor: &mut Compositor, state: &mut Quic
+@@ -2693,8 +2700,11 @@ fn sync_quick_clock(app: &mut App, compositor: &mut Compositor, state: &mut Quic
  }
  
  fn achievement_upload(
@@ -2972,7 +2967,7 @@ index 3755e5c..5ecbc72 100644
  ) -> TexId {
      if let Some(tex) = previous {
          compositor.update_texture(tex, w, h, rgba);
-@@ -2727,7 +2738,11 @@ fn sync_achievement_view(app: &mut App, compositor: &mut Compositor) {
+@@ -2724,7 +2734,11 @@ fn sync_achievement_view(app: &mut App, compositor: &mut Compositor) {
                  let name = [false, true].map(|lit| {
                      let f = cheat_name_face(&a.title, lit);
                      let previous = old_names.get(slot).map(|pair| pair[lit as usize].0);
@@ -2985,7 +2980,7 @@ index 3755e5c..5ecbc72 100644
                  });
                  let value = [false, true].map(|lit| {
                      let label = if !a.unlocked {
-@@ -2741,14 +2756,20 @@ fn sync_achievement_view(app: &mut App, compositor: &mut Compositor) {
+@@ -2738,14 +2752,20 @@ fn sync_achievement_view(app: &mut App, compositor: &mut Compositor) {
                      };
                      let f = quick_value_face(&label, lit);
                      let previous = old_values.get(slot).map(|pair| pair[lit as usize].0);
@@ -3009,7 +3004,7 @@ index 3755e5c..5ecbc72 100644
                          );
                          (tex, pic.width, pic.height)
                      });
-@@ -2764,16 +2785,32 @@ fn sync_achievement_view(app: &mut App, compositor: &mut Compositor) {
+@@ -2761,16 +2781,32 @@ fn sync_achievement_view(app: &mut App, compositor: &mut Compositor) {
              Some(v) => {
                  let earned = v.entries.iter().filter(|a| a.unlocked).count();
                  let total: u32 = v.entries.iter().map(|a| a.points).sum();
@@ -3050,26 +3045,26 @@ index 3755e5c..5ecbc72 100644
          let previous = app.achievement_header_texture().map(|(tex, _, _)| tex);
          let tex = achievement_upload(compositor, previous, f.w, f.h, &f.rgba);
 diff --git a/crates/slot/src/invite.rs b/crates/slot/src/invite.rs
-index d9fb032..d48d5fb 100644
+index 05b2f88..2ff903e 100644
 --- a/crates/slot/src/invite.rs
 +++ b/crates/slot/src/invite.rs
-@@ -41,6 +41,7 @@ fn core_byte(core: Core) -> u8 {
-         Core::Mgba => 1,
+@@ -42,6 +42,7 @@ fn core_byte(core: Core) -> u8 {
          Core::Gpsp => 2,
          Core::Gambatte => 3,
-+        Core::Picodrive => 4,
-         // SameBoy was removed from select. slot.'s bundled emulator choices.
-         // Do not incorrectly announce it as a playable link core.
-         Core::Sameboy => 0,
-@@ -54,6 +55,7 @@ fn core_from(byte: u8) -> Option<Core> {
-         1 => Some(Core::Mgba),
+         Core::Armgba => 4,
++        Core::Picodrive => 5,
+         #[cfg(feature = "nds")]
+         Core::Dsperate => 0,
+     }
+@@ -53,6 +54,7 @@ fn core_from(byte: u8) -> Option<Core> {
          2 => Some(Core::Gpsp),
          3 => Some(Core::Gambatte),
-+        4 => Some(Core::Picodrive),
+         4 => Some(Core::Armgba),
++        5 => Some(Core::Picodrive),
          _ => None,
      }
  }
-@@ -63,6 +65,7 @@ fn platform_byte(platform: Platform) -> u8 {
+@@ -62,6 +64,7 @@ fn platform_byte(platform: Platform) -> u8 {
          Platform::Gb => 1,
          Platform::Gbc => 2,
          Platform::Gba | Platform::Gbav => 3,
@@ -3077,7 +3072,7 @@ index d9fb032..d48d5fb 100644
          #[cfg(feature = "nds")]
          Platform::Nds => 0,
      }
-@@ -73,6 +76,7 @@ fn platform_from(byte: u8) -> Option<Platform> {
+@@ -72,6 +75,7 @@ fn platform_from(byte: u8) -> Option<Platform> {
          1 => Some(Platform::Gb),
          2 => Some(Platform::Gbc),
          3 => Some(Platform::Gba),
@@ -3086,7 +3081,7 @@ index d9fb032..d48d5fb 100644
      }
  }
 diff --git a/crates/slot/src/session.rs b/crates/slot/src/session.rs
-index 925ae57..fdcd633 100644
+index c3b5b4c..485db1d 100644
 --- a/crates/slot/src/session.rs
 +++ b/crates/slot/src/session.rs
 @@ -402,7 +402,8 @@ impl Session {
@@ -3109,12 +3104,12 @@ index 925ae57..fdcd633 100644
          self.bridge_link(|app| app.update(dt));
          if let Some(action) = self.app.take_achievement_action() {
              self.achievements.request_library(action);
-@@ -725,7 +727,7 @@ impl Session {
+@@ -728,7 +730,7 @@ impl Session {
                  // cheats are not wired up yet.
                  let cheats = match core {
-                     Core::Mgba => crate::cheats::load(&root, platform, &stem, &rom),
--                    Core::Gpsp | Core::Gambatte | Core::Sameboy => Vec::new(),
-+                    Core::Gpsp | Core::Gambatte | Core::Sameboy | Core::Picodrive => Vec::new(),
+                     Core::Mgba | Core::Armgba => crate::cheats::load(&root, platform, &stem, &rom),
+-                    Core::Gpsp | Core::Gambatte => Vec::new(),
++                    Core::Gpsp | Core::Gambatte | Core::Picodrive => Vec::new(),
                      #[cfg(feature = "nds")]
                      Core::Dsperate => Vec::new(),
                  };
@@ -3183,10 +3178,10 @@ index aed872f..18f60f8 100644
      [(canvas.w - w) / 2.0, slot_ui::rest_y(canvas, h), w, h]
  }
 diff --git a/crates/slot/src/update.rs b/crates/slot/src/update.rs
-index f0b587c..dce7c9b 100644
+index c42e398..cf4789e 100644
 --- a/crates/slot/src/update.rs
 +++ b/crates/slot/src/update.rs
-@@ -146,13 +146,15 @@ fn parts(v: &str) -> Option<Vec<u64>> {
+@@ -147,13 +147,15 @@ fn parts(v: &str) -> Option<Vec<u64>> {
      v.split('.').map(|p| p.parse().ok()).collect()
  }
  
@@ -3205,7 +3200,7 @@ index f0b587c..dce7c9b 100644
                  s.parse::<u64>().ok()?.checked_add(3_000_000)?
              } else if let Some(s) = suffix.strip_prefix("custom.") {
                  s.parse::<u64>().ok()?.checked_add(2_000_000)?
-@@ -174,10 +176,14 @@ pub fn display_version(kind: Kind, version: &str) -> String {
+@@ -175,10 +177,14 @@ pub fn display_version(kind: Kind, version: &str) -> String {
          return format!("v{version}");
      }
      if let Some((upstream, suffix)) = version.split_once('-') {
@@ -3222,7 +3217,7 @@ index f0b587c..dce7c9b 100644
                  }
              }
          }
-@@ -344,7 +350,8 @@ impl<R: Read> Read for Stoppable<R> {
+@@ -345,7 +351,8 @@ impl<R: Read> Read for Stoppable<R> {
  pub const WIFI_CONF: &str = "Config/wifi.conf";
  // This fork's releases carry their own versions.json, so updates never cross over to
  // upstream's builds.
@@ -3232,11 +3227,29 @@ index f0b587c..dce7c9b 100644
  const RELEASES: &str = "https://github.com/Sinastrax/select-slot/releases/download";
  const FORK: &str = "select";
  const BASEOS_RELEASES: &str = "https://github.com/pvaibhav/BaseOS/releases/download";
+diff --git a/crates/slot/tests/scale.rs b/crates/slot/tests/scale.rs
+index 6f54a38..f0ef4fb 100644
+--- a/crates/slot/tests/scale.rs
++++ b/crates/slot/tests/scale.rs
+@@ -17,6 +17,13 @@ fn root_for(platform: Platform) -> TempDir {
+         Platform::Gba => tmp_root_with_carts(&["Game", "Zzz"]),
+         Platform::Gb => tmp_root_with_gb_carts(&["Game", "Zzz"]),
+         Platform::Gbc => tmp_root_with_gbc_carts(&["Game", "Zzz"]),
++        Platform::Gg => {
++            let d = tmp_root_with_carts(&["Zzz"]);
++            let dir = d.path().join("Games/GG");
++            std::fs::create_dir_all(&dir).unwrap();
++            std::fs::write(dir.join("Game.gg"), vec![0; 0x8000]).unwrap();
++            d
++        }
+         Platform::Gbav => {
+             let d = tmp_root_with_carts(&["Zzz"]);
+             let dir = d.path().join("Games").join(Platform::Gbav.dir_name());
 diff --git a/crates/slot/tests/update.rs b/crates/slot/tests/update.rs
-index cc85818..10645b8 100644
+index ca5aace..89c26ef 100644
 --- a/crates/slot/tests/update.rs
 +++ b/crates/slot/tests/update.rs
-@@ -210,6 +210,9 @@ fn newer_counts_fork_releases_of_the_same_upstream_version() {
+@@ -211,6 +211,9 @@ fn newer_counts_fork_releases_of_the_same_upstream_version() {
      assert!(!newer("1.15.3-rgsp.4", "1.15.3-custom.1"));
      assert!(newer("1.15.3-select.1", "1.15.3-custom.99"));
      assert!(newer("1.15.3-select.2", "1.15.3-select.1"));
@@ -3247,10 +3260,10 @@ index cc85818..10645b8 100644
      assert!(!newer("1.15.3-custom.1", "1.15.3-custom.1"));
      assert!(newer("1.14.0-pvaibhav.2", "1.14.0-pvaibhav.1"));
 diff --git a/taskfile.yml b/taskfile.yml
-index e45bddf..c8cdf78 100644
+index c408c50..4311ff4 100644
 --- a/taskfile.yml
 +++ b/taskfile.yml
-@@ -310,7 +310,7 @@ tasks:
+@@ -311,7 +311,7 @@ tasks:
        ROOT: '{{.ROOT | default "./sdcard"}}'
      cmds:
        - ./target/debug/slot --init-root {{.ROOT}}

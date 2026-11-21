@@ -2,13 +2,13 @@
 
 **A separate Slot build for adding systems beyond the original select.slot. versions.**
 
-`more. slot.` starts with Sega Game Gear. This branch is based on the prepared select.slot. H700 source and keeps the established shelf, game launch, save, settings, and online-update infrastructure while adding Game Gear as a distinct system. It does not change the existing select.slot. or Miyoo builds.
+`more. slot.` starts with Sega Game Gear. This branch is based on select. slot. 1.16.0 Ver. 57 for H700 and keeps the established shelf, game launch, save, settings, and online-update infrastructure while adding Game Gear as a distinct system. It does not change the existing select.slot. or Miyoo builds.
 
 ## Current work
 
 | System | Core | Controls | Display options | Hardware status |
 | --- | --- | --- | --- | --- |
-| Sega Game Gear (`.gg`) | PicoDrive | D-pad, A, B, Select, Start, turbo | Per-system shader, scale, overlay, bezel, frame blending | Integrated in source; not yet built or tested on hardware |
+| Sega Game Gear (`.gg`) | PicoDrive | D-pad, A, B, Select, Start, turbo | Per-system shader, scale, overlay, bezel, frame blending | Hardware confirmation pending |
 
 The default scale is **Fit**. The display menu keeps Game Gear settings separate from GB, GBC, and GBA settings. Game Gear games use a separate cartridge silhouette, label position, shell branding, and clear-shell shadow/backing on the shelf.
 

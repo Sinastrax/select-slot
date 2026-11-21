@@ -29,7 +29,8 @@ source = (SCRIPTS / "h700-prepare.sh").read_text()
 assert source.startswith("#!/usr/bin/env bash\n")
 assert "set -euo pipefail\n" in source
 assert "v1.15.3-pvaibhav.1.tar.gz" in source
-assert "v1.16.0-pvaibhav.1.tar.gz" in source
+assert "v1.16.0-pvaibhav.2.tar.gz" in source
+assert "v1.16.0-pvaibhav.1.tar.gz" not in source
 assert "git merge --no-edit --no-ff -X ours upstream-1.16" in source
 
 # All references must resolve locally; an upstream refactor should be
@@ -53,6 +54,10 @@ stages = [
     "python3 ../.github/scripts/restore-ver4-pocket-optics.py",
     "python3 ../.github/scripts/restore-sgb-pocket-whitepoint.py",
     "python3 ../.github/scripts/fix-gba-fit-lcd-intersections.py",
+    "python3 ../.github/scripts/verify-gba-fit-lcd-intersections.py",
+    "python3 ../.github/scripts/add-h700-original-gba-bezel.py",
+    "python3 ../.github/scripts/verify-h700-original-gba-bezel.py",
+    "python3 ../.github/scripts/optimize-authentic-pocket-sampling.py",
     "python3 ../.github/scripts/ra-config-migration-ver27.py",
     "python3 ../.github/scripts/ver30-menu.py",
     "python3 ../.github/scripts/fix-menu-overflow-all-pages.py",
@@ -73,16 +78,27 @@ assert '+    "https://raw.githubusercontent.com/Sinastrax/select-slot/more-slot/
 assert '+pub const LATEST: &str = "https://github.com/Sinastrax/select-slot/releases/latest/download/versions.json";' in stable_patch
 assert "bash .github/scripts/h700-prepare.sh" in build
 assert "python3 .github/scripts/verify-h700-maintenance.py" in build
+prep = (SCRIPTS / "h700-prepare.sh").read_text()
+assert "restore-known-good-authentic-texture-filter.py" in prep
+assert (SCRIPTS / "restore-known-good-authentic-texture-filter.py").exists()
 assert "cargo test -p slot-achievements -- --nocapture" in build
 assert "cargo test -p slot-ui --lib menu_viewport_tests" in build
 assert "cargo test -p slot --no-default-features --features device --lib hardware_nickname_regression" in build
+assert "cargo test -p slot-gfx --lib authentic_blending_tests" in build
+assert "cargo test -p slot --no-default-features --features device --test app authentic_trades_the_game_boys_colour_and_palette_rows_for_a_model" in build
 assert "check-gles2-shader.py" in build
 assert "verify-ota-publisher.py" in build
 assert "needs: build-h700" in build
-assert "if: github.ref == 'refs/heads/main' && github.event_name == 'push'" in build
+assert "  release-h700:" not in build
+assert "SLOT_VERSION=\"$(cat ../.github/ota-version.txt)\"" in build
+assert "version=\"$(cat ../.github/ota-version.txt)\"" in build
 assert "sha256" in build and "versions.json" in build
 assert "mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz" in build
-assert "gh release create" in build and "--latest" in build
+assert "armgba_libretro.so" in build
+assert "armgba-src" in build
+assert "gh release create" in build and "--latest" not in build
+assert "release-test-h700" not in build
+assert "configure-h700-test-ota.py" not in build
 assert "gh release delete" not in build
 assert "git/refs/tags/" not in build  # never force-move a published tag
 assert "release-more-slot-test:" in build

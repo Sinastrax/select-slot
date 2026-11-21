@@ -58,7 +58,7 @@ are included in the corresponding more. slot release source assets.
 This core is subject to the non-commercial terms in picodrive-LICENSE.txt.
 NOTICE
 
-mv "$work"/picodrive-*-src.tar.gz "$release/"
+mv "$work"/picodrive-src.tar.gz "$work"/picodrive-*-src.tar.gz "$release/"
 cat > "$release/picodrive-src.meta" <<META
 core_commit=$commit
 core_sha256=$sha

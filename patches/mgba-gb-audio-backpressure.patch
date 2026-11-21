@@ -1,0 +1,21 @@
+--- a/crates/slot/src/emu.rs
++++ b/crates/slot/src/emu.rs
+@@ -1001,16 +1001,8 @@
+                         &mut out,
+                         self.shared.volume.load(Ordering::Relaxed),
+                     );
+-                    if self.shared.mgba_gb_audio.load(Ordering::Relaxed)
+-                        && speed == Speed::Normal
+-                    {
+-                        // Do not hold the emulation thread up to 50ms when the
+-                        // audio ring is full. Discard the oldest buffered audio
+-                        // instead; samples that survive play at native pitch.
+-                        ring.push_drop_oldest(&out);
+-                    } else {
+-                        ring.push_blocking(&out);
+-                    }
++                    // Preserve every sample by letting the audio ring apply backpressure.
++                    ring.push_blocking(&out);
+                     paced += 1;
+                     if crate::session::trace() && paced.is_multiple_of(TRACE_EVERY) {
+                         let (dropped, starved) = (ring.overruns(), ring.underruns());

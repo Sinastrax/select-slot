@@ -47,7 +47,7 @@ assert "c = clamp(mix(panelRgb, reflector, gapShare) * shadowShare" in shader
 assert "GbModel::PocketSgb => slot_gfx::Screen::PocketSgb" in front
 assert "GbModel::PocketColor => slot_gfx::Screen::PocketColor" in front
 assert "Shader::Authentic if self.gb_model() == GbModel::PocketSgb => GbColors::SgbAuto" in app
-assert "Core::Sameboy | Core::Mgba => self.state.gb_model_mgba" in app
+assert "Core::Mgba => self.state.gb_model_mgba" in app
 assert 'core.set_option("mgba_gb_model", "Super Game Boy");' in core
 assert 'core.set_option("mgba_gb_colors_preset", "2");' in core
 assert 'core.set_option("mgba_gb_colors", "Auto");' in core

@@ -9,11 +9,11 @@ from pathlib import Path
 
 workflow = Path("../.github/workflows/build-h700.yml").read_text()
 verify_step = workflow.split(
-    "      - name: Verify version and archive checksum before publication\n", 1
+    "      - name: Validate the test build manifest\n", 1
 )
 assert len(verify_step) == 2, "H700 verified release job missing"
 validate = verify_step[1].split(
-    "      - name: Publish update assets on GitHub Releases\n", 1
+    "      - name: Publish a prerelease without changing stable releases\n", 1
 )
 assert len(validate) == 2, "H700 release checksum/publication ordering broken"
 anchor = "          python3 - <<'PY'\n"
@@ -24,15 +24,15 @@ code = "\n".join(
     for line in body.splitlines()
 )
 compile(code, "h700_manifest_validator", "exec")
-assert 'assert hashlib.sha256(archive.read_bytes()).hexdigest() == d["sha256"]' in code
-assert 'assert d["tag"] == ref.removeprefix("refs/tags/")' in code
-assert '"RELEASE_TAG=" + d["tag"]' in code
+assert 'assert hashlib.sha256(archive.read_bytes()).hexdigest() == manifest["sha256"]' in code
+assert 'assert manifest["tag"] == "v" + version' in code
+assert 'assert manifest["version"] == version' in code
 
 publish = validate[1]
-assert 'gh release view "$RELEASE_TAG"' in publish
+assert 'gh release view "$tag"' in publish
 assert "leaving it unchanged" in publish
-assert 'gh release create "$RELEASE_TAG"' in publish
-assert "--latest" in publish
+assert 'gh release create "$tag"' in publish
+assert "--prerelease" in publish and "--latest" not in publish
 assert "--notes-file RELEASE_NOTES.md" in publish
 assert "release/versions.json" in publish
 assert "release/upstream/source-release/mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz" in publish
