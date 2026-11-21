@@ -1,3 +1,3 @@
-# select. slot. 1.16.0 Ver. 56
+# select. slot. 1.16.0 Ver. 57
 
-- Shorten German update splash messages so they remain compact during OTA installation.
+- Speed up Authentic color correction for Game Boy Pocket Color and Pocket SGB by precomputing the measured LCD colors once at startup.

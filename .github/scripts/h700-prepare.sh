@@ -216,3 +216,5 @@ git apply ../patches/mgba-gb-audio-gentle-drc.patch
 # Preserve continuous mGBA GB/GBC audio when the ring reaches capacity.
 git apply --check ../patches/mgba-gb-audio-backpressure.patch
 git apply ../patches/mgba-gb-audio-backpressure.patch
+git apply --check ../patches/pocket-color-table.patch
+git apply ../patches/pocket-color-table.patch

@@ -1,0 +1,124 @@
+diff --git a/crates/slot-gfx/src/authentic.rs b/crates/slot-gfx/src/authentic.rs
+index b05ad5b..fd53a3d 100644
+--- a/crates/slot-gfx/src/authentic.rs
++++ b/crates/slot-gfx/src/authentic.rs
+@@ -98,6 +98,28 @@ pub(crate) fn ramp_texture() -> Vec<u8> {
+         .collect()
+ }
+ 
++/// Cache the measured Pocket color conversion for all 32³ source codes.
++pub(crate) fn pocket_color_table() -> Vec<u8> {
++    let look = Screen::Gbc.look();
++    let levels = RAMPS[1].map(|v| look.gamma.map(|g| (f32::from(v) / 255.0).powf(g)));
++    let mut rgba = Vec::with_capacity(256 * 128 * 4);
++    for y in 0..128 {
++        for x in 0..256 {
++            let r = levels[x % 32][0];
++            let g = levels[y % 32][1];
++            let b = levels[(y / 32) * 8 + x / 32][2];
++            for c in 0..3 {
++                let linear = (look.response[c] * r + look.response[3 + c] * g
++                    + look.response[6 + c] * b).clamp(look.least[c], 1.0);
++                let light = look.dark[c] + (look.light[c] - look.dark[c]) * linear;
++                rgba.push((light.max(0.0).powf(1.0 / 2.2) * 255.0).round() as u8);
++            }
++            rgba.push(255);
++        }
++    }
++    rgba
++}
++
+ fn rgb(hex: u32) -> [f32; 3] {
+     [16, 8, 0].map(|s| ((hex >> s) & 0xff) as f32 / 255.0)
+ }
+diff --git a/crates/slot-gfx/src/pipeline.rs b/crates/slot-gfx/src/pipeline.rs
+index 023f0f4..6ab00ae 100644
+--- a/crates/slot-gfx/src/pipeline.rs
++++ b/crates/slot-gfx/src/pipeline.rs
+@@ -90,6 +90,7 @@ pub struct GamePass {
+     /// when the bezel carries the glass itself, and no sheen when the reflection is off.
+     sheen: [f32; 2],
+     ramp: gl::types::GLuint,
++    pocket_table: gl::types::GLuint,
+     screen: Screen,
+     lcd: Lcd,
+     ghost: Ghost,
+@@ -126,6 +127,7 @@ impl GamePass {
+             gl::RGBA,
+             Some(&crate::authentic::ramp_texture()),
+         );
++        let pocket_table = crate::gl::texture(256, 128, gl::NEAREST, gl::CLAMP_TO_EDGE, gl::RGBA, Some(&crate::authentic::pocket_color_table()));
+         let (u_rect, u_bright, u_uv, u_mode, u_paper_size, u_pic, u_fbo, u_origin);
+         let (u_light, u_dark, u_response, u_gamma, u_least, u_grain, u_lcd, u_ink, u_glass);
+         let u_sheen;
+@@ -159,6 +161,7 @@ impl GamePass {
+             u_least = crate::gl::uniform_location(prog, "u_least");
+             u_grain = crate::gl::uniform_location(prog, "u_grain");
+             gl::Uniform1i(crate::gl::uniform_location(prog, "u_ramp"), 2);
++            gl::Uniform1i(crate::gl::uniform_location(prog, "u_pocket_table"), 3);
+             u_lcd = crate::gl::uniform_location(prog, "u_lcd");
+             u_authentic_correction = crate::gl::uniform_location(prog, "u_authentic_correction");
+             u_ink = crate::gl::uniform_location(prog, "u_ink");
+@@ -199,6 +202,7 @@ impl GamePass {
+             u_sheen,
+             sheen: [1.0; 2],
+             ramp,
++            pocket_table,
+             screen: Screen::Gba,
+             lcd: Lcd::Gba,
+             ghost,
+@@ -476,6 +480,8 @@ impl GamePass {
+                 let [x, y, z] = look.glass;
+                 gl::Uniform3f(self.u_glass, x, y, z);
+                 gl::Uniform2f(self.u_sheen, self.sheen[0], self.sheen[1]);
++                gl::ActiveTexture(gl::TEXTURE3);
++                gl::BindTexture(gl::TEXTURE_2D, self.pocket_table);
+                 gl::ActiveTexture(gl::TEXTURE2);
+                 gl::BindTexture(gl::TEXTURE_2D, self.ramp);
+             }
+@@ -517,6 +523,7 @@ impl Drop for GamePass {
+         unsafe {
+             gl::DeleteTextures(2, self.game.as_ptr());
+             gl::DeleteTextures(1, &self.paper);
++            gl::DeleteTextures(1, &self.pocket_table);
+             gl::DeleteTextures(1, &self.ramp);
+             gl::DeleteProgram(self.prog);
+         }
+diff --git a/crates/slot-gfx/src/shaders.rs b/crates/slot-gfx/src/shaders.rs
+index 4dfcbb4..eedb65c 100644
+--- a/crates/slot-gfx/src/shaders.rs
++++ b/crates/slot-gfx/src/shaders.rs
+@@ -71,6 +71,7 @@ uniform vec4 u_rect;
+ uniform vec2 u_fbo;
+ uniform vec4 u_pic;
+ uniform sampler2D u_ramp;
++uniform sampler2D u_pocket_table;
+ uniform vec3 u_light;
+ uniform vec3 u_dark;
+ uniform mat3 u_response;
+@@ -201,21 +202,10 @@ void main() {
+                 vec3 raw = centreRgb;
+                 vec3 panelRgb = raw;
+                 if (u_authentic_correction > 0.5 && u_lcd.y > 0.5) {
+-                    vec3 code = (floor((raw * 255.0 + 0.5) / 8.0) + 0.5) / 32.0;
+-                    vec2 gbcPick = vec2(0.0, 1.0);
+-                    vec3 measured = vec3(
+-                        dot(texture2D(u_ramp, vec2(code.r, 0.5)).rg, gbcPick),
+-                        dot(texture2D(u_ramp, vec2(code.g, 0.5)).rg, gbcPick),
+-                        dot(texture2D(u_ramp, vec2(code.b, 0.5)).rg, gbcPick));
+-                    vec3 response = clamp(u_response * pow(measured, u_gamma), u_least, vec3(1.0));
+-                    // Treat colour correction as a source-colour conversion only.
+-                    // Preserve the source's luminance and neutral greys, including
+-                    // white, rather than changing the simulated LCD white/black point.
+-                    // Pocket Color's corrected mode uses the measured GBC
+-                    // response and physical black/white points.
+-                    vec3 gbcWhite = pow(vec3(134.0, 140.0, 122.0) / 255.0, vec3(2.2));
+-                    vec3 gbcBlack = pow(vec3(14.0, 25.0, 28.0) / 255.0, vec3(2.2));
+-                    panelRgb = pow(mix(gbcBlack, gbcWhite, response), vec3(1.0 / 2.2));
++                    vec3 code = min(floor((raw * 255.0 + 0.5) / 8.0), vec3(31.0));
++                    vec2 tile = vec2(mod(code.b, 8.0), floor(code.b / 8.0));
++                    vec2 pixel = tile * 32.0 + code.rg + 0.5;
++                    panelRgb = texture2D(u_pocket_table, pixel / vec2(256.0, 128.0)).rgb;
+                 } else if (u_authentic_correction > 0.5) {
+                     // SGB: preserve mGBA's per-game SNES RGB palette.
+                     // Optional original SNES CRT response, never GBC LCD.
