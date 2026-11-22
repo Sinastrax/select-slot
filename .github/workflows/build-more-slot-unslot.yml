@@ -91,7 +91,7 @@ jobs:
           archive="$RUNNER_TEMP/slot-v1.16.0-more.4-h700.zip"
           curl -fsSL --retry 5 --retry-all-errors "https://github.com/Sinastrax/select-slot/releases/download/v1.16.0-more.4/slot-v1.16.0-more.4-h700.zip" -o "$archive"
           echo "ca98c3ac106bedaedcb19f50f4e89d361df8868e83bfb60b9a8741774db4e5a7  $archive" | sha256sum -c -
-          unzip -p "$archive" more-slot-h700/System/gambatte_libretro.so > more-slot-h700/System/gambatte_libretro.so
+          unzip -p "$archive" select-slot-h700/System/gambatte_libretro.so > more-slot-h700/System/gambatte_libretro.so
           file more-slot-h700/System/gambatte_libretro.so | grep -qi aarch64
           cat > more-slot-h700/System/licenses/gambatte-transition-compatibility.txt <<'EOF'
           Gambatte is retained in this package so the more.slot Test 4 updater can transition to this build.
