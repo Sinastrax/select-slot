@@ -1,0 +1,217 @@
+name: Build more.slot Test OTA on UnsloT
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - more-slot
+    paths:
+      - "patches/unslot-more-slot-gamegear.patch.gz"
+      - "handheld-i18n/**"
+      - ".github/cores/armgba/**"
+      - ".github/scripts/h700-prepare-unslot.sh"
+      - ".github/scripts/brand-more-unslot-boot.py"
+      - ".github/workflows/build-more-slot-unslot.yml"
+      - ".github/ota-version.txt"
+      - "branding/more-slot-wordmark.b85"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: more-slot-unslot-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/more-slot'
+    runs-on: ubuntu-24.04-arm
+    container:
+      image: rust:1-bookworm
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install firmware build tools
+        run: |
+          set -euo pipefail
+          apt-get update
+          apt-get install -y --no-install-recommends zip unzip cmake file curl ca-certificates git build-essential pkg-config libpng-dev bison flex bsdextrautils glslang-tools python3-pil
+          task_tgz=task_linux_arm64.tar.gz
+          curl -fsSLO --http1.1 --retry 5 --retry-delay 10 --retry-all-errors \
+            "https://github.com/go-task/task/releases/download/v3.54.0/$task_tgz"
+          echo "d7189d439d4a6058e39e1b2acd7c8b27acd4856691b408f23b242e4294e1df5b  $task_tgz" | sha256sum -c -
+          tar -xzf "$task_tgz" -C /usr/local/bin task
+          rm "$task_tgz"
+
+      - name: Prepare pinned UnsloT source and our port
+        run: |
+          bash .github/scripts/h700-prepare-unslot.sh
+          bash -n .github/cores/armgba/build.sh
+          python3 handheld-i18n/language_menu.py upstream
+          python3 .github/scripts/brand-more-unslot-boot.py upstream/card/System
+
+      - name: Verify source formatting and H700 frontends
+        working-directory: upstream
+        run: |
+          set -euo pipefail
+          cargo fmt --all -- --check
+          cargo check -p slot-ui -p slot-store -p slot-gfx
+          cargo check -p slot --no-default-features --features device
+
+      - name: Build full H700 firmware tree
+        working-directory: upstream
+        env:
+          VERSION_FILE: ${{ github.workspace }}/.github/ota-version.txt
+        run: |
+          set -euo pipefail
+          version="$(cat "$VERSION_FILE")"
+          test "$version" = "1.16.0-more.5"
+          task dist:device OUT=more-slot-h700 VERSION="$version"
+          python3 "${GITHUB_WORKSPACE}/handheld-i18n/german.py" .
+          cargo build --profile device --target-dir target-device -p slot --no-default-features --features device
+          install -m 755 target-device/device/slot more-slot-h700/System/slot-de
+          python3 "${GITHUB_WORKSPACE}/handheld-i18n/launcher.py" more-slot-h700/System/launch_frontend.sh
+          sh -n more-slot-h700/System/launch_frontend.sh
+          ! cmp -s more-slot-h700/System/slot more-slot-h700/System/slot-de
+
+      - name: Build ArmGBA and retain its corresponding source
+        working-directory: upstream
+        run: |
+          set -euo pipefail
+          commit=df6b2631291f249d54a00dd14f49bc893e438feb
+          mkdir -p cores/armgba source-release more-slot-h700/System/licenses
+          cp "${GITHUB_WORKSPACE}/.github/cores/armgba/"* cores/armgba/
+          cmake_dir="$RUNNER_TEMP/cmake-3.28.6"
+          curl -fsSL --retry 5 --retry-all-errors \
+            https://github.com/Kitware/CMake/releases/download/v3.28.6/cmake-3.28.6-linux-aarch64.tar.gz \
+            | tar -xz -C "$RUNNER_TEMP"
+          export PATH="$RUNNER_TEMP/cmake-3.28.6-linux-aarch64/bin:$PATH"
+          curl -fsSL --retry 5 --retry-all-errors \
+            "https://github.com/MagnominusGit/armGBA/archive/${commit}.tar.gz" \
+            -o source-release/armgba-src.tar.gz
+          tar -tzf source-release/armgba-src.tar.gz | grep "^armGBA-${commit}/CMakeLists.txt$"
+          sh cores/armgba/build.sh build "$commit" source-release/armgba-src.tar.gz \
+            "$RUNNER_TEMP/armgba-build" more-slot-h700/System/armgba_libretro.so
+          cp source-release/armgba-src.tar.gz "more-slot-h700/System/licenses/armgba-${commit}.tar.gz"
+          cp "${GITHUB_WORKSPACE}/.github/cores/armgba/link-stop-queued-once.patch" \
+            "more-slot-h700/System/licenses/armgba-link-stop-queued-once.patch"
+          file more-slot-h700/System/armgba_libretro.so | grep -q aarch64
+
+      - name: Verify the Test 4 transition files
+        working-directory: upstream
+        run: |
+          set -euo pipefail
+          version="$(cat "${GITHUB_WORKSPACE}/.github/ota-version.txt")"
+          test "$(cat more-slot-h700/System/version)" = "$version"
+          for f in slot launch_frontend.sh mgba_libretro.so gpsp_libretro.so gambatte_libretro.so armgba_libretro.so; do
+            test -s "more-slot-h700/System/$f"
+          done
+          test -s more-slot-h700/System/licenses/gamegear-cartridge-art.txt
+          test -s "more-slot-h700/System/licenses/armgba-df6b2631291f249d54a00dd14f49bc893e438feb.tar.gz"
+          file more-slot-h700/System/slot | grep -q aarch64
+          sh tools/check-card-tree.sh more-slot-h700
+
+      - name: Package legacy transition ZIP and BaseOS update pack
+        working-directory: upstream
+        env:
+          VERSION_FILE: ${{ github.workspace }}/.github/ota-version.txt
+        run: |
+          set -euo pipefail
+          version="$(cat "$VERSION_FILE")"
+          zip="slot-v${version}-h700.zip"
+          zip -qry "../$zip" more-slot-h700
+          sh tools/update/pack.sh more-slot-h700 ../MinUI.zip
+          cp source-release/armgba-src.tar.gz ../armgba-src.tar.gz
+          python3 - "$version" "$zip" ../MinUI.zip ../versions.json <<'PY'
+          import hashlib, json, pathlib, sys
+          version, transition_name, minui_name, manifest_name = sys.argv[1:]
+          transition = pathlib.Path("..") / transition_name
+          minui = pathlib.Path(minui_name)
+          result = {"stable": {
+              "version": version,
+              "tag": "v" + version,
+              "zip": transition_name,
+              "size": transition.stat().st_size,
+              "sha256": hashlib.sha256(transition.read_bytes()).hexdigest(),
+              "baseos_zip": "MinUI.zip",
+              "baseos_size": minui.stat().st_size,
+              "baseos_sha256": hashlib.sha256(minui.read_bytes()).hexdigest(),
+          }}
+          pathlib.Path(manifest_name).write_text(json.dumps(result, indent=2) + "\n")
+          print(result)
+          PY
+          unzip -t "../$zip" | tail -1
+          unzip -t ../MinUI.zip | tail -1
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: more-slot-test-5-h700
+          path: |
+            slot-v1.16.0-more.5-h700.zip
+            MinUI.zip
+            versions.json
+            armgba-src.tar.gz
+          if-no-files-found: error
+
+  publish-test-ota:
+    if: github.ref == 'refs/heads/more-slot' && github.event_name == 'push'
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: more-slot-test-5-h700
+          path: release
+      - name: Validate and publish only the more.slot prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib, json, pathlib
+          root = pathlib.Path("release")
+          m = json.loads((root / "versions.json").read_text())["stable"]
+          for name, size_key, hash_key in [
+              (m["zip"], "size", "sha256"),
+              (m["baseos_zip"], "baseos_size", "baseos_sha256"),
+          ]:
+              data = (root / name).read_bytes()
+              assert len(data) == m[size_key]
+              assert hashlib.sha256(data).hexdigest() == m[hash_key]
+          assert m["version"] == "1.16.0-more.5"
+          assert m["tag"] == "v1.16.0-more.5"
+          PY
+          version="$(cat .github/ota-version.txt)"
+          tag="v$version"
+          gh release create "$tag" \
+            "release/slot-$tag-h700.zip" \
+            release/MinUI.zip \
+            release/versions.json \
+            release/armgba-src.tar.gz \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --title "more.slot $version (test build)" \
+            --notes-file .github/release-notes/h700-more-ver5.md
+
+      - name: Update only the more.slot test OTA manifest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git fetch origin "refs/heads/more-slot:refs/remotes/origin/more-slot"
+          if [ "$(git rev-parse origin/more-slot)" != "$GITHUB_SHA" ]; then
+            echo "A newer more-slot commit exists; leave the feed for that build to publish."
+            exit 0
+          fi
+          git checkout -B more-slot origin/more-slot
+          cp release/versions.json versions.json
+          git add -f versions.json
+          git -c user.name="github-actions[bot]" \
+            -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -m "Update more.slot test OTA manifest"
+          git push origin more-slot

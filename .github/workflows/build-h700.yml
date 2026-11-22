@@ -34,6 +34,7 @@ concurrency:
 
 jobs:
   build-h700:
+    if: github.ref != 'refs/heads/more-slot'
     runs-on: ubuntu-24.04-arm
     env:
       H700_UPDATE_LABEL: ${{ github.ref == 'refs/heads/more-slot' && 'MORE. SLOT' || 'SELECT. SLOT' }}

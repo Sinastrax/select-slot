@@ -7,6 +7,38 @@ root = Path(sys.argv[1])
 menu = root / "crates/slot-ui/src/quick_menu.rs"
 app = root / "crates/slot/src/app.rs"
 
+if (menu.exists() and 'const GENERIC: [QuickRow;' in menu.read_text()):
+    def replace(source, before, after, count=1):
+        if source.count(before) != count:
+            raise RuntimeError(f"Language menu anchor changed: {before!r}")
+        return source.replace(before, after)
+
+    s = menu.read_text()
+    s = replace(s, "    Theme,\n", "    Theme,\n    Language,\n", 1)
+    s = replace(s, "const GENERIC: [QuickRow; 72]", "const GENERIC: [QuickRow; 73]")
+    s = replace(s, "    QuickRow::Theme,\n    QuickRow::Wallpaper,", "    QuickRow::Theme,\n    QuickRow::Language,\n    QuickRow::Wallpaper,")
+    s = replace(s, "pub const GENERAL: [QuickRow; 15]", "pub const GENERAL: [QuickRow; 16]")
+    s = replace(s, "        QuickRow::Theme,\n        QuickRow::BootLogo,", "        QuickRow::Theme,\n        QuickRow::Language,\n        QuickRow::BootLogo,")
+    s = replace(s, "            | QuickRow::Theme\n", "            | QuickRow::Theme\n            | QuickRow::Language\n")
+    s = replace(s, 'QuickRow::Theme => "Theme",', 'QuickRow::Theme => "Theme",\n            QuickRow::Language => "Language",')
+    s = replace(s, "    Authentic,\n", "    Authentic,\n    English,\n    German,\n", 1)
+    s = replace(s, "pub const ALL: [QuickValue; 52]", "pub const ALL: [QuickValue; 54]")
+    s = replace(s, "        QuickValue::Authentic,\n", "        QuickValue::Authentic,\n        QuickValue::English,\n        QuickValue::German,\n", 1)
+    s = replace(s, 'QuickValue::Authentic => "Authentic",', 'QuickValue::Authentic => "Authentic",\n            QuickValue::English => "English",\n            QuickValue::German => "Deutsch",')
+    menu.write_text(s)
+
+    s = app.read_text()
+    s = replace(s, "    root: Option<PathBuf>,", "    root: Option<PathBuf>,\n    language_german: bool,")
+    s = replace(s, "            root: None,", "            root: None,\n            language_german: false,")
+    s = replace(s, "        app.root = Some(root.to_path_buf());", "        app.root = Some(root.to_path_buf());\n        app.language_german = std::fs::read_to_string(root.join(\"Config/language.txt\"))\n            .is_ok_and(|v| v.trim() == \"de\");")
+    s = replace(s, "            QuickRow::WallpaperTint => Some(match self.state.wallpaper_tint {", "            QuickRow::Language => Some(if self.language_german { QuickValue::German } else { QuickValue::English }),\n            QuickRow::WallpaperTint => Some(match self.state.wallpaper_tint {")
+    s = replace(s, "            | QuickRow::Hardcore\n            | QuickRow::Theme\n            | QuickRow::Clock", "            | QuickRow::Hardcore\n            | QuickRow::Theme\n            | QuickRow::Language\n            | QuickRow::Clock")
+    s = replace(s, "            | QuickRow::Controls\n            | QuickRow::Bezel => return,", "            | QuickRow::Controls\n            | QuickRow::Language\n            | QuickRow::Bezel => return,")
+    s = replace(s, "        if row == QuickRow::Theme {", "        if row == QuickRow::Language {\n            if let Some(root) = self.root.as_ref() {\n                let path = root.join(\"Config/language.txt\");\n                let next = if self.language_german { \"en\\n\" } else { \"de\\n\" };\n                if slot_store::atomic_write(&path, next.as_bytes()).is_ok() {\n                    self.language_german = !self.language_german;\n                }\n            }\n            return;\n        }\n        if row == QuickRow::Theme {")
+    app.write_text(s)
+    print("Added the saved English/German selector to UnsloT's General settings")
+    raise SystemExit(0)
+
 def replace(source, before, after, count=1):
     if source.count(before) != count:
         raise RuntimeError(f"Language menu anchor changed: {before!r}")

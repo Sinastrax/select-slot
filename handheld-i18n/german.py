@@ -48,6 +48,6 @@ for crate, names in modules.items():
         updated = literal.sub(render, source)
         if source != updated:
             path.write_text(updated)
-if not {'Language', 'Settings', 'Resume', 'Brightness', 'General', 'Off'} <= seen:
+if not {'Language', 'Settings', 'Resume', 'General', 'Off'} <= seen:
     raise ValueError('Incomplete pinned menu tree')
 print(f'German frontend: {len(seen)} distinct translated source strings')
