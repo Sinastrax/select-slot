@@ -63,6 +63,10 @@ jobs:
           cargo check -p slot-ui -p slot-store -p slot-gfx
           cargo check -p slot --no-default-features --features device
 
+      - name: Fetch and verify PortMaster runtime
+        working-directory: upstream
+        run: sh tools/portmaster/fetch.sh vendor/portmaster
+
       - name: Build full H700 firmware tree
         working-directory: upstream
         env:
