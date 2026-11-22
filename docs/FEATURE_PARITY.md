@@ -1,0 +1,24 @@
+# more. slot. feature parity tracker
+
+This tracks the select.slot-specific behavior that must be carried into the separate UnsloT-based more.slot branch. Test 5 was not feature-complete. Test 6 is the current port candidate, and is not ready for publication while rows remain incomplete. UnsloT already has its own implementations of several general Slot features; those count as inherited only after their behavior is checked against the maintainer's known-good select.slot behavior.
+
+| Feature group | select.slot reference | Test 6 candidate status | Port requirement |
+| --- | --- | --- | --- |
+| Authentic GB/GBC/GBA display profiles, color correction, reflection and frame blend behavior | `docs/H700_FEATURES.md`; `patches/` | Authentic profiles and correction shader are now wired for GB/GBC/GBA and Game Gear; separate reflection toggle and saved GB model selector are still missing | Finish persistent model/reflection controls, then verify on supported handhelds |
+| Pocket Color and Pocket SGB, including actual SGB color source, shared Pocket LCD treatment, and independent core settings | `docs/H700_FEATURES.md`; `patches/` | Missing | Port mGBA/Gambatte routing, Pocket Color/SGB pixel separation and white point, plus per-core persistence |
+| GB/GBC mGBA performance and audio behavior | `docs/H700_FEATURES.md`; ordered `mgba-*.patch` files | Missing custom mGBA core/audio integration | Port the known-good core pin and audio/performance behavior, without carrying retired experiments; keep PicoDrive separate |
+| RetroAchievements fixes and tools | `docs/H700_FEATURES.md`; select.slot Ver. 25–35 sources | UnsloT has a different RA implementation; select.slot-specific fixes and UX are not ported | Compare and port only missing behavior: login/config preservation, Wi-Fi lifecycle, German Pokémon Smaragd recognition, safe indirect reads, progress refresh, status, popup/viewer, fast-forward tracking and cached/offline behavior |
+| Controls and menu behavior | select.slot Ver. 30–40 sources and hotkey guide | Partial overlap with UnsloT; no parity audit | Port extra H700 controls/mapping fixes, inactivity screen/power timers, standalone restart, safe cleanup and verified compact guide as applicable |
+| Keyboard, cheats and long-name UI | select.slot latest sources | One-shot Shift plus Caps Lock is in the candidate. UnsloT has no cheat API/page, so cheat support and long-name scrolling remain absent | Retain the keyboard change; add cheat parsing, per-game state, core API delivery and menu page; then add scrolling for long cheat and achievement names |
+| Device, scaling and boot/update behavior | select.slot stable H700 implementation | Some inherited UnsloT behavior, not verified for parity | Preserve per-system Fit default/scaling, correct H700 identity, resume-on-power semantics, update branding and isolated more.slot test OTA channel |
+| Localization | select.slot handheld English/German work | Partial | Audit every handheld string and line break, retaining natural German terminology rather than literal translations |
+| Game Gear system | more.slot Test 5 patches | Retained in Test 6 candidate | Preserve PicoDrive, system-specific settings, German UI, Game Gear Authentic/shader and bezel behavior; verify MENU and game input |
+| Cartridge art and shelf presentation | SlotPlusUltra research + Test 5 cartridge patches | Game Gear silhouette is present; full intended cartridge setup/parity is unverified | Compare the live shelf behavior and cartridge model/label handling against SlotPlusUltra; keep existing select.slot systems intact |
+
+## Release gate
+
+Do not call a more.slot build complete or publish it as a feature-parity update until each row is implemented or its upstream UnsloT equivalent is inspected and marked verified. A successful package/OTA check is separate from hardware confirmation. Stable select.slot releases and their OTA feed remain independent.
+
+## Current work
+
+The keyboard and Authentic display ports are in the local feature branch. The compositor now turns frame blending off while fast-forwarding. The keyboard behavior is: a first Shift press highlights the key and applies to one typed character, a second consecutive press locks Caps, and the next press unlocks it. The on-screen key changes with the lock state. It has not been compiled or run on hardware yet. Rust/Cargo are unavailable in the workspace; compile and package verification will run through the GitHub Actions pull-request build.

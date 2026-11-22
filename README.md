@@ -2,7 +2,7 @@
 
 **A separate Slot build for adding systems beyond the original select.slot. versions.**
 
-`more. slot.` starts with Sega Game Gear. This branch is based on select. slot. 1.16.0 Ver. 57 for H700 and keeps the established shelf, game launch, save, settings, and online-update infrastructure while adding Game Gear as a distinct system. It does not change the existing select.slot. or Miyoo builds.
+`more. slot.` is the separate UnsloT-based branch for adding systems beyond select.slot. Test 5 was an incomplete Game Gear evaluation build. Test 6 is being prepared with the select.slot feature port; its implementation and hardware package are still under review. Track exact parity in [the feature parity tracker](docs/FEATURE_PARITY.md). It does not change the existing select.slot. or Miyoo builds.
 
 ## Current work
 
@@ -16,9 +16,13 @@ The first integration targets Anbernic H700 devices. It does not add Miyoo suppo
 
 ## Testing and releases
 
-The H700 workflow publishes `more. slot.` builds as GitHub prereleases for testing. It does not mark them as latest and does not change the stable select.slot release or updater feed. The first test build must be installed manually; after that, only this build's isolated test feed can deliver later `more. slot.` updates through **Settings → System → Check for Updates**. See [the test OTA notes](MORE_OTA.md).
+The H700 workflow builds pull requests without publishing. A verified merge to `more-slot` publishes `more. slot.` as a GitHub prerelease for testing. It does not mark the build as latest or change the stable select.slot release or updater feed. The first test build must be installed manually; after that, only this build's isolated test feed can deliver later `more. slot.` updates through **Settings → System → Check for Updates**. See [the test OTA notes](MORE_OTA.md).
 
 The first build is intended primarily for the Anbernic RG35XX-H. No device is marked tested until you report testing results. PicoDrive's license prohibits commercial use; each downloadable build includes the pinned source and required notices.
+
+## Port status
+
+Test 5 is the manually installable Game Gear evaluation build. Test 6 remains a candidate until the parity tracker’s release gate is cleared and the H700 package passes GitHub Actions. This branch is kept separate from stable select.slot; the Test 6 update feed can only update more.slot test builds.
 
 ## Credits
 
