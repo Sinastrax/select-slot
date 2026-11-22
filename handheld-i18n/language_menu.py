@@ -7,6 +7,12 @@ root = Path(sys.argv[1])
 menu = root / "crates/slot-ui/src/quick_menu.rs"
 app = root / "crates/slot/src/app.rs"
 
+# The More.slot patch carries this setting itself. Keep this source-prep helper
+# safe to rerun across both patched and upstream-only trees.
+if menu.exists() and "QuickRow::Language" in menu.read_text():
+    print("Language setting is already present in this source tree")
+    raise SystemExit(0)
+
 if (menu.exists() and 'const GENERIC: [QuickRow;' in menu.read_text()):
     def replace(source, before, after, count=1):
         if source.count(before) != count:
