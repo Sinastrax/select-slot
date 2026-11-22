@@ -394,7 +394,7 @@ index 450d61f..d16b3a0 100644
              self.change_setting(row, true);
              let said = match self.colour_correction() {
 diff --git a/crates/slot/src/frontend.rs b/crates/slot/src/frontend.rs
-index c672503..c331294 100644
+index c672503..a071a49 100644
 --- a/crates/slot/src/frontend.rs
 +++ b/crates/slot/src/frontend.rs
 @@ -135,14 +135,14 @@ struct QuickPalette {
@@ -426,7 +426,7 @@ index c672503..c331294 100644
  }
  
  #[derive(Clone, Copy)]
-@@ -2302,11 +2302,48 @@ fn bezel_key(pick: &BezelPick, art: Option<BezelArt>, last: Option<BezelArt>) ->
+@@ -2302,11 +2302,55 @@ fn bezel_key(pick: &BezelPick, art: Option<BezelArt>, last: Option<BezelArt>) ->
      }
  }
  
@@ -457,26 +457,33 @@ index c672503..c331294 100644
 -    let last = state.image.as_ref().and_then(|image| image.2);
 +    let gg_window = (platform == Console::Gg
 +        && pick == BezelPick::Default && !app.picture_fills()).then(|| {
-+        let [x, y, width, height] = app.game_layout().rect;
++        let layout = app.game_layout();
++        let [x, y, width, height] = layout.rect;
 +        let [src_x, src_y, src_w, src_h] = app.source_rect();
 +        let native_w = 160.0 / slot_gfx::SRC_W as f32;
 +        let native_h = 144.0 / slot_gfx::SRC_H as f32;
 +        let left = ((1.0 - native_w) * 0.5 - src_x) / src_w;
 +        let top = ((1.0 - native_h) * 0.5 - src_y) / src_h;
-+        let sx = w as f32 / slot_gfx::OUT_W as f32;
-+        let sy = h as f32 / slot_gfx::OUT_H as f32;
++        let (frame_x, frame_y, frame_w, frame_h) =
++            if slot_gfx::framed((w, h)) && !layout.panel {
++                slot_gfx::screen_rect((w, h))
++            } else {
++                (0, 0, w as i32, h as i32)
++            };
++        let sx = frame_w as f32 / slot_gfx::OUT_W as f32;
++        let sy = frame_h as f32 / slot_gfx::OUT_H as f32;
 +        [
-+            (x + left * width) * sx,
-+            (y + top * height) * sy,
-+            (x + (left + native_w / src_w) * width) * sx,
-+            (y + (top + native_h / src_h) * height) * sy,
++            frame_x as f32 + (x + left * width) * sx,
++            frame_y as f32 + (y + top * height) * sy,
++            frame_x as f32 + (x + (left + native_w / src_w) * width) * sx,
++            frame_y as f32 + (y + (top + native_h / src_h) * height) * sy,
 +        ].map(|value| value.round() as i32)
 +    });
 +    let last = state.image.as_ref().filter(|image| image.0 == platform).and_then(|image| image.2);
      let art = bezel_key(&pick, app.bezel_art(), last);
      let shown = (
          platform,
-@@ -2315,10 +2352,12 @@ fn sync_game_bezel(app: &mut App, compositor: &mut Compositor, state: &mut Bezel
+@@ -2315,10 +2359,12 @@ fn sync_game_bezel(app: &mut App, compositor: &mut Compositor, state: &mut Bezel
          (w, h),
          app.authentic(platform),
          app.reflection(platform),
@@ -489,7 +496,7 @@ index c672503..c331294 100644
              BezelPick::Default => shown
                  .2
                  .and_then(|kind| default_game_bezel_face(platform == Console::Gbc, kind, w, h)),
-@@ -2364,7 +2403,7 @@ fn sync_game_bezel(app: &mut App, compositor: &mut Compositor, state: &mut Bezel
+@@ -2364,7 +2410,7 @@ fn sync_game_bezel(app: &mut App, compositor: &mut Compositor, state: &mut Bezel
      if app.quick_menu().is_none() && app.in_game_menu().is_none() {
          return;
      }
@@ -498,7 +505,7 @@ index c672503..c331294 100644
          .into_iter()
          .enumerate()
      {
-@@ -2468,6 +2507,7 @@ fn sync_overlay(app: &mut App, compositor: &mut Compositor, state: &mut OverlayS
+@@ -2468,6 +2514,7 @@ fn sync_overlay(app: &mut App, compositor: &mut Compositor, state: &mut OverlayS
          Console::Gba,
          Console::Gb,
          Console::Gbc,
