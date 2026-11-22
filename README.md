@@ -2,28 +2,36 @@
 
 **A separate Slot build for adding systems beyond the original select.slot. versions.**
 
-`more. slot.` starts with Sega Game Gear. This branch is based on select. slot. 1.16.0 Ver. 57 for H700 and keeps the established shelf, game launch, save, settings, and online-update infrastructure while adding Game Gear as a distinct system. It does not change the existing select.slot. or Miyoo builds.
+`more. slot.` is the separate UnsloT-based branch for adding systems beyond select.slot. Test 5 was an incomplete Game Gear evaluation build. Test 6 is a test-only evaluation of the select.slot feature port and Game Gear changes; it is not a feature-parity release. Track the remaining parity work in [the feature parity tracker](docs/FEATURE_PARITY.md). It does not change the existing select.slot. stable release or OTA feed.
+
+The Miyoo Mini port remains available as [select.slot. 1.8.1 Ver. 12](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver12).
 
 ## Current work
 
 | System | Core | Controls | Display options | Hardware status |
 | --- | --- | --- | --- | --- |
-| Sega Game Gear (`.gg`) | PicoDrive | D-pad, A, B, Select, Start, turbo | Per-system shader, scale, overlay, bezel, frame blending | Hardware confirmation pending |
+| Sega Game Gear (`.gg`) | Gearsystem (PicoDrive, Genesis Plus GX and SMS Plus available as alternatives) | D-pad, A, B, Select, Start, turbo | Per-system Authentic shader, color correction, scaling, bezel and frame blending | Hardware confirmation pending |
 
-The default scale is **Fit**. The display menu keeps Game Gear settings separate from GB, GBC, and GBA settings. Game Gear games use a separate cartridge silhouette, label position, shell branding, and clear-shell shadow/backing on the shelf.
+The default scale is **Fit**. The display menu keeps Game Gear settings separate from GB, GBC, and GBA settings. Game Gear games use their own cartridge silhouette and label area. **General → Cart Slot** selects the Game Gear bay artwork; the other systems keep their existing shelf slot.
 
 The first integration targets Anbernic H700 devices. It does not add Miyoo support. Game Gear offers its own Authentic LCD profile with optional color correction and frame blending. Custom bezels go in Bezels/GG.
 
 ## Testing and releases
 
-The H700 workflow publishes `more. slot.` builds as GitHub prereleases for testing. It does not mark them as latest and does not change the stable select.slot release or updater feed. The first test build must be installed manually; after that, only this build's isolated test feed can deliver later `more. slot.` updates through **Settings → System → Check for Updates**. See [the test OTA notes](MORE_OTA.md).
+The H700 workflow builds pull requests without publishing. Test 4 established the separate More.slot OTA feed; each later test release advances that feed through **Settings → System → Check for Updates**. A verified merge to `more-slot` publishes a prerelease and updates only the `more-slot` OTA manifest. It does not mark the build as latest or change the stable select.slot release or updater feed. See [the test OTA notes](MORE_OTA.md).
 
 The first build is intended primarily for the Anbernic RG35XX-H. No device is marked tested until you report testing results. PicoDrive's license prohibits commercial use; each downloadable build includes the pinned source and required notices.
+
+## Port status
+
+Test 5 was an incomplete Game Gear evaluation build. Test 6 is a test build that can be delivered through the isolated More.slot OTA feed after the H700 package passes GitHub Actions. It does not claim full feature parity; use the tracker for known gaps. The select.slot stable release and updater feed remain separate.
 
 ## Credits
 
 - [Slot](https://github.com/slot-cfw/slot), by Brandon Kowalski
 - [pvaibhav's H700 Slot fork](https://github.com/pvaibhav/slot)
+- [SlotPlus Ultra](https://github.com/nelynes/slotPlus), for the adapted Game Gear cartridge and bay artwork (GPL-3; see `System/licenses/gamegear-cartridge-art.txt` in the build)
+- [Gearsystem](https://github.com/drhelius/Gearsystem), the default Game Gear core
 - [PicoDrive libretro core](https://github.com/libretro/picodrive), plus its separately pinned build dependencies
 
 The included source and core notices are authoritative for the bundled emulator's terms. This project does not include game ROMs or proprietary BIOS files.

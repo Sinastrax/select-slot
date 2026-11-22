@@ -6,11 +6,27 @@ on:
     branches:
       - more-slot
     paths:
+      - "patches/**"
+      - "handheld-i18n/**"
+      - ".github/cores/armgba/**"
+      - ".github/scripts/h700-prepare-unslot.sh"
+      - ".github/scripts/brand-more-unslot-boot.py"
+      - ".github/scripts/build-stable-mgba.sh"
+      - ".github/workflows/build-more-slot-unslot.yml"
+      - ".github/ota-version.txt"
+      - ".github/release-notes/**"
+      - "branding/more-slot-wordmark.b85"
+      - "docs/FEATURE_PARITY.md"
+  pull_request:
+    branches:
+      - more-slot
+    paths:
       - "patches/unslot-more-slot-gamegear.patch.gz"
       - "handheld-i18n/**"
       - ".github/cores/armgba/**"
       - ".github/scripts/h700-prepare-unslot.sh"
       - ".github/scripts/brand-more-unslot-boot.py"
+      - ".github/scripts/build-stable-mgba.sh"
       - ".github/workflows/build-more-slot-unslot.yml"
       - ".github/ota-version.txt"
       - "branding/more-slot-wordmark.b85"
@@ -24,7 +40,7 @@ concurrency:
 
 jobs:
   build:
-    if: github.ref == 'refs/heads/more-slot'
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/more-slot' || github.ref == 'refs/heads/feature/more-slot-select-port'
     runs-on: ubuntu-24.04-arm
     defaults:
       run:
@@ -74,8 +90,9 @@ jobs:
         run: |
           set -euo pipefail
           version="$(cat "$VERSION_FILE")"
-          test "$version" = "1.16.0-more.5"
+          [[ "$version" =~ ^1\.16\.0-more\.[0-9]+$ ]]
           task dist:device OUT=more-slot-h700 VERSION="$version"
+          bash "${GITHUB_WORKSPACE}/.github/scripts/build-stable-mgba.sh" more-slot-h700
           python3 "${GITHUB_WORKSPACE}/handheld-i18n/german.py" .
           cargo fmt --all
           cargo build --profile device --target-dir target-device -p slot --no-default-features --features device
@@ -144,7 +161,10 @@ jobs:
             require_file "more-slot-h700/System/$f"
           done
           require_file more-slot-h700/System/licenses/gamegear-cartridge-art.txt
+          require_file more-slot-h700/System/licenses/mgba-stable.sha256
+          require_file more-slot-h700/System/licenses/mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz
           require_file "more-slot-h700/System/licenses/armgba-df6b2631291f249d54a00dd14f49bc893e438feb.tar.gz"
+          (cd more-slot-h700/System && sha256sum -c licenses/mgba-stable.sha256)
           check_aarch64() {
             echo "Checking $1 architecture"
             file "$1"
@@ -189,9 +209,9 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: more-slot-test-5-h700
+          name: more-slot-test-h700
           path: |
-            slot-v1.16.0-more.5-h700.zip
+            slot-v*-h700.zip
             MinUI.zip
             versions.json
             armgba-src.tar.gz
@@ -207,7 +227,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: more-slot-test-5-h700
+          name: more-slot-test-h700
           path: release
       - name: Validate and publish only the more.slot prerelease
         env:
@@ -225,21 +245,27 @@ jobs:
               data = (root / name).read_bytes()
               assert len(data) == m[size_key]
               assert hashlib.sha256(data).hexdigest() == m[hash_key]
-          assert m["version"] == "1.16.0-more.5"
-          assert m["tag"] == "v1.16.0-more.5"
+          assert m["version"].startswith("1.16.0-more.")
+          assert m["tag"] == "v" + m["version"]
           PY
           version="$(cat .github/ota-version.txt)"
           tag="v$version"
-          gh release create "$tag" \
-            "release/slot-$tag-h700.zip" \
-            release/MinUI.zip \
-            release/versions.json \
-            release/armgba-src.tar.gz \
-            --repo "$GITHUB_REPOSITORY" \
-            --target "$GITHUB_SHA" \
-            --prerelease \
-            --title "more.slot $version (test build)" \
-            --notes-file .github/release-notes/h700-more-ver5.md
+          release_notes=".github/release-notes/h700-more-ver${version##*.}.md"
+          test -s "$release_notes"
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Test release $tag already exists; leaving it unchanged."
+          else
+            gh release create "$tag" \
+              "release/slot-$tag-h700.zip" \
+              release/MinUI.zip \
+              release/versions.json \
+              release/armgba-src.tar.gz \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --prerelease \
+              --title "more.slot $version (test build)" \
+              --notes-file "$release_notes"
+          fi
 
       - name: Update only the more.slot test OTA manifest
         env:

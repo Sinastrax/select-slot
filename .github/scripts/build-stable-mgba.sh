@@ -47,7 +47,7 @@ if nm -D -u "$core" | grep -E ' U (VFileOpenFD|VFileFromFD)$'; then
 fi
 file "$core" | grep -E "ARM aarch64|ARM64|aarch64"
 install -m 644 "$core" "$out/System/mgba_libretro.so"
-sha256sum "$out/System/mgba_libretro.so" | tee "$out/System/licenses/mgba-stable.sha256"
+(cd "$out/System" && sha256sum mgba_libretro.so | tee licenses/mgba-stable.sha256)
 printf 'commit=%s\nsource=https://github.com/libretro/mgba/tree/%s\ncustom_fix=legacy-libretro-cmake-compatibility\n' \
   "$commit" "$commit" > "$out/System/licenses/mgba-$commit.meta"
 tar -czf "$out/System/licenses/mgba-$commit-source.tar.gz" -C "$source_dir" --exclude=.git .
