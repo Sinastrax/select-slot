@@ -1,0 +1,411 @@
+diff --git a/crates/slot-gfx/src/authentic.rs b/crates/slot-gfx/src/authentic.rs
+index fd53a3d..1c40838 100644
+--- a/crates/slot-gfx/src/authentic.rs
++++ b/crates/slot-gfx/src/authentic.rs
+@@ -39,6 +39,7 @@ pub enum Screen {
+     Light,
+     Gbc,
+     Gba,
++    GameGear,
+ }
+ 
+ pub(crate) struct Look {
+@@ -245,6 +246,13 @@ impl Screen {
+                 // Off passes source RGB unchanged while retaining the grid.
+                 Screen::PocketColor.look()
+             },
++            // Backlit passive-matrix panel. Black/white endpoints are visual estimates.
++            Screen::GameGear => Look {
++                light: rgb(0xebece8), dark: rgb(0x212430),
++                lcd: [3.0, 0.0, 0.0, 0.0],
++                response: [0.0; 9], gamma: [1.0; 3], least: [0.0; 3],
++                grain: 0.0, ink: [0.0; 4], glass: [0.0; 3], ghost: [0.0; 2],
++            },
+             Screen::Light => LIGHT.look([keep(30.0), keep(10.0)]),
+             // BGB's GBC reality white and black. Its blue lies outside sRGB, and BGB draws
+             // the red in it darker than the black level, as the screen's own red is.
+diff --git a/crates/slot-gfx/src/shaders.rs b/crates/slot-gfx/src/shaders.rs
+index eedb65c..afcc279 100644
+--- a/crates/slot-gfx/src/shaders.rs
++++ b/crates/slot-gfx/src/shaders.rs
+@@ -118,7 +118,22 @@ void main() {
+     vec2 f = fract(uv * u_src);
+     vec3 c;
+     bool inside = all(greaterThanEqual(uv, u_pic.xy)) && all(lessThan(uv, u_pic.zw));
+-    if (u_mode > 5.5 && u_mode < 6.5) {
++    if (u_mode > 5.5 && u_mode < 6.5 && u_lcd.x > 2.5) {
++        // Native Game Gear: vertical BGR filters on a backlit colour panel.
++        // Integrate the periodic aperture across one output pixel, also at fractional Fit.
++        vec2 span = u_rect.zw * u_fbo / (u_uv.zw * u_src);
++        vec2 halfWidth = 0.5 / span;
++        vec3 phase = f.x - lcd_centres.bgr;
++        vec3 stripe = (lcd_ramp(phase + halfWidth.x) - lcd_ramp(phase - halfWidth.x)) * span.x;
++        float row = (lcd_ramp(vec3(f.y - 0.5 + halfWidth.y)).x
++                   - lcd_ramp(vec3(f.y - 0.5 - halfWidth.y)).x) * span.y;
++        vec3 source = inside ? texture2D(u_game, (floor(uv * u_src) + 0.5) / u_src).rgb : vec3(0.0);
++        if (u_authentic_correction > 0.5) {
++            float luma = dot(source, vec3(0.299, 0.587, 0.114));
++            source = mix(u_dark, u_light, mix(vec3(luma), source, 0.90));
++        }
++        c = source * (1.0 + 0.12 * stripe) * (0.96 + 0.04 * row);
++    } else if (u_mode > 5.5 && u_mode < 6.5) {
+         // Authentic: an unlit LCD in room light, its panel running on past the picture to
+         // the edge of the screen. See authentic.rs.
+         vec2 texel = 1.0 / u_src;
+diff --git a/crates/slot-store/src/slot_state.rs b/crates/slot-store/src/slot_state.rs
+index dee6199..70d5cb3 100644
+--- a/crates/slot-store/src/slot_state.rs
++++ b/crates/slot-store/src/slot_state.rs
+@@ -516,6 +516,7 @@ pub struct SlotState {
+     pub shader_gb_mgba: Shader,
+     pub shader_gbc: Shader,
+     pub shader_gg: Shader,
++    pub authentic_gg_correction: bool,
+     pub resume_insert: bool,
+     pub resume_power_on: bool,
+     pub rewind: bool,
+@@ -569,6 +570,7 @@ pub struct SlotState {
+     pub authentic_blending_gb: Blending,
+     pub authentic_blending_gbc: Blending,
+     pub blending_gg: Blending,
++    pub authentic_blending_gg: Blending,
+     pub recents: Vec<Recent>,
+     pub favorites: Vec<Recent>,
+     pub shelf: Option<String>,
+@@ -671,13 +673,14 @@ impl Shader {
+         Shader::Shimmerless,
+         Shader::Authentic,
+     ];
+-    pub const GG: [Shader; 6] = [
++    pub const GG: [Shader; 7] = [
+         Shader::Off,
+         Shader::Lcd3x,
+         Shader::Grid,
+         Shader::Dot,
+         Shader::Simpletex,
+         Shader::Shimmerless,
++        Shader::Authentic,
+     ];
+ 
+     pub fn name(self) -> &'static str {
+@@ -752,6 +755,7 @@ impl Default for SlotState {
+             shader_gb_mgba: Shader::Simpletex,
+             shader_gbc: Shader::Simpletex,
+             shader_gg: Shader::Off,
++            authentic_gg_correction: true,
+             resume_insert: true,
+             resume_power_on: true,
+             rewind: true,
+@@ -800,6 +804,7 @@ impl Default for SlotState {
+             authentic_blending_gb: Blending::Ghosting,
+             authentic_blending_gbc: Blending::Ghosting,
+             blending_gg: Blending::Off,
++            authentic_blending_gg: Blending::Ghosting,
+             recents: Vec::new(),
+             favorites: Vec::new(),
+             shelf: None,
+@@ -901,6 +906,7 @@ pub fn write_slot_state(root: &Path, s: &SlotState) -> std::io::Result<()> {
+         s.colour_correction_gbc as u8
+     ));
+     text.push_str(&format!("shader_gbc={}\n", s.shader_gbc.name()));
++    text.push_str(&format!("authentic_gg_correction={}\n", s.authentic_gg_correction as u8));
+     text.push_str(&format!("shader_gg={}\n", s.shader_gg.name()));
+     text.push_str(&format!(
+         "authentic_gb_correction={}\n",
+@@ -988,6 +994,7 @@ pub fn write_slot_state(root: &Path, s: &SlotState) -> std::io::Result<()> {
+         s.authentic_blending_gbc.key(),
+     ));
+     text.push_str(&format!("blending_gg={}\n", s.blending_gg.key()));
++    text.push_str(&format!("authentic_blending_gg={}\n", s.authentic_blending_gg.key()));
+     text.push_str(&format!("shelf={}\n", s.shelf.as_deref().unwrap_or("")));
+     text.push_str(&format!(
+         "shelf_cart={}\n",
+@@ -1055,6 +1062,7 @@ fn parse(text: &str) -> Option<SlotState> {
+     let mut shader_gb_mgba = None;
+     let mut shader_gbc = None;
+     let mut shader_gg = None;
++    let mut authentic_gg_correction = None;
+     let mut auto_load = None;
+     let mut resume_insert = None;
+     let mut resume_power_on = None;
+@@ -1104,6 +1112,7 @@ fn parse(text: &str) -> Option<SlotState> {
+     let mut authentic_blending_gb = None;
+     let mut authentic_blending_gbc = None;
+     let mut blending_gg = None;
++    let mut authentic_blending_gg = None;
+     let mut shelf = None;
+     let mut shelf_cart = None;
+     let mut shelf_mode = None;
+@@ -1196,6 +1205,7 @@ fn parse(text: &str) -> Option<SlotState> {
+             "authentic_blending_gb" => authentic_blending_gb = Blending::parse(value),
+             "authentic_blending_gbc" => authentic_blending_gbc = Blending::parse(value),
+             "blending_gg" => blending_gg = Some(Blending::parse(value).unwrap_or_default()),
++            "authentic_blending_gg" => authentic_blending_gg = Some(Blending::parse(value).unwrap_or_default()),
+             "shelf" => shelf = Some(value.to_string()).filter(|v| !v.is_empty()),
+             "shelf_cart" => shelf_cart = recent_value(value),
+             "shelf_mode" => shelf_mode = ShelfMode::parse(value),
+@@ -1208,6 +1218,7 @@ fn parse(text: &str) -> Option<SlotState> {
+                 shader_gb_mgba = Shader::parse(value).filter(|s| Shader::GB.contains(s))
+             }
+             "shader_gbc" => shader_gbc = Shader::parse(value).filter(|s| Shader::GB.contains(s)),
++            "authentic_gg_correction" => authentic_gg_correction = flag(value),
+             "shader_gg" => shader_gg = Shader::parse(value).filter(|s| Shader::GG.contains(s)),
+             "authentic_gb_correction" => {
+                 authentic_gb_correction = value.parse::<u32>().ok().map(|n| n & 0x3f)
+@@ -1270,6 +1281,7 @@ fn parse(text: &str) -> Option<SlotState> {
+             .or(shader_gb)
+             .unwrap_or(fallback.shader_gb_mgba),
+         shader_gbc: shader_gbc.or(shader_gb).unwrap_or(fallback.shader_gbc),
++        authentic_gg_correction: authentic_gg_correction.unwrap_or(fallback.authentic_gg_correction),
+         shader_gg: shader_gg.unwrap_or(fallback.shader_gg),
+         resume_insert: resume_insert
+             .or(auto_load.map(|(insert, _)| insert))
+@@ -1329,6 +1341,7 @@ fn parse(text: &str) -> Option<SlotState> {
+         authentic_blending_gb: authentic_blending_gb.unwrap_or(fallback.authentic_blending_gb),
+         authentic_blending_gbc: authentic_blending_gbc.unwrap_or(fallback.authentic_blending_gbc),
+         blending_gg: blending_gg.unwrap_or(fallback.blending_gg),
++        authentic_blending_gg: authentic_blending_gg.unwrap_or(fallback.authentic_blending_gg),
+         recents: Vec::new(),
+         favorites: Vec::new(),
+         shelf,
+diff --git a/crates/slot-ui/src/quick_menu.rs b/crates/slot-ui/src/quick_menu.rs
+index 0181998..f501eb1 100644
+--- a/crates/slot-ui/src/quick_menu.rs
++++ b/crates/slot-ui/src/quick_menu.rs
+@@ -33,6 +33,7 @@ pub enum QuickRow {
+     WallpaperTint,
+     GbcShader,
+     GgShader,
++    GgColourCorrection,
+     GgOverlay,
+     GgBezel,
+     GgScale,
+@@ -219,7 +220,7 @@ pub enum QuickRow {
+ }
+ 
+ impl QuickRow {
+-    pub const ALL: [QuickRow; 205 + cfg!(feature = "nds") as usize] = [
++    pub const ALL: [QuickRow; 206 + cfg!(feature = "nds") as usize] = [
+         QuickRow::FastForward,
+         QuickRow::FastForwardSound,
+         QuickRow::Screen,
+@@ -244,6 +245,7 @@ impl QuickRow {
+         QuickRow::WallpaperTint,
+         QuickRow::GbcShader,
+         QuickRow::GgShader,
++        QuickRow::GgColourCorrection,
+         QuickRow::GgOverlay,
+         QuickRow::GgBezel,
+         QuickRow::GgScale,
+@@ -659,8 +661,9 @@ impl QuickRow {
+         QuickRow::GbcStretch,
+     ];
+ 
+-    pub const SCREEN_GG: [QuickRow; 5] = [
++    pub const SCREEN_GG: [QuickRow; 6] = [
+         QuickRow::GgShader,
++        QuickRow::GgColourCorrection,
+         QuickRow::GgOverlay,
+         QuickRow::GgBlending,
+         QuickRow::GgBezel,
+@@ -766,6 +769,7 @@ impl QuickRow {
+             | QuickRow::GbcScale
+             | QuickRow::GbcStretch => &QuickRow::SCREEN_GBC,
+             QuickRow::GgShader
++            | QuickRow::GgColourCorrection
+             | QuickRow::GgOverlay
+             | QuickRow::GgBlending
+             | QuickRow::GgBezel
+@@ -1039,7 +1043,7 @@ impl QuickRow {
+             QuickRow::GbcShader | QuickRow::GgShader => "Shader",
+             QuickRow::GbaColourCorrection => "Color Correction",
+             QuickRow::GbColourCorrection => "Color Correction",
+-            QuickRow::GbcColourCorrection => "Color Correction",
++            QuickRow::GbcColourCorrection | QuickRow::GgColourCorrection => "Color Correction",
+             QuickRow::Game => "Gameplay",
+             QuickRow::ResumeInsert => "Resume on Insert",
+             QuickRow::ResumePowerOn => "Resume on Power On",
+diff --git a/crates/slot/src/app.rs b/crates/slot/src/app.rs
+index 1c8c926..450d61f 100644
+--- a/crates/slot/src/app.rs
++++ b/crates/slot/src/app.rs
+@@ -3012,6 +3012,9 @@ impl App {
+             hidden.push(QuickRow::Palette);
+         }
+         let platform = self.playing_platform();
++        if platform == Platform::Gg && !self.authentic(platform) {
++            hidden.push(QuickRow::ColourCorrection);
++        }
+         if self.authentic(platform) {
+             // Color Correction and Frame Blending remain available here.
+             hidden.push(QuickRow::Palette);
+@@ -3020,7 +3023,7 @@ impl App {
+             hidden.push(QuickRow::Model);
+         }
+         // The glass's reflection is Authentic's; no other shader draws one.
+-        if !self.authentic(platform) {
++        if platform == Platform::Gg || !self.authentic(platform) {
+             hidden.push(QuickRow::Reflection);
+         }
+         if no_bezel {
+@@ -3161,6 +3164,7 @@ impl App {
+             (QuickRow::Shader, Platform::Gg) => QuickRow::GgShader,
+             (QuickRow::ColourCorrection, Platform::Gba) => QuickRow::GbaColourCorrection,
+             (QuickRow::ColourCorrection, Platform::Gb) => QuickRow::GbColourCorrection,
++            (QuickRow::ColourCorrection, Platform::Gg) => QuickRow::GgColourCorrection,
+             (QuickRow::ColourCorrection, Platform::Gbc) => QuickRow::GbcColourCorrection,
+             (QuickRow::Bezel, Platform::Gba) => QuickRow::GbaBezel,
+             (QuickRow::Bezel, Platform::Gb) => QuickRow::GbBezel,
+@@ -3200,7 +3204,13 @@ impl App {
+             | QuickRow::PlaySaturation
+             | QuickRow::PlayContrast
+             | QuickRow::Reflection
+-            | QuickRow::Scale => self.quick_value(self.playing_row(row)),
++            | QuickRow::Scale => {
++                let resolved = self.playing_row(row);
++                if resolved == row {
++                    return None;
++                }
++                self.quick_value(resolved)
++            }
+             QuickRow::GbaReflection => Some(QuickValue::flag(self.state.reflection_gba)),
+             QuickRow::GbReflection => Some(QuickValue::flag(self.state.reflection_gb)),
+             QuickRow::GbcReflection => Some(QuickValue::flag(self.state.reflection_gbc)),
+@@ -3217,7 +3227,7 @@ impl App {
+             QuickRow::GbaBlending => Some(blending_value(self.blending_for(Platform::Gba))),
+             QuickRow::GbcBlending => Some(blending_value(self.blending_for(Platform::Gbc))),
+             QuickRow::GbBlending => Some(blending_value(self.blending_for(Platform::Gb))),
+-            QuickRow::GgBlending => Some(blending_value(self.state.blending_gg)),
++            QuickRow::GgBlending => Some(blending_value(self.blending_for(Platform::Gg))),
+             QuickRow::Blending => Some(blending_value(self.blending_in_play())),
+             QuickRow::Brightness => Some(QuickValue::level(self.brightness_level())),
+             QuickRow::BlueLight => Some(match self.state.blue_light {
+@@ -3247,6 +3257,7 @@ impl App {
+             QuickRow::GbaShader => Some(shader_value(self.gba_shader())),
+             QuickRow::GbShader => Some(shader_value(self.gb_shader())),
+             QuickRow::GbcShader => Some(shader_value(self.state.shader_gbc)),
++            QuickRow::GgColourCorrection => self.authentic(Platform::Gg).then(|| QuickValue::flag(self.state.authentic_gg_correction)),
+             QuickRow::GgShader => Some(shader_value(self.state.shader_gg)),
+             QuickRow::Rumble => Some(QuickValue::flag(self.state.rumble)),
+             QuickRow::LeftStick => Some(QuickValue::flag(self.state.left_stick_dpad)),
+@@ -4313,6 +4324,7 @@ impl App {
+             (QuickRow::GbaReflection, Platform::Gba),
+             (QuickRow::GbReflection, Platform::Gb),
+             (QuickRow::GbcReflection, Platform::Gbc),
++            (QuickRow::GgColourCorrection, Platform::Gg),
+         ] {
+             if !self.authentic(platform) {
+                 hidden.push(row);
+@@ -5734,7 +5746,7 @@ impl App {
+                     (bits & (1 << (self.gb_model() as u32))) != 0
+                 }
+                 Platform::Gbc => self.state.authentic_gbc_correction,
+-                Platform::Gg => false,
++                Platform::Gg => self.state.authentic_gg_correction,
+ 
+                 #[cfg(feature = "nds")]
+                 Platform::Nds => false,
+@@ -5815,7 +5827,8 @@ impl App {
+             (Platform::Gbc, false) => s.blending_gbc,
+             #[cfg(feature = "nds")]
+             (Platform::Nds, _) => Blending::Off,
+-            (Platform::Gg, _) => s.blending_gg,
++            (Platform::Gg, true) => s.authentic_blending_gg,
++            (Platform::Gg, false) => s.blending_gg,
+         }
+     }
+ 
+@@ -5831,7 +5844,8 @@ impl App {
+             (Platform::Gbc, false) => &mut s.blending_gbc,
+             #[cfg(feature = "nds")]
+             (Platform::Nds, _) => return,
+-            (Platform::Gg, _) => &mut s.blending_gg,
++            (Platform::Gg, true) => &mut s.authentic_blending_gg,
++            (Platform::Gg, false) => &mut s.blending_gg,
+         };
+         *blending = blending.step(choices, right);
+         self.persist();
+@@ -7615,6 +7629,7 @@ impl App {
+             }
+             QuickRow::RaBackground => self.toggle_ra_index(),
+             QuickRow::GgShader
++            | QuickRow::GgColourCorrection
+             | QuickRow::GgOverlay
+             | QuickRow::GgBezel
+             | QuickRow::GgScale
+@@ -8083,6 +8098,9 @@ impl App {
+                 *slot = to;
+                 self.core_options_pending();
+             }
++            QuickRow::GgColourCorrection => {
++                s.authentic_gg_correction = !s.authentic_gg_correction;
++            }
+             QuickRow::GgShader => {
+                 let to = s.shader_gg.step(&Shader::GG, right);
+                 if to == s.shader_gg {
+@@ -8108,7 +8126,7 @@ impl App {
+             QuickRow::ResumePowerOn => s.resume_power_on = !s.resume_power_on,
+             QuickRow::Rewind => s.rewind = !s.rewind,
+             QuickRow::GgBlending => {
+-                s.blending_gg = s.blending_gg.step(&Blending::ALL, right);
++                return self.step_blending(Platform::Gg, &Blending::ALL, right);
+             }
+             QuickRow::Theme => s.appearance = s.appearance.toggle(),
+             QuickRow::BatteryDisplay => s.battery_display = s.battery_display.step(right),
+diff --git a/crates/slot/src/frontend.rs b/crates/slot/src/frontend.rs
+index 3fa6661..c672503 100644
+--- a/crates/slot/src/frontend.rs
++++ b/crates/slot/src/frontend.rs
+@@ -1761,7 +1761,7 @@ fn authentic_screen(app: &App) -> slot_gfx::Screen {
+         },
+         Console::Gbc => slot_gfx::Screen::Gbc,
+         Console::Gba | Console::Gbav => slot_gfx::Screen::Gba,
+-        Console::Gg => slot_gfx::Screen::Gba,
++        Console::Gg => slot_gfx::Screen::GameGear,
+         #[cfg(feature = "nds")]
+         Console::Nds => slot_gfx::Screen::Gba,
+     }
+diff --git a/crates/slot/tests/scale.rs b/crates/slot/tests/scale.rs
+index f0ef4fb..7ebf3f5 100644
+--- a/crates/slot/tests/scale.rs
++++ b/crates/slot/tests/scale.rs
+@@ -355,3 +355,39 @@ fn a_suffixed_bezel_follows_the_scale_to_its_matching_file() {
+     );
+     assert_eq!(pick, BezelPick::None);
+ }
++
++#[test]
++fn game_gear_menu_opens_draws_and_resumes() {
++    let (_root, mut app) = playing(Platform::Gg, (640, 480), SlotState::default());
++    app.apply(Action::QuickMenu);
++    assert!(app.in_game_menu().is_some());
++    for row in [QuickRow::ColourCorrection, QuickRow::Reflection] {
++        assert!(app.in_game_hidden().contains(&row));
++        assert_eq!(app.quick_value(row), None);
++    }
++    for _ in 0..120 {
++        app.update(1.0 / 60.0);
++    }
++    let mut draws = Vec::new();
++    app.draw(&mut draws);
++    assert!(!draws.is_empty());
++    app.apply(Action::QuickMenu);
++    assert!(app.in_game_menu().is_none());
++}
++
++#[test]
++fn game_gear_menu_authentic_has_its_own_colour_and_blending() {
++    let (_root, mut app) = playing(Platform::Gg, (640, 480), SlotState {
++        shader_gg: slot_store::Shader::Authentic,
++        ..SlotState::default()
++    });
++    app.apply(Action::QuickMenu);
++    assert!(app.authentic(Platform::Gg));
++    assert_eq!(app.quick_value(QuickRow::ColourCorrection), Some(QuickValue::flag(true)));
++    assert!(!app.in_game_hidden().contains(&QuickRow::ColourCorrection));
++    assert!(app.in_game_hidden().contains(&QuickRow::Reflection));
++    assert_eq!(app.quick_value(QuickRow::Blending), Some(QuickValue::Ghosting));
++    for row in QuickRow::ALL {
++        let _ = app.quick_value(row);
++    }
++}

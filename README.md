@@ -12,7 +12,7 @@
 
 The default scale is **Fit**. The display menu keeps Game Gear settings separate from GB, GBC, and GBA settings. Game Gear games use a separate cartridge silhouette, label position, shell branding, and clear-shell shadow/backing on the shelf.
 
-The first integration targets Anbernic H700 devices. It does not add Miyoo support. Shaders and bezels use Slot's existing rendering and asset paths; no Game Gear-specific LCD shader or bezel artwork is included yet.
+The first integration targets Anbernic H700 devices. It does not add Miyoo support. Game Gear offers its own Authentic LCD profile with optional color correction and frame blending. Custom bezels go in Bezels/GG.
 
 ## Testing and releases
 

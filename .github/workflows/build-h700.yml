@@ -112,6 +112,7 @@ jobs:
         working-directory: upstream
         shell: bash
         run: |
+          cargo test -p slot --no-default-features --features device --test scale game_gear_menu
           cargo test -p slot-gfx --lib authentic_blending_tests -- --nocapture
           cargo test -p slot --no-default-features --features device --test app authentic_trades_the_game_boys_colour_and_palette_rows_for_a_model -- --nocapture
           cargo test -p slot --no-default-features --features device --test update -- --nocapture
