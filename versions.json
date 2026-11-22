@@ -1,9 +1,12 @@
 {
   "stable": {
-    "version": "1.16.0-more.4",
-    "tag": "v1.16.0-more.4",
-    "zip": "slot-v1.16.0-more.4-h700.zip",
-    "size": 30198588,
-    "sha256": "ca98c3ac106bedaedcb19f50f4e89d361df8868e83bfb60b9a8741774db4e5a7"
+    "version": "1.16.0-more.5",
+    "tag": "v1.16.0-more.5",
+    "zip": "slot-v1.16.0-more.5-h700.zip",
+    "size": 268407355,
+    "sha256": "30e3d0bddca38628546821262dd43969a3fce73057b578dd77aaab80b0caa0d4",
+    "baseos_zip": "MinUI.zip",
+    "baseos_size": 268340844,
+    "baseos_sha256": "e716ce008d178a2a5dfb4eda24bda3eb5fc9b7c4f5e243c5c77d4ccff5eba452"
   }
 }
