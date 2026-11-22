@@ -52,6 +52,7 @@ jobs:
           bash .github/scripts/h700-prepare-unslot.sh
           bash -n .github/cores/armgba/build.sh
           python3 handheld-i18n/language_menu.py upstream
+          (cd upstream && cargo fmt --all)
           python3 .github/scripts/brand-more-unslot-boot.py upstream/card/System
 
       - name: Verify source formatting and H700 frontends
@@ -72,6 +73,7 @@ jobs:
           test "$version" = "1.16.0-more.5"
           task dist:device OUT=more-slot-h700 VERSION="$version"
           python3 "${GITHUB_WORKSPACE}/handheld-i18n/german.py" .
+          cargo fmt --all
           cargo build --profile device --target-dir target-device -p slot --no-default-features --features device
           install -m 755 target-device/device/slot more-slot-h700/System/slot-de
           python3 "${GITHUB_WORKSPACE}/handheld-i18n/launcher.py" more-slot-h700/System/launch_frontend.sh
