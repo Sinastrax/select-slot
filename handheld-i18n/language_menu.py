@@ -15,7 +15,14 @@ if (menu.exists() and 'const GENERIC: [QuickRow;' in menu.read_text()):
 
     s = menu.read_text()
     s = replace(s, "    Theme,\n", "    Theme,\n    Language,\n", 1)
-    s = replace(s, "const GENERIC: [QuickRow; 72]", "const GENERIC: [QuickRow; 73]")
+    s, n = re.subn(
+        r"const GENERIC: \[QuickRow; (\d+)\]",
+        lambda m: f"const GENERIC: [QuickRow; {int(m.group(1)) + 1}]",
+        s,
+        count=1,
+    )
+    if n != 1:
+        raise RuntimeError("Language menu could not find the generic row count")
     s = replace(s, "    QuickRow::Theme,\n    QuickRow::Wallpaper,", "    QuickRow::Theme,\n    QuickRow::Language,\n    QuickRow::Wallpaper,")
     s = replace(s, "pub const GENERAL: [QuickRow; 15]", "pub const GENERAL: [QuickRow; 16]")
     s = replace(s, "        QuickRow::Theme,\n        QuickRow::BootLogo,", "        QuickRow::Theme,\n        QuickRow::Language,\n        QuickRow::BootLogo,")
