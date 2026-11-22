@@ -12,6 +12,7 @@ on:
       - ".github/cores/armgba/**"
       - ".github/scripts/h700-prepare-unslot.sh"
       - ".github/scripts/brand-more-unslot-boot.py"
+      - ".github/scripts/build-stable-mgba.sh"
       - ".github/workflows/build-more-slot-unslot.yml"
       - ".github/ota-version.txt"
       - ".github/release-notes/**"
@@ -26,6 +27,7 @@ on:
       - ".github/cores/armgba/**"
       - ".github/scripts/h700-prepare-unslot.sh"
       - ".github/scripts/brand-more-unslot-boot.py"
+      - ".github/scripts/build-stable-mgba.sh"
       - ".github/workflows/build-more-slot-unslot.yml"
       - ".github/ota-version.txt"
       - "branding/more-slot-wordmark.b85"
@@ -91,6 +93,7 @@ jobs:
           version="$(cat "$VERSION_FILE")"
           [[ "$version" =~ ^1\.16\.0-more\.[0-9]+$ ]]
           task dist:device OUT=more-slot-h700 VERSION="$version"
+          bash "${GITHUB_WORKSPACE}/.github/scripts/build-stable-mgba.sh" more-slot-h700
           python3 "${GITHUB_WORKSPACE}/handheld-i18n/german.py" .
           cargo fmt --all
           cargo build --profile device --target-dir target-device -p slot --no-default-features --features device
@@ -159,7 +162,10 @@ jobs:
             require_file "more-slot-h700/System/$f"
           done
           require_file more-slot-h700/System/licenses/gamegear-cartridge-art.txt
+          require_file more-slot-h700/System/licenses/mgba-stable.sha256
+          require_file more-slot-h700/System/licenses/mgba-c758314a639aa0066e7b65a8341448181b73c804-source.tar.gz
           require_file "more-slot-h700/System/licenses/armgba-df6b2631291f249d54a00dd14f49bc893e438feb.tar.gz"
+          (cd more-slot-h700/System && sha256sum -c licenses/mgba-stable.sha256)
           check_aarch64() {
             echo "Checking $1 architecture"
             file "$1"
