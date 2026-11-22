@@ -118,9 +118,14 @@ jobs:
           done
           test -s more-slot-h700/System/licenses/gamegear-cartridge-art.txt
           test -s "more-slot-h700/System/licenses/armgba-df6b2631291f249d54a00dd14f49bc893e438feb.tar.gz"
-          file more-slot-h700/System/slot | grep -q aarch64
-          file more-slot-h700/System/armgba_libretro.so | grep -q aarch64
-          file more-slot-h700/System/slot-de | grep -q aarch64
+          check_aarch64() {
+            echo "Checking $1 architecture"
+            file "$1"
+            file "$1" | grep -qi aarch64
+          }
+          check_aarch64 more-slot-h700/System/slot
+          check_aarch64 more-slot-h700/System/armgba_libretro.so
+          check_aarch64 more-slot-h700/System/slot-de
           sh -n more-slot-h700/System/launch_frontend.sh
 
       - name: Package legacy transition ZIP and BaseOS update pack
