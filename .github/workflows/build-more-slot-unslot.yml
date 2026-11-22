@@ -39,7 +39,7 @@ jobs:
         run: |
           set -euo pipefail
           apt-get update
-          apt-get install -y --no-install-recommends zip unzip cmake file curl ca-certificates git build-essential pkg-config libpng-dev bison flex bsdextrautils glslang-tools python3-pil
+          apt-get install -y --no-install-recommends zip unzip cmake file curl ca-certificates git build-essential pkg-config libpng-dev bison flex bsdextrautils glslang-tools python3-pil libgles-dev
           task_tgz=task_linux_arm64.tar.gz
           curl -fsSLO --http1.1 --retry 5 --retry-delay 10 --retry-all-errors \
             "https://github.com/go-task/task/releases/download/v3.54.0/$task_tgz"
