@@ -221,3 +221,4 @@ git apply ../patches/pocket-color-table.patch
 git apply --check ../patches/gamegear-picodrive.patch
 git apply ../patches/gamegear-picodrive.patch
 git apply ../patches/gamegear-menu.patch
+git apply ../patches/gamegear-display.patch

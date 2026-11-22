@@ -1,0 +1,530 @@
+diff --git a/crates/slot-gfx/src/pipeline.rs b/crates/slot-gfx/src/pipeline.rs
+index 6ab00ae..ca198f8 100644
+--- a/crates/slot-gfx/src/pipeline.rs
++++ b/crates/slot-gfx/src/pipeline.rs
+@@ -450,7 +450,12 @@ impl GamePass {
+             gl::Uniform4f(self.u_uv, src[0], src[1], src[2], src[3]);
+             gl::Uniform1f(self.u_bright, bright);
+             gl::Uniform1f(self.u_mode, self.effect.mode());
+-            gl::Uniform1f(self.u_authentic_correction, if self.authentic_colour_correction { 1.0 } else { 0.0 });
++            let correction = match (self.authentic_colour_correction, self.screen) {
++                (false, _) => 0.0,
++                (true, Screen::GameGear) => 2.0,
++                (true, _) => 1.0,
++            };
++            gl::Uniform1f(self.u_authentic_correction, correction);
+             gl::Uniform1f(self.u_paper_size, self.paper_size);
+             gl::Uniform2f(self.u_fbo, self.fbo_scale[0], self.fbo_scale[1]);
+             gl::Uniform2f(self.u_origin, self.origin[0], self.origin[1]);
+diff --git a/crates/slot-gfx/src/shaders.rs b/crates/slot-gfx/src/shaders.rs
+index afcc279..c11a88f 100644
+--- a/crates/slot-gfx/src/shaders.rs
++++ b/crates/slot-gfx/src/shaders.rs
+@@ -113,6 +113,12 @@ vec3 lcd_ramp(vec3 x) {
+     vec3 u = fract(x + 0.5) - 0.5;
+     return u - 2.0 * u * abs(u);
+ }
++// Approximate the contrast and muted colors of the backlit Game Gear panel.
++vec3 game_gear_colour(vec3 source) {
++    float luma = dot(source, vec3(0.299, 0.587, 0.114));
++    return mix(vec3(33.0, 36.0, 48.0) / 255.0, vec3(235.0, 236.0, 232.0) / 255.0,
++               mix(vec3(luma), source, 0.90));
++}
+ void main() {
+     vec2 uv = u_uv.xy + v_uv * u_uv.zw;
+     vec2 f = fract(uv * u_src);
+@@ -129,8 +135,7 @@ void main() {
+                    - lcd_ramp(vec3(f.y - 0.5 - halfWidth.y)).x) * span.y;
+         vec3 source = inside ? texture2D(u_game, (floor(uv * u_src) + 0.5) / u_src).rgb : vec3(0.0);
+         if (u_authentic_correction > 0.5) {
+-            float luma = dot(source, vec3(0.299, 0.587, 0.114));
+-            source = mix(u_dark, u_light, mix(vec3(luma), source, 0.90));
++            source = game_gear_colour(source);
+         }
+         c = source * (1.0 + 0.12 * stripe) * (0.96 + 0.04 * row);
+     } else if (u_mode > 5.5 && u_mode < 6.5) {
+@@ -412,6 +417,9 @@ void main() {
+             c *= yfactor * xfactors;
+         }
+     }
++    if (inside && u_authentic_correction > 1.5 && !(u_mode > 5.5 && u_mode < 6.5)) {
++        c = game_gear_colour(c);
++    }
+     FRAG_COLOR = vec4(c * u_bright, 1.0);
+ }
+ "#;
+diff --git a/crates/slot-store/src/slot_state.rs b/crates/slot-store/src/slot_state.rs
+index 70d5cb3..9483b5e 100644
+--- a/crates/slot-store/src/slot_state.rs
++++ b/crates/slot-store/src/slot_state.rs
+@@ -504,6 +504,7 @@ pub struct SlotState {
+     pub colour_correction_gba: bool,
+     pub colour_correction_gb: bool,
+     pub colour_correction_gbc: bool,
++    pub colour_correction_gg: bool,
+     /// Individual Authentic GB model correction bits, DMG through GBC.
+     pub authentic_gb_correction: u32,
+     /// Independent correction flags for SameBoy Authentic GB models.
+@@ -559,6 +560,7 @@ pub struct SlotState {
+     pub scale_gg: Scale,
+     pub stretch_gb: Stretch,
+     pub stretch_gbc: Stretch,
++    pub stretch_gg: Stretch,
+     pub blending_gba: Blending,
+     pub blending_gb: Blending,
+     /// Gambatte Authentic model (original gb_model setting).
+@@ -746,6 +748,7 @@ impl Default for SlotState {
+             colour_correction_gba: false,
+             colour_correction_gb: false,
+             colour_correction_gbc: false,
++            colour_correction_gg: false,
+             authentic_gb_correction: 0x3f,
+             authentic_gb_correction_sameboy: 0x3f,
+             authentic_gbc_correction: true,
+@@ -795,6 +798,7 @@ impl Default for SlotState {
+             scale_gg: Scale::Fit,
+             stretch_gb: Stretch::Classic,
+             stretch_gbc: Stretch::Classic,
++            stretch_gg: Stretch::Classic,
+             blending_gba: Blending::Off,
+             blending_gb: Blending::Off,
+             gb_model: GbModel::Pocket,
+@@ -905,6 +909,7 @@ pub fn write_slot_state(root: &Path, s: &SlotState) -> std::io::Result<()> {
+         "colour_correction_gbc={}\n",
+         s.colour_correction_gbc as u8
+     ));
++    text.push_str(&format!("colour_correction_gg={}\n", s.colour_correction_gg as u8));
+     text.push_str(&format!("shader_gbc={}\n", s.shader_gbc.name()));
+     text.push_str(&format!("authentic_gg_correction={}\n", s.authentic_gg_correction as u8));
+     text.push_str(&format!("shader_gg={}\n", s.shader_gg.name()));
+@@ -982,6 +987,7 @@ pub fn write_slot_state(root: &Path, s: &SlotState) -> std::io::Result<()> {
+     text.push_str(&format!("scale_gg={}\n", s.scale_gg.name()));
+     text.push_str(&format!("stretch_gb={}\n", s.stretch_gb.name()));
+     text.push_str(&format!("stretch_gbc={}\n", s.stretch_gbc.name()));
++    text.push_str(&format!("stretch_gg={}\n", s.stretch_gg.name()));
+     text.push_str(&format!("blending_gba={}\n", s.blending_gba.key()));
+     text.push_str(&format!("blending_gb={}\n", s.blending_gb.key()));
+     text.push_str(&format!("gb_model={}\n", s.gb_model.key()));
+@@ -1050,6 +1056,7 @@ fn parse(text: &str) -> Option<SlotState> {
+     let mut colour_correction_gba = None;
+     let mut colour_correction_gb = None;
+     let mut colour_correction_gbc = None;
++    let mut colour_correction_gg = None;
+     let mut ghosting_gba = None;
+     let mut ghosting_gb = None;
+     let mut ghosting_gbc = None;
+@@ -1103,6 +1110,7 @@ fn parse(text: &str) -> Option<SlotState> {
+     let mut scale_gg = None;
+     let mut stretch_gb = None;
+     let mut stretch_gbc = None;
++    let mut stretch_gg = None;
+     let mut blending_gba = None;
+     let mut blending_gb = None;
+     let mut gb_model = None;
+@@ -1148,6 +1156,7 @@ fn parse(text: &str) -> Option<SlotState> {
+             "colour_correction_gba" => colour_correction_gba = flag(value),
+             "colour_correction_gb" => colour_correction_gb = flag(value),
+             "colour_correction_gbc" => colour_correction_gbc = flag(value),
++            "colour_correction_gg" => colour_correction_gg = flag(value),
+             "ghosting_gba" => ghosting_gba = flag(value),
+             "ghosting_gb" => ghosting_gb = flag(value),
+             "ghosting_gbc" => ghosting_gbc = flag(value),
+@@ -1196,6 +1205,7 @@ fn parse(text: &str) -> Option<SlotState> {
+             "scale_gg" => scale_gg = Scale::parse(value),
+             "stretch_gb" => stretch_gb = Stretch::parse(value),
+             "stretch_gbc" => stretch_gbc = Stretch::parse(value),
++            "stretch_gg" => stretch_gg = Stretch::parse(value),
+             "blending_gba" => blending_gba = Some(Blending::parse(value).unwrap_or_default()),
+             "blending_gb" => blending_gb = Some(Blending::parse(value).unwrap_or_default()),
+             "gb_model" => gb_model = GbModel::parse(value),
+@@ -1266,6 +1276,7 @@ fn parse(text: &str) -> Option<SlotState> {
+             .or(colour_correction_gb)
+             .or(colour_correction)
+             .unwrap_or(fallback.colour_correction_gbc),
++        colour_correction_gg: colour_correction_gg.unwrap_or(fallback.colour_correction_gg),
+         authentic_gb_correction: authentic_gb_correction
+             .unwrap_or(fallback.authentic_gb_correction),
+         authentic_gb_correction_sameboy: authentic_gb_correction_sameboy
+@@ -1326,6 +1337,7 @@ fn parse(text: &str) -> Option<SlotState> {
+         scale_gg: scale_gg.unwrap_or(fallback.scale_gg),
+         stretch_gb: stretch_gb.unwrap_or(fallback.stretch_gb),
+         stretch_gbc: stretch_gbc.unwrap_or(fallback.stretch_gbc),
++        stretch_gg: stretch_gg.unwrap_or(fallback.stretch_gg),
+         blending_gba: blending_gba
+             .or_else(|| legacy_blending(ghosting_gba))
+             .unwrap_or(fallback.blending_gba),
+diff --git a/crates/slot-ui/src/quick_menu.rs b/crates/slot-ui/src/quick_menu.rs
+index f501eb1..a50e02e 100644
+--- a/crates/slot-ui/src/quick_menu.rs
++++ b/crates/slot-ui/src/quick_menu.rs
+@@ -37,6 +37,7 @@ pub enum QuickRow {
+     GgOverlay,
+     GgBezel,
+     GgScale,
++    GgStretch,
+     GgBlending,
+     GbcColourCorrection,
+     Resume,
+@@ -220,7 +221,7 @@ pub enum QuickRow {
+ }
+ 
+ impl QuickRow {
+-    pub const ALL: [QuickRow; 206 + cfg!(feature = "nds") as usize] = [
++    pub const ALL: [QuickRow; 207 + cfg!(feature = "nds") as usize] = [
+         QuickRow::FastForward,
+         QuickRow::FastForwardSound,
+         QuickRow::Screen,
+@@ -249,6 +250,7 @@ impl QuickRow {
+         QuickRow::GgOverlay,
+         QuickRow::GgBezel,
+         QuickRow::GgScale,
++        QuickRow::GgStretch,
+         QuickRow::GgBlending,
+         QuickRow::GbcColourCorrection,
+         QuickRow::Resume,
+@@ -661,13 +663,14 @@ impl QuickRow {
+         QuickRow::GbcStretch,
+     ];
+ 
+-    pub const SCREEN_GG: [QuickRow; 6] = [
++    pub const SCREEN_GG: [QuickRow; 7] = [
+         QuickRow::GgShader,
+         QuickRow::GgColourCorrection,
+         QuickRow::GgOverlay,
+         QuickRow::GgBlending,
+         QuickRow::GgBezel,
+         QuickRow::GgScale,
++        QuickRow::GgStretch,
+     ];
+ 
+     pub const SCREEN_GB: [QuickRow; 10] = [
+@@ -773,7 +776,8 @@ impl QuickRow {
+             | QuickRow::GgOverlay
+             | QuickRow::GgBlending
+             | QuickRow::GgBezel
+-            | QuickRow::GgScale => &QuickRow::SCREEN_GG,
++            | QuickRow::GgScale
++            | QuickRow::GgStretch => &QuickRow::SCREEN_GG,
+             QuickRow::GbShader
+             | QuickRow::GbModel
+             | QuickRow::GbOverlay
+@@ -1198,7 +1202,7 @@ impl QuickRow {
+             | QuickRow::GbcScale
+             | QuickRow::GgScale
+             | QuickRow::Scale => "Scale",
+-            QuickRow::GbStretch | QuickRow::GbcStretch | QuickRow::Stretch => "Stretch",
++            QuickRow::GbStretch | QuickRow::GbcStretch | QuickRow::GgStretch | QuickRow::Stretch => "Stretch",
+             QuickRow::GbaBlending
+             | QuickRow::GbcBlending
+             | QuickRow::GbBlending
+diff --git a/crates/slot/src/app.rs b/crates/slot/src/app.rs
+index 450d61f..d16b3a0 100644
+--- a/crates/slot/src/app.rs
++++ b/crates/slot/src/app.rs
+@@ -3012,9 +3012,6 @@ impl App {
+             hidden.push(QuickRow::Palette);
+         }
+         let platform = self.playing_platform();
+-        if platform == Platform::Gg && !self.authentic(platform) {
+-            hidden.push(QuickRow::ColourCorrection);
+-        }
+         if self.authentic(platform) {
+             // Color Correction and Frame Blending remain available here.
+             hidden.push(QuickRow::Palette);
+@@ -3178,6 +3175,7 @@ impl App {
+             (QuickRow::Scale, Platform::Gbc) => QuickRow::GbcScale,
+             (QuickRow::Scale, Platform::Gg) => QuickRow::GgScale,
+             (QuickRow::Stretch, Platform::Gb) => QuickRow::GbStretch,
++            (QuickRow::Stretch, Platform::Gg) => QuickRow::GgStretch,
+             (QuickRow::Stretch, Platform::Gbc) => QuickRow::GbcStretch,
+             (QuickRow::PlayBrightness, _) => QuickRow::Brightness,
+             (QuickRow::PlayBlueLight, _) => QuickRow::BlueLight,
+@@ -3224,6 +3222,7 @@ impl App {
+             QuickRow::GgScale => Some(scale_value(self.resolved_scale(Platform::Gg))),
+             QuickRow::GbStretch => Some(stretch_value(self.resolved_stretch(Platform::Gb))),
+             QuickRow::GbcStretch => Some(stretch_value(self.resolved_stretch(Platform::Gbc))),
++            QuickRow::GgStretch => Some(stretch_value(self.resolved_stretch(Platform::Gg))),
+             QuickRow::GbaBlending => Some(blending_value(self.blending_for(Platform::Gba))),
+             QuickRow::GbcBlending => Some(blending_value(self.blending_for(Platform::Gbc))),
+             QuickRow::GbBlending => Some(blending_value(self.blending_for(Platform::Gb))),
+@@ -3257,7 +3256,7 @@ impl App {
+             QuickRow::GbaShader => Some(shader_value(self.gba_shader())),
+             QuickRow::GbShader => Some(shader_value(self.gb_shader())),
+             QuickRow::GbcShader => Some(shader_value(self.state.shader_gbc)),
+-            QuickRow::GgColourCorrection => self.authentic(Platform::Gg).then(|| QuickValue::flag(self.state.authentic_gg_correction)),
++            QuickRow::GgColourCorrection => Some(QuickValue::flag(self.colour_correction_for(Platform::Gg))),
+             QuickRow::GgShader => Some(shader_value(self.state.shader_gg)),
+             QuickRow::Rumble => Some(QuickValue::flag(self.state.rumble)),
+             QuickRow::LeftStick => Some(QuickValue::flag(self.state.left_stick_dpad)),
+@@ -3795,7 +3794,7 @@ impl App {
+         if platform.hardware() != Platform::Gba {
+             choices.push(BezelPick::Default);
+         }
+-        if self.framed_panel() {
++        if self.framed_panel() && platform != Platform::Gg {
+             choices.push(BezelPick::Ags102);
+             if crate::bezel::original_gba_available(self.panel, platform) {
+                 choices.push(BezelPick::Agb001);
+@@ -3815,6 +3814,7 @@ impl App {
+     pub fn bezel_label(&self, platform: Platform) -> String {
+         let pick = self.resolved_bezel(platform);
+         match (platform.hardware(), &pick) {
++            (Platform::Gg, BezelPick::Default) => "Game Gear".to_string(),
+             (Platform::Gba, BezelPick::Ags102) => "GBA SP".to_string(),
+             _ => pick.label(),
+         }
+@@ -4008,6 +4008,7 @@ impl App {
+             return None;
+         }
+         if self.resolved_bezel(self.playing_platform()) == BezelPick::Default
++            && self.playing_platform() != Platform::Gg
+             && self.bezel_art().is_none()
+         {
+             return None;
+@@ -4016,7 +4017,7 @@ impl App {
+     }
+ 
+     pub fn bezel_art(&self) -> Option<BezelArt> {
+-        if self.picture_fills() || self.table_panel() {
++        if self.picture_fills() || self.table_panel() || self.playing_platform() == Platform::Gg {
+             return None;
+         }
+         let gba = self.playing_platform().hardware() == Platform::Gba;
+@@ -4324,7 +4325,6 @@ impl App {
+             (QuickRow::GbaReflection, Platform::Gba),
+             (QuickRow::GbReflection, Platform::Gb),
+             (QuickRow::GbcReflection, Platform::Gbc),
+-            (QuickRow::GgColourCorrection, Platform::Gg),
+         ] {
+             if !self.authentic(platform) {
+                 hidden.push(row);
+@@ -4353,6 +4353,7 @@ impl App {
+         for (row, platform) in [
+             (QuickRow::GbStretch, Platform::Gb),
+             (QuickRow::GbcStretch, Platform::Gbc),
++            (QuickRow::GgStretch, Platform::Gg),
+         ] {
+             if self.stretch_choices(platform).len() < 2 {
+                 hidden.push(row);
+@@ -4831,7 +4832,7 @@ impl App {
+         match platform {
+             Platform::Gb => self.state.stretch_gb,
+             Platform::Gbc => self.state.stretch_gbc,
+-            Platform::Gg => Stretch::Classic,
++            Platform::Gg => self.state.stretch_gg,
+ 
+             Platform::Gba | Platform::Gbav => Stretch::Classic,
+             #[cfg(feature = "nds")]
+@@ -4995,6 +4996,7 @@ impl App {
+         }];
+         match platform {
+             Platform::Gbc => self.state.stretch_gbc = to,
++            Platform::Gg => self.state.stretch_gg = to,
+             _ => self.state.stretch_gb = to,
+         }
+     }
+@@ -5758,7 +5760,7 @@ impl App {
+             Platform::Nds => false,
+             Platform::Gb => self.state.colour_correction_gb,
+             Platform::Gbc => self.state.colour_correction_gbc,
+-            Platform::Gg => false,
++            Platform::Gg => self.state.colour_correction_gg,
+         }
+     }
+ 
+@@ -7726,6 +7728,7 @@ impl App {
+             | QuickRow::GbcScale
+             | QuickRow::GbStretch
+             | QuickRow::GbcStretch
++            | QuickRow::GgStretch
+             | QuickRow::GbaBlending
+             | QuickRow::GbcBlending
+             | QuickRow::GbBlending
+@@ -7930,9 +7933,10 @@ impl App {
+             self.persist();
+             return;
+         }
+-        if let QuickRow::GbStretch | QuickRow::GbcStretch = row {
++        if let QuickRow::GbStretch | QuickRow::GbcStretch | QuickRow::GgStretch = row {
+             let platform = match row {
+                 QuickRow::GbStretch => Platform::Gb,
++                QuickRow::GgStretch => Platform::Gg,
+                 _ => Platform::Gbc,
+             };
+             self.cycle_stretch(platform, right);
+@@ -8099,7 +8103,12 @@ impl App {
+                 self.core_options_pending();
+             }
+             QuickRow::GgColourCorrection => {
+-                s.authentic_gg_correction = !s.authentic_gg_correction;
++                let correction = if s.shader_gg == Shader::Authentic {
++                    &mut s.authentic_gg_correction
++                } else {
++                    &mut s.colour_correction_gg
++                };
++                *correction = !*correction;
+             }
+             QuickRow::GgShader => {
+                 let to = s.shader_gg.step(&Shader::GG, right);
+@@ -8188,6 +8197,7 @@ impl App {
+             | QuickRow::GgOverlay
+             | QuickRow::GbStretch
+             | QuickRow::GbcStretch
++            | QuickRow::GgStretch
+             | QuickRow::GbaBlending
+             | QuickRow::GbBlending
+             | QuickRow::GbcBlending
+@@ -8419,9 +8429,6 @@ impl App {
+             return true;
+         }
+         if action == Action::ColourCorrectionToggle {
+-            if self.playing_platform() == Platform::Gg {
+-                return true;
+-            }
+             if self.authentic(self.playing_platform()) {
+                 return true;
+             }
+@@ -8431,7 +8438,7 @@ impl App {
+                 Platform::Nds => QuickRow::GbaColourCorrection,
+                 Platform::Gb => QuickRow::GbColourCorrection,
+                 Platform::Gbc => QuickRow::GbcColourCorrection,
+-                Platform::Gg => return true,
++                Platform::Gg => QuickRow::GgColourCorrection,
+             };
+             self.change_setting(row, true);
+             let said = match self.colour_correction() {
+diff --git a/crates/slot/src/frontend.rs b/crates/slot/src/frontend.rs
+index c672503..c331294 100644
+--- a/crates/slot/src/frontend.rs
++++ b/crates/slot/src/frontend.rs
+@@ -135,14 +135,14 @@ struct QuickPalette {
+ }
+ 
+ /// The bezel shown, and whether it shades an Authentic screen.
+-type BezelImage = (Console, BezelPick, Option<BezelArt>, (u32, u32), bool, bool);
++type BezelImage = (Console, BezelPick, Option<BezelArt>, (u32, u32), bool, bool, Option<[i32; 4]>);
+ 
+ #[derive(Default)]
+ struct BezelSync {
+     tex: Option<TexId>,
+     image: Option<BezelImage>,
+-    labels: [String; 3],
+-    faces: [(Option<TexId>, Option<TexId>); 3],
++    labels: [String; 4],
++    faces: [(Option<TexId>, Option<TexId>); 4],
+ }
+ 
+ #[derive(Default)]
+@@ -155,8 +155,8 @@ struct OverlaySync {
+     full_bottom: Option<TexId>,
+     shown: Option<ShownOverlay>,
+     ds: Option<crate::overlay::DecodedOverlay>,
+-    labels: [String; 4],
+-    faces: [(Option<TexId>, Option<TexId>); 4],
++    labels: [String; 4 + cfg!(feature = "nds") as usize],
++    faces: [(Option<TexId>, Option<TexId>); 4 + cfg!(feature = "nds") as usize],
+ }
+ 
+ #[derive(Clone, Copy)]
+@@ -2302,11 +2302,48 @@ fn bezel_key(pick: &BezelPick, art: Option<BezelArt>, last: Option<BezelArt>) ->
+     }
+ }
+ 
++// A dark Game Gear face fitted to Slot's live picture rectangle.
++fn game_gear_bezel(w: u32, h: u32, [left, top, right, bottom]: [i32; 4]) -> Vec<u8> {
++    let mut rgba = Vec::with_capacity(w as usize * h as usize * 4);
++    let lamp_x = w as f32 * 0.5;
++    let lamp_y = top as f32 * 0.5;
++    for y in 0..h as i32 {
++        for x in 0..w as i32 {
++            if x >= left && x < right && y >= top && y < bottom {
++                rgba.extend_from_slice(&[0, 0, 0, 0]);
++                continue;
++            }
++            let lamp = top >= 8 && y < top
++                && ((x as f32 - lamp_x) / 9.0).powi(2)
++                    + ((y as f32 - lamp_y) / 2.0).powi(2) <= 1.0;
++            rgba.extend_from_slice(if lamp { &[68, 208, 103, 255] } else { &[14, 15, 17, 255] });
++        }
++    }
++    rgba
++}
++
+ fn sync_game_bezel(app: &mut App, compositor: &mut Compositor, state: &mut BezelSync) {
+     let platform = app.playing_platform();
+     let pick = app.resolved_bezel(platform);
+     let (w, h) = app.game_bezel_size();
+-    let last = state.image.as_ref().and_then(|image| image.2);
++    let gg_window = (platform == Console::Gg
++        && pick == BezelPick::Default && !app.picture_fills()).then(|| {
++        let [x, y, width, height] = app.game_layout().rect;
++        let [src_x, src_y, src_w, src_h] = app.source_rect();
++        let native_w = 160.0 / slot_gfx::SRC_W as f32;
++        let native_h = 144.0 / slot_gfx::SRC_H as f32;
++        let left = ((1.0 - native_w) * 0.5 - src_x) / src_w;
++        let top = ((1.0 - native_h) * 0.5 - src_y) / src_h;
++        let sx = w as f32 / slot_gfx::OUT_W as f32;
++        let sy = h as f32 / slot_gfx::OUT_H as f32;
++        [
++            (x + left * width) * sx,
++            (y + top * height) * sy,
++            (x + (left + native_w / src_w) * width) * sx,
++            (y + (top + native_h / src_h) * height) * sy,
++        ].map(|value| value.round() as i32)
++    });
++    let last = state.image.as_ref().filter(|image| image.0 == platform).and_then(|image| image.2);
+     let art = bezel_key(&pick, app.bezel_art(), last);
+     let shown = (
+         platform,
+@@ -2315,10 +2352,12 @@ fn sync_game_bezel(app: &mut App, compositor: &mut Compositor, state: &mut Bezel
+         (w, h),
+         app.authentic(platform),
+         app.reflection(platform),
++        gg_window,
+     );
+     if state.image.as_ref() != Some(&shown) {
+         let rgba = match &shown.1 {
+             BezelPick::None | BezelPick::Ags102 | BezelPick::Agb001 => None,
++            BezelPick::Default if platform == Console::Gg => gg_window.map(|window| game_gear_bezel(w, h, window)),
+             BezelPick::Default => shown
+                 .2
+                 .and_then(|kind| default_game_bezel_face(platform == Console::Gbc, kind, w, h)),
+@@ -2364,7 +2403,7 @@ fn sync_game_bezel(app: &mut App, compositor: &mut Compositor, state: &mut Bezel
+     if app.quick_menu().is_none() && app.in_game_menu().is_none() {
+         return;
+     }
+-    for (at, platform) in [Console::Gba, Console::Gb, Console::Gbc]
++    for (at, platform) in [Console::Gba, Console::Gb, Console::Gbc, Console::Gg]
+         .into_iter()
+         .enumerate()
+     {
+@@ -2468,6 +2507,7 @@ fn sync_overlay(app: &mut App, compositor: &mut Compositor, state: &mut OverlayS
+         Console::Gba,
+         Console::Gb,
+         Console::Gbc,
++        Console::Gg,
+         #[cfg(feature = "nds")]
+         Console::Nds,
+     ] {
+diff --git a/crates/slot/tests/scale.rs b/crates/slot/tests/scale.rs
+index 7ebf3f5..2693d05 100644
+--- a/crates/slot/tests/scale.rs
++++ b/crates/slot/tests/scale.rs
+@@ -361,13 +361,16 @@ fn game_gear_menu_opens_draws_and_resumes() {
+     let (_root, mut app) = playing(Platform::Gg, (640, 480), SlotState::default());
+     app.apply(Action::QuickMenu);
+     assert!(app.in_game_menu().is_some());
+-    for row in [QuickRow::ColourCorrection, QuickRow::Reflection] {
++    for row in [QuickRow::Reflection] {
+         assert!(app.in_game_hidden().contains(&row));
+         assert_eq!(app.quick_value(row), None);
+     }
+     for _ in 0..120 {
+         app.update(1.0 / 60.0);
+     }
++    assert_eq!(app.quick_value(QuickRow::ColourCorrection), Some(QuickValue::flag(false)));
++    assert!(app.stretch_choices(Platform::Gg).contains(&Stretch::FullScreen));
++    assert_eq!(app.bezel_label(Platform::Gg), "Game Gear");
+     let mut draws = Vec::new();
+     app.draw(&mut draws);
+     assert!(!draws.is_empty());
