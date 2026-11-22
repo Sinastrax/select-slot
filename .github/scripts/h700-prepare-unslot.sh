@@ -15,10 +15,10 @@ git clone --quiet --no-checkout https://github.com/cloudwithax/unslot.git "$sour
 git -C "$source_dir" checkout --quiet --detach "$UNSLOT_COMMIT"
 test "$(git -C "$source_dir" rev-parse HEAD)" = "$UNSLOT_COMMIT"
 gzip -dc "$root/patches/unslot-more-slot-gamegear.patch.gz" > "$patch_file"
-git -C "$source_dir" apply --check "$patch_file"
-git -C "$source_dir" apply "$patch_file"
 mkdir -p "$source_dir/assets" "$source_dir/licenses"
 cp "$root/.github/assets/gamegear/gg_"*.png "$source_dir/assets/"
 cp "$root/.github/assets/gamegear/NOTICE.txt" "$source_dir/licenses/gamegear-cartridge-art.txt"
+git -C "$source_dir" apply --check "$patch_file"
+git -C "$source_dir" apply "$patch_file"
 
 printf 'Prepared unslot %s with more.slot Game Gear, OTA and compatibility changes\n' "$UNSLOT_COMMIT"
