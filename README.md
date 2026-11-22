@@ -10,9 +10,9 @@ The Miyoo Mini port remains available as [select.slot. 1.8.1 Ver. 12](https://gi
 
 | System | Core | Controls | Display options | Hardware status |
 | --- | --- | --- | --- | --- |
-| Sega Game Gear (`.gg`) | PicoDrive | D-pad, A, B, Select, Start, turbo | Per-system shader, scale, overlay, bezel, frame blending | Hardware confirmation pending |
+| Sega Game Gear (`.gg`) | Gearsystem (PicoDrive, Genesis Plus GX and SMS Plus available as alternatives) | D-pad, A, B, Select, Start, turbo | Per-system Authentic shader, color correction, scaling, bezel and frame blending | Hardware confirmation pending |
 
-The default scale is **Fit**. The display menu keeps Game Gear settings separate from GB, GBC, and GBA settings. Game Gear games use a separate cartridge silhouette, label position, shell branding, and clear-shell shadow/backing on the shelf.
+The default scale is **Fit**. The display menu keeps Game Gear settings separate from GB, GBC, and GBA settings. Game Gear games use their own cartridge silhouette and label area. **General → Cart Slot** selects the Game Gear bay artwork; the other systems keep their existing shelf slot.
 
 The first integration targets Anbernic H700 devices. It does not add Miyoo support. Game Gear offers its own Authentic LCD profile with optional color correction and frame blending. Custom bezels go in Bezels/GG.
 
@@ -30,6 +30,8 @@ Test 5 was an incomplete Game Gear evaluation build. Test 6 remains an unpublish
 
 - [Slot](https://github.com/slot-cfw/slot), by Brandon Kowalski
 - [pvaibhav's H700 Slot fork](https://github.com/pvaibhav/slot)
+- [SlotPlus Ultra](https://github.com/nelynes/slotPlus), for the adapted Game Gear cartridge and bay artwork (GPL-3; see `System/licenses/gamegear-cartridge-art.txt` in the build)
+- [Gearsystem](https://github.com/drhelius/Gearsystem), the default Game Gear core
 - [PicoDrive libretro core](https://github.com/libretro/picodrive), plus its separately pinned build dependencies
 
 The included source and core notices are authoritative for the bundled emulator's terms. This project does not include game ROMs or proprietary BIOS files.
