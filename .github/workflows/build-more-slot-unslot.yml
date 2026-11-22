@@ -112,12 +112,23 @@ jobs:
         run: |
           set -euo pipefail
           version="$(cat "${GITHUB_WORKSPACE}/.github/ota-version.txt")"
-          test "$(cat more-slot-h700/System/version)" = "$version"
+          if [[ "$(cat more-slot-h700/System/version)" != "$version" ]]; then
+            echo "System/version does not match OTA version $version" >&2
+            exit 1
+          fi
+          require_file() {
+            if [[ -s "$1" ]]; then
+              echo "Verified file: $1"
+            else
+              echo "Missing or empty required file: $1" >&2
+              exit 1
+            fi
+          }
           for f in slot launch_frontend.sh mgba_libretro.so gpsp_libretro.so gambatte_libretro.so armgba_libretro.so; do
-            test -s "more-slot-h700/System/$f"
+            require_file "more-slot-h700/System/$f"
           done
-          test -s more-slot-h700/System/licenses/gamegear-cartridge-art.txt
-          test -s "more-slot-h700/System/licenses/armgba-df6b2631291f249d54a00dd14f49bc893e438feb.tar.gz"
+          require_file more-slot-h700/System/licenses/gamegear-cartridge-art.txt
+          require_file "more-slot-h700/System/licenses/armgba-df6b2631291f249d54a00dd14f49bc893e438feb.tar.gz"
           check_aarch64() {
             echo "Checking $1 architecture"
             file "$1"
