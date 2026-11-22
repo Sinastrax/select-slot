@@ -1,9 +1,9 @@
 {
   "stable": {
-    "version": "1.16.0-more.2",
-    "tag": "v1.16.0-more.2",
-    "zip": "slot-v1.16.0-more.2-h700.zip",
-    "size": 29685742,
-    "sha256": "6f4fd75a5c3940cceaa9a77232680f3dec1548aab9c438f7cbc57ed4e4104e25"
+    "version": "1.16.0-more.3",
+    "tag": "v1.16.0-more.3",
+    "zip": "slot-v1.16.0-more.3-h700.zip",
+    "size": 29683756,
+    "sha256": "92f5fc20c9bd10409389f0310eea5d7bc25315b5f16d115a911fc2cc7c29c8bb"
   }
 }
