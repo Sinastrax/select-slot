@@ -84,6 +84,24 @@ jobs:
           sh -n more-slot-h700/System/launch_frontend.sh
           ! cmp -s more-slot-h700/System/slot more-slot-h700/System/slot-de
 
+      - name: Preserve Gambatte for the Test 4 transition
+        working-directory: upstream
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/slot-v1.16.0-more.4-h700.zip"
+          curl -fsSL --retry 5 --retry-all-errors \\
+            https://github.com/Sinastrax/select-slot/releases/download/v1.16.0-more.4/slot-v1.16.0-more.4-h700.zip \\
+            -o "$archive"
+          echo "ca98c3ac106bedaedcb19f50f4e89d361df8868e83bfb60b9a8741774db4e5a7  $archive" | sha256sum -c -
+          unzip -p "$archive" more-slot-h700/System/gambatte_libretro.so > more-slot-h700/System/gambatte_libretro.so
+          file more-slot-h700/System/gambatte_libretro.so | grep -qi aarch64
+          cat > more-slot-h700/System/licenses/gambatte-transition-compatibility.txt <<'EOF'
+          Gambatte is retained in this package so the more.slot Test 4 updater can transition to this build.
+          It is not selected by the UnsloT Game Boy frontend, which uses mGBA.
+          The binary is copied from the SHA-256 verified Test 4 package.
+          Gambatte source: https://github.com/libretro/gambatte (GPL-2.0-or-later).
+          EOF
+
       - name: Build ArmGBA and retain its corresponding source
         working-directory: upstream
         run: |
