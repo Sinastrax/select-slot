@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - more-slot
+      - feature/more-slot-select-port
   pull_request:
     branches:
       - more-slot
@@ -27,7 +28,7 @@ concurrency:
 
 jobs:
   build:
-    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/more-slot'
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/more-slot' || github.ref == 'refs/heads/feature/more-slot-select-port'
     runs-on: ubuntu-24.04-arm
     defaults:
       run:
