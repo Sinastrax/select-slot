@@ -1,0 +1,3 @@
+Game Gear cartridge shell, silhouette, interior and circuit board adapted from nelynes/slotPlus, commit 0e85ed2b82dd1baf57ac10139c25f58a2365c09e.
+The source artwork and its generator are at https://github.com/nelynes/slotPlus/tree/0e85ed2b82dd1baf57ac10139c25f58a2365c09e/assets .
+GNU General Public License v3. The images were proportionally scaled from 352x329 to 312x292 and centered in a transparent 312x337 canvas.

@@ -1,0 +1,274 @@
+diff --git a/card/Labels/README.txt b/card/Labels/README.txt
+index 1bcf00d..cf9a4f4 100644
+--- a/card/Labels/README.txt
++++ b/card/Labels/README.txt
+@@ -9,6 +9,7 @@ every device.
+   GBA               1.94:1   1280 x 661
+   Game Boy          1.13:1   1024 x 901
+   Game Boy Color    1.12:1   1024 x 901
++  Game Gear         1.46:1   258 x 177
+ 
+ Other sizes are scaled to fill the label and cropped from the centre.
+ Cart Studio makes these: https://studio.slot-cfw.fyi
+diff --git a/crates/slot-labels/src/lib.rs b/crates/slot-labels/src/lib.rs
+index b4545fa..ad5acfe 100644
+--- a/crates/slot-labels/src/lib.rs
++++ b/crates/slot-labels/src/lib.rs
+@@ -64,7 +64,7 @@ pub fn label_size(platform: Platform) -> (u32, u32) {
+         Platform::Gba | Platform::Gbav => (264, 136),
+         Platform::Gb => (223, 199),
+         Platform::Gbc => (223, 199),
+-        Platform::Gg => (223, 199),
++        Platform::Gg => (258, 177),
+         #[cfg(feature = "nds")]
+         Platform::Nds => (170, 184),
+     }
+diff --git a/crates/slot-ui/src/bitmaps.rs b/crates/slot-ui/src/bitmaps.rs
+index 8b33584..8526e7a 100644
+--- a/crates/slot-ui/src/bitmaps.rs
++++ b/crates/slot-ui/src/bitmaps.rs
+@@ -155,6 +155,21 @@ pub fn gbc_cart() -> &'static [u8] {
+     load(GBC_CART_PNG, GB_CART_W, GB_CART_H, &P)
+ }
+ 
++pub fn gg_cart() -> &'static [u8] {
++    static IMAGE: OnceLock<Vec<u8>> = OnceLock::new();
++    load(include_bytes!("../../../assets/gg_cart.png"), GB_CART_W, GB_CART_H, &IMAGE)
++}
++
++pub fn gg_interior() -> &'static [u8] {
++    static IMAGE: OnceLock<Vec<u8>> = OnceLock::new();
++    load(include_bytes!("../../../assets/gg_interior.png"), GB_CART_W, GB_CART_H, &IMAGE)
++}
++
++pub fn gg_board() -> &'static [u8] {
++    static IMAGE: OnceLock<Vec<u8>> = OnceLock::new();
++    load(include_bytes!("../../../assets/gg_board.png"), GB_CART_W, GB_CART_H, &IMAGE)
++}
++
+ /// The inside of a GBA cart, from `assets/gba_interior.png`. Same size as the cart and
+ /// the board, so the carousel can stack the three 1:1. Its colour is set by the game, with the
+ /// same overlay blend the shells use.
+@@ -413,11 +428,11 @@ pub fn shell_asset(mould: Mould, clear: bool) -> &'static [u8] {
+         (Mould::Gba, false) => (GBA_SHELL_PNG, GBA_CART_W, GBA_CART_H, &GBA),
+         (Mould::Notched, false) => (GB_SHELL_PNG, GB_CART_W, GB_CART_H, &GB),
+         (Mould::Rounded, false) => (GBC_SHELL_PNG, GB_CART_W, GB_CART_H, &GBC),
+-        (Mould::GameGear, false) => (GBC_SHELL_PNG, GB_CART_W, GB_CART_H, &GG),
++        (Mould::GameGear, false) => (include_bytes!("../../../assets/gg_neutral.png").as_slice(), GB_CART_W, GB_CART_H, &GG),
+         (Mould::Gba, true) => (GBA_CLEAR_PNG, GBA_CART_W, GBA_CART_H, &GBA_CLEAR),
+         (Mould::Notched, true) => (GB_CLEAR_PNG, GB_CART_W, GB_CART_H, &GB_CLEAR),
+         (Mould::Rounded, true) => (GBC_CLEAR_PNG, GB_CART_W, GB_CART_H, &GBC_CLEAR),
+-        (Mould::GameGear, true) => (GBC_CLEAR_PNG, GB_CART_W, GB_CART_H, &GG_CLEAR),
++        (Mould::GameGear, true) => (include_bytes!("../../../assets/gg_clear.png").as_slice(), GB_CART_W, GB_CART_H, &GG_CLEAR),
+         #[cfg(feature = "nds")]
+         (Mould::Ds, _) => return ds_cart(),
+     };
+diff --git a/crates/slot-ui/src/board.rs b/crates/slot-ui/src/board.rs
+index 5e87606..9a4b44e 100644
+--- a/crates/slot-ui/src/board.rs
++++ b/crates/slot-ui/src/board.rs
+@@ -82,7 +82,12 @@ fn marking_face(title: &[String]) -> CartFace {
+ 
+ pub fn board_face(cart: &Cart) -> CartFace {
+     if let Some(shell) = gb_shell_of(cart) {
+-        return gb_backing(bitmaps::gb_board_empty(), shell);
++        let board = if shell == crate::GbShell::GameGear {
++            bitmaps::gg_board()
++        } else {
++            bitmaps::gb_board_empty()
++        };
++        return gb_backing(board, shell);
+     }
+     let mut face = CartFace {
+         rgba: bitmaps::board().to_vec(),
+diff --git a/crates/slot-ui/src/cart.rs b/crates/slot-ui/src/cart.rs
+index e123858..f96cb75 100644
+--- a/crates/slot-ui/src/cart.rs
++++ b/crates/slot-ui/src/cart.rs
+@@ -46,10 +46,10 @@ pub const GBC_LABEL_X: u32 = 45;
+ pub const GBC_LABEL_Y: u32 = 110;
+ pub const GBC_LABEL_W: u32 = 223;
+ pub const GBC_LABEL_H: u32 = 199;
+-pub const GG_LABEL_X: u32 = 44;
+-pub const GG_LABEL_Y: u32 = 95;
+-pub const GG_LABEL_W: u32 = 223;
+-pub const GG_LABEL_H: u32 = 199;
++pub const GG_LABEL_X: u32 = 27;
++pub const GG_LABEL_Y: u32 = 65;
++pub const GG_LABEL_W: u32 = 258;
++pub const GG_LABEL_H: u32 = 177;
+ 
+ const PAD: u32 = 10;
+ const MAX_LINES: usize = 3;
+@@ -217,7 +217,7 @@ fn spec(shape: Shape) -> Spec {
+             paint: match shell {
+                 GbShell::Notched => bitmaps::gb_cart(),
+                 GbShell::Rounded => bitmaps::gbc_cart(),
+-                GbShell::GameGear => bitmaps::gbc_cart(),
++                GbShell::GameGear => bitmaps::gg_cart(),
+             },
+         },
+         #[cfg(feature = "nds")]
+@@ -302,7 +302,7 @@ pub fn cart_interior(cart: &Cart) -> CartFace {
+             let src = match shell {
+                 GbShell::Notched => bitmaps::gb_interior(),
+                 GbShell::Rounded => bitmaps::gbc_interior(),
+-                GbShell::GameGear => bitmaps::gbc_interior(),
++                GbShell::GameGear => bitmaps::gg_interior(),
+             };
+             (src, s.w, s.h, Some(s.mask))
+         }
+@@ -333,7 +333,11 @@ pub fn cart_backing(shell: Option<GbShell>) -> CartFace {
+             h: BOARD_H,
+         };
+     };
+-    gb_backing(bitmaps::gb_board(), shell)
++    let board = match shell {
++        GbShell::GameGear => bitmaps::gg_board(),
++        _ => bitmaps::gb_board(),
++    };
++    gb_backing(board, shell)
+ }
+ 
+ pub fn gb_backing(board: &[u8], shell: GbShell) -> CartFace {
+@@ -668,10 +672,7 @@ fn shell_face(s: &Spec, shell: &Shell) -> CartFace {
+ 
+ fn shell_face_of(s: &Spec, shell: &Shell, bare: bool) -> CartFace {
+     let clear = shell.finish != Finish::Solid;
+-    let generated = (s.mould == Mould::GameGear).then(|| neutral_shell(s.mould, clear));
+-    let src = generated
+-        .as_deref()
+-        .unwrap_or_else(|| bitmaps::shell_asset(s.mould, clear));
++    let src = bitmaps::shell_asset(s.mould, clear);
+     assert_eq!(
+         src.len(),
+         (s.w * s.h * 4) as usize,
+diff --git a/crates/slot-ui/src/shell.rs b/crates/slot-ui/src/shell.rs
+index c9578d4..a86e078 100644
+--- a/crates/slot-ui/src/shell.rs
++++ b/crates/slot-ui/src/shell.rs
+@@ -84,7 +84,8 @@ pub fn shell_for(cart: &Cart) -> Shell {
+         Platform::Gba | Platform::Gbav => gba_shell_for(&gba_code(cart)),
+         #[cfg(feature = "nds")]
+         Platform::Nds => gba_shell_for(""),
+-        Platform::Gb | Platform::Gbc | Platform::Gg => gb_shell_for(&cart.rom),
++        Platform::Gg => game_gear_shell(),
++        Platform::Gb | Platform::Gbc => gb_shell_for(&cart.rom),
+     }
+ }
+ 
+@@ -99,13 +100,18 @@ pub fn indexed_shell(cart: &Cart) -> Option<Shell> {
+         },
+         #[cfg(feature = "nds")]
+         Platform::Nds => None,
+-        Platform::Gb | Platform::Gbc | Platform::Gg => {
++        Platform::Gg => Some(game_gear_shell()),
++        Platform::Gb | Platform::Gbc => {
+             slot_store::header_index::peek_gb_header(&cart.rom)
+                 .map(|h| gb_shell_from(h.as_ref(), &cart.rom))
+         }
+     }
+ }
+ 
++fn game_gear_shell() -> Shell {
++    Shell { colour: [36, 37, 41], finish: Finish::Solid }
++}
++
+ fn gba_code(cart: &Cart) -> String {
+     match cart.code.is_empty() {
+         false => cart.code.clone(),
+diff --git a/crates/slot-ui/src/silhouette.rs b/crates/slot-ui/src/silhouette.rs
+index f806d37..fe43e19 100644
+--- a/crates/slot-ui/src/silhouette.rs
++++ b/crates/slot-ui/src/silhouette.rs
+@@ -15,13 +15,10 @@ pub fn silhouette(w: u32, h: u32) -> Vec<u8> {
+ }
+ 
+ pub fn gb_silhouette(shell: GbShell, w: u32, h: u32) -> Vec<u8> {
+-    if shell == GbShell::GameGear {
+-        return gamegear_silhouette(w, h);
+-    }
+     let src = match shell {
+         GbShell::Notched => bitmaps::gb_cart(),
+         GbShell::Rounded => bitmaps::gbc_cart(),
+-        GbShell::GameGear => unreachable!(),
++        GbShell::GameGear => bitmaps::gg_cart(),
+     };
+     alpha(src, w, h)
+ }
+@@ -44,45 +41,8 @@ pub(crate) fn gb_cart_mask(shell: GbShell) -> &'static [u8] {
+         GbShell::Rounded => &ROUNDED,
+         GbShell::GameGear => {
+             static GAME_GEAR: OnceLock<Vec<u8>> = OnceLock::new();
+-            return GAME_GEAR.get_or_init(|| gamegear_silhouette(GB_CART_W, GB_CART_H));
++            &GAME_GEAR
+         }
+     };
+     lock.get_or_init(|| gb_silhouette(shell, GB_CART_W, GB_CART_H))
+ }
+-
+-/// Game Gear carts have a squared body with clipped shoulders and a wider bottom lip. Keep
+-/// this mask separate from the Game Boy pak so the GG shelf reads as its own cartridge system.
+-fn gamegear_silhouette(w: u32, h: u32) -> Vec<u8> {
+-    let mut mask = vec![0; (w * h) as usize];
+-    let sx = w as f32 / GB_CART_W as f32;
+-    let sy = h as f32 / GB_CART_H as f32;
+-    const POLYGON: [(f32, f32); 8] = [
+-        (22.0, 1.0),
+-        (290.0, 1.0),
+-        (311.0, 20.0),
+-        (311.0, 305.0),
+-        (296.0, 335.0),
+-        (16.0, 335.0),
+-        (1.0, 305.0),
+-        (1.0, 20.0),
+-    ];
+-    for y in 0..h {
+-        for x in 0..w {
+-            let (px, py) = (x as f32 / sx, y as f32 / sy);
+-            let mut inside = false;
+-            let mut j = POLYGON.len() - 1;
+-            for i in 0..POLYGON.len() {
+-                let (xi, yi) = POLYGON[i];
+-                let (xj, yj) = POLYGON[j];
+-                if (yi > py) != (yj > py) && px < (xj - xi) * (py - yi) / (yj - yi) + xi {
+-                    inside = !inside;
+-                }
+-                j = i;
+-            }
+-            if inside {
+-                mask[(y * w + x) as usize] = 255;
+-            }
+-        }
+-    }
+-    mask
+-}
+diff --git a/crates/slot-ui/tests/cart.rs b/crates/slot-ui/tests/cart.rs
+index 841bae4..de9eca1 100644
+--- a/crates/slot-ui/tests/cart.rs
++++ b/crates/slot-ui/tests/cart.rs
+@@ -693,3 +693,24 @@ fn sheet(cart: &slot_store::Cart, rgb: [u8; 3]) -> Vec<u8> {
+         .flat_map(|_| [rgb[0], rgb[1], rgb[2], 255])
+         .collect()
+ }
++
++#[test]
++fn game_gear_renders_a_dedicated_shell_and_board() {
++    let root = tmp_root();
++    write_gb_rom(&root, "GG", "Game.gg", 0);
++    let mut cart = scan(root.path()).unwrap().into_iter().next().unwrap();
++    assert_eq!(cart.platform, Platform::Gg);
++    assert_eq!(shell_for(&cart).finish, Finish::Solid);
++    assert_eq!(slot_ui::label_size(&cart), (258, 177));
++    let solid = cart_face(&cart);
++    assert_eq!(pixel_alpha(&solid, 156, 5), 0);
++    assert_eq!(pixel_alpha(&solid, 156, 100), 255);
++    cart.shell = Some(slot_store::ShellChoice {
++        outline: slot_store::Outline::Auto,
++        colour: [80, 120, 150],
++        finish: slot_store::ShellFinish::Clear,
++    });
++    let backing = slot_ui::cart_backing(Some(GbShell::GameGear));
++    assert_ne!(backing.rgba, slot_ui::cart_backing(Some(GbShell::Rounded)).rgba);
++    assert_ne!(cart_face(&cart).rgba, solid.rgba);
++}

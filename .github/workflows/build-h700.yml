@@ -113,6 +113,7 @@ jobs:
         shell: bash
         run: |
           cargo test -p slot --no-default-features --features device --test scale game_gear_menu
+          cargo test -p slot-ui --test cart game_gear_renders
           cargo test -p slot-gfx --lib authentic_blending_tests -- --nocapture
           cargo test -p slot --no-default-features --features device --test app authentic_trades_the_game_boys_colour_and_palette_rows_for_a_model -- --nocapture
           cargo test -p slot --no-default-features --features device --test update -- --nocapture
@@ -273,6 +274,7 @@ jobs:
           test -s select-slot-h700/System/licenses/picodrive-tremor-BSD.txt
           test -s select-slot-h700/System/licenses/picodrive-headerless-files.txt
           test -s select-slot-h700/System/licenses/picodrive-notice.txt
+          install -m 644 ../.github/assets/gamegear/NOTICE.txt select-slot-h700/System/licenses/gamegear-cartridge-art.txt
           test -s source-release/picodrive-src.meta
           test -s source-release/picodrive-src.tar.gz
           test -s source-release/picodrive-emu2413-src.tar.gz

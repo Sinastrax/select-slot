@@ -222,3 +222,5 @@ git apply --check ../patches/gamegear-picodrive.patch
 git apply ../patches/gamegear-picodrive.patch
 git apply ../patches/gamegear-menu.patch
 git apply ../patches/gamegear-display.patch
+cp ../.github/assets/gamegear/*.png assets/
+git apply ../patches/gamegear-cartridges.patch
