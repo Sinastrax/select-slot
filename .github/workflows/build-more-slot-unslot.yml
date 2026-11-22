@@ -26,6 +26,9 @@ jobs:
   build:
     if: github.ref == 'refs/heads/more-slot'
     runs-on: ubuntu-24.04-arm
+    defaults:
+      run:
+        shell: bash
     container:
       image: rust:1-bookworm
     timeout-minutes: 180
