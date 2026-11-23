@@ -4,7 +4,7 @@
 
 # select. slot.
 
-**A personal take on Slot for Game Boy, Game Boy Color and Game Boy Advance.**
+**select. slot. is a custom Slot frontend and firmware build for Anbernic H700 and Miyoo handhelds, focused on Game Boy, Game Boy Color and Game Boy Advance.**
 
 [**Download for Anbernic H700**](https://github.com/Sinastrax/select-slot/releases/latest) · [**Download for Miyoo Mini**](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver12) · [**Release history**](CHANGELOG.md) · [**Original Slot guide**](https://slot-cfw.fyi/) · [**Original Slot Discord**](https://discord.gg/NYRWsSuPUu)
 
