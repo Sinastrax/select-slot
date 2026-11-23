@@ -1,10 +1,5 @@
-## more.slot Test 6
+## Withdrawn: more.slot Test 6
 
-This is the next Game Gear test build for the RG35XX H.
+This build has been withdrawn after the OTA update and manual installation failed. Do not use it for installation or recovery. Its feature claims were not verified on hardware, and substantial select.slot parity work remains incomplete. See [the feature parity tracker](../../docs/FEATURE_PARITY.md).
 
-- Adds Gearsystem as the default Game Gear core, with PicoDrive, Genesis Plus GX and SMS Plus available as alternatives.
-- Adds SlotPlus Ultra's dedicated Game Gear shelf bay, its seated-cartridge lip, and a saved Cart Slot setting.
-- Adds Authentic display changes for GB, GBC, GBA and Game Gear, including saved Game Boy models and separate color-correction and reflection settings.
-- Adds one-press Shift and double-press Caps Lock behavior to the on-screen keyboard, and disables frame blending during fast-forward.
-
-This is a test release, not a feature-parity release. Some select.slot features remain unported; see the repository's feature parity tracker. Game Gear behavior still needs handheld testing. The separate more.slot test OTA does not change the stable select.slot release or its update feed.
+The More.slot OTA manifest has been moved back to the previous Test 5 entry. This does not make Test 5 a recovery image. More.slot publication is paused until the requested feature set and a safe, working update/install path are verified. The stable select.slot release and OTA feed remain unchanged.
