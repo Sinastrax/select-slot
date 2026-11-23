@@ -2,7 +2,7 @@
 
 **A separate Slot build for adding systems beyond the original select.slot. versions.**
 
-`more. slot.` is the separate UnsloT-based branch for adding systems beyond select.slot. Test 5 was an incomplete Game Gear evaluation build. Test 6 is a test-only evaluation of the select.slot feature port and Game Gear changes; it is not a feature-parity release. Track the remaining parity work in [the feature parity tracker](docs/FEATURE_PARITY.md). It does not change the existing select.slot. stable release or OTA feed.
+`more. slot.` is the separate UnsloT-based branch for adding systems beyond select.slot. More.slot Test 6 (`v1.16.0-more.6`) has been withdrawn after its update and installation failed. The OTA feed no longer points to Test 6. Test 5 remains an archived test build; neither build is a recommended recovery image. More.slot development is paused until the installation path and requested feature set are corrected. The stable select.slot release and OTA feed are separate and unchanged.
 
 The Miyoo Mini port remains available as [select.slot. 1.8.1 Ver. 12](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver12).
 
@@ -18,13 +18,13 @@ The first integration targets Anbernic H700 devices. It does not add Miyoo suppo
 
 ## Testing and releases
 
-The H700 workflow builds pull requests without publishing. Test 4 established the separate More.slot OTA feed; each later test release advances that feed through **Settings → System → Check for Updates**. A verified merge to `more-slot` publishes a prerelease and updates only the `more-slot` OTA manifest. It does not mark the build as latest or change the stable select.slot release or updater feed. See [the test OTA notes](MORE_OTA.md).
+The H700 workflow builds pull requests without publishing. Test 4 established the separate More.slot OTA feed; test releases are delivered through **Settings → System → Check for Updates**. A verified merge to `more-slot` publishes a prerelease and updates only the `more-slot` OTA manifest. It does not mark the build as latest or change the stable select.slot release or updater feed. See [the test OTA notes](MORE_OTA.md).
 
 The first build is intended primarily for the Anbernic RG35XX-H. No device is marked tested until you report testing results. PicoDrive's license prohibits commercial use; each downloadable build includes the pinned source and required notices.
 
 ## Port status
 
-Test 5 was an incomplete Game Gear evaluation build. Test 6 is a test build that can be delivered through the isolated More.slot OTA feed after the H700 package passes GitHub Actions. It does not claim full feature parity; use the tracker for known gaps. The select.slot stable release and updater feed remain separate.
+Test 6 was withdrawn and is not a valid test build. The known select.slot parity gaps remain listed in [the feature parity tracker](docs/FEATURE_PARITY.md). The next release must not be published until its OTA and installation paths work and the requested feature set is present and reviewed. The stable select.slot release and updater feed remain unchanged.
 
 ## Credits
 
