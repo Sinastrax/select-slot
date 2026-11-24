@@ -1,12 +1,19 @@
 # select. slot. — release history
 
-There are two independent firmware lines: **Anbernic H700** (Slot 1.16.0) and **Miyoo Mini family** (Slot 1.8.1). The [Releases page](https://github.com/Sinastrax/select-slot/releases) intentionally keeps only meaningful stable milestones and rollback points. Intermediate development versions remain traceable through their original Git tags and merged pull requests; the release downloads below cover the current builds and selected rollback points.
+There are two independent select. slot. firmware lines: **Anbernic H700** (Slot 1.16.0) and **Miyoo Mini family** (Slot 1.8.1). The tables below list the current builds and selected stable milestones or rollback points. The GitHub Releases page also contains prerelease packages; install only a stable select. slot. build for your device. Intermediate H700 development revisions are traceable through their original Git tags and merged pull requests.
 
 ## Anbernic H700
 
 | Version | Status / milestone | Release |
 | --- | --- | --- |
-| **Ver. 47** | **Current H700 release.** Keeps the wrapped RetroAchievements header in view. Tested on RG SP, RG34XXSP and RG35XX H | [Ver. 47](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.47) |
+| **Ver. 57** | **Current H700 release.** Speeds up Authentic Pocket Color/SGB color correction. Tested on RG SP, RG34XXSP and RG35XX H | [Ver. 57](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.57) |
+| Ver. 56 | Keeps German OTA installation messages compact | [Ver. 56](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.56) |
+| Ver. 55 | Improves continuous mGBA GB/GBC audio | [Ver. 55](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.55) |
+| Ver. 52 | Adds in-game Authentic Color Correction control | [Ver. 52](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.52) |
+| Ver. 50 | Adds separate Authentic Frame Blending control; disables it during fast-forward | [Ver. 50](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.50) |
+| Ver. 49 | Fixes Pocket Color/SGB routing on armGBA; restores separate Frame Blending | [Ver. 49](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.49) |
+| Ver. 48 | Adds armGBA as the default GBA core; keeps mGBA and gpSP available | [Ver. 48](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.48) |
+| Ver. 47 | Keeps the wrapped RetroAchievements header in view | [Ver. 47](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.47)
 | **Ver. 43** | One-shot Shift with a white key indicator, plus Caps Lock. Rollback before the German interface | [Ver. 43](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.43) |
 | Ver. 40 | Hardware-tested H700 — compact non-overlapping Hotkey Guide | [Ver. 40](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.40) |
 | Ver. 36 | Verified maintenance and reproducible OTA baseline | [Ver. 36](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.36) |
@@ -15,6 +22,18 @@ There are two independent firmware lines: **Anbernic H700** (Slot 1.16.0) and **
 | Ver. 17 | Finalized Pocket Color and Pocket SGB white point / rendering | [Ver. 17](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.17) |
 | Ver. 4 | Early user-verified Authentic color baseline | [Ver. 4](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.4) |
 | 1.15.3 Ver. 3 | Legacy pre-1.16.0 release, corrected resume-on-power-on | [Legacy](https://github.com/Sinastrax/select-slot/releases/tag/v1.15.3-rgsp.3) |
+
+**Ver. 57:** Precomputes measured LCD colors once at startup to speed up Authentic color correction for Pocket Color and Pocket SGB.
+
+**Ver. 55:** Paces mGBA GB/GBC audio production against the audio ring to prevent queued samples from being discarded. The existing core-specific pitch correction is unchanged.
+
+**Ver. 52:** Makes the Authentic Color Correction switch available in the in-game Screen menu.
+
+**Ver. 50:** Adds a separate Authentic Frame Blending setting in system and in-game Screen menus. Frame blending is forced off during fast-forward.
+
+**Ver. 49:** Corrects Pocket Color and SGB color routing when GB cartridges use armGBA, and restores the independent per-system Frame Blending setting.
+
+**Ver. 48:** Adds armGBA as the default GBA core, while retaining mGBA and gpSP as alternatives and keeping GBA Video on mGBA.
 
 **Ver. 40:** Removes unnecessary entries from the read-only Hotkey Guide, keeps only harder-to-discover controls, and fits separate label/value columns inside narrow 640×480 screens. It changes no actual button bindings, emulator behavior, or configuration. As with every H700 update, reported successful results apply to all compatible devices in the regular RG SP, RG34XXSP and RG35XX H test lineup unless the maintainer explicitly states an exception.
 
