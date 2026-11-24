@@ -220,3 +220,4 @@ git apply --check ../patches/pocket-color-table.patch
 git apply ../patches/pocket-color-table.patch
 # Authentic GBC model choices and reduced lower-glass banding.
 python3 ../.github/scripts/fix-authentic-gbc-model-and-glass.py
+git apply ../patches/pocket-color-boot.patch

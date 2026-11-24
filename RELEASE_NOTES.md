@@ -1,4 +1,3 @@
-# select. slot. 1.16.0 Ver. 58
+# select. slot. 1.16.0 Ver. 59
 
-- Add an independent Authentic screen-model selector for Game Boy Color games.
-- Soften and reduce the lower Authentic glass shade that caused diagonal gradient banding.
+- Authentic Pocket Color uses the Game Boy Color startup on a fresh launch with Gambatte, mGBA and armGBA when the GBC boot ROM is installed in `BIOS/gbc_bios.bin`.
