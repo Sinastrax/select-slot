@@ -1,0 +1,36 @@
+--- a/crates/slot/src/session.rs
++++ b/crates/slot/src/session.rs
+@@ -708,6 +708,13 @@
+         let stem = stem.to_owned();
+         let clean = self.app.starting_clean() || switched;
+         let player = self.app.link_player();
++        let pocket_color_boot = player.is_none()
++            && self.app.authentic(platform)
++            && match platform {
++                Platform::Gb => self.app.gb_model() == slot_store::GbModel::PocketColor,
++                Platform::Gbc => self.app.gbc_model() == slot_store::GbModel::PocketColor,
++                _ => false,
++            };
+         let chosen = self.app.core_gb_colors();
+         let colour = self.app.core_colour_correction_for(platform);
+         let join = std::thread::Builder::new()
+@@ -720,6 +727,19 @@
+                 launch("resume state read");
+                 let palette = crate::core::palette_for(chosen, platform, &rom, player);
+                 let mut opened = open_core(&root, core, platform, serial, colour, palette, player);
++                if pocket_color_boot {
++                    // Select the boot hardware before retro_load_game, independently of the palette.
++                    match core {
++                        Core::Gambatte => opened.core.set_option("gambatte_gb_hwmode", "GBC"),
++                        Core::Mgba => {
++                            opened.core.set_option("mgba_gb_model", "Game Boy Color");
++                            opened.core.set_option("mgba_use_bios", "ON");
++                            opened.core.set_option("mgba_skip_bios", "OFF");
++                        }
++                        Core::Armgba => opened.core.set_option("armgba_gb_model", "Game Boy Color"),
++                        _ => {}
++                    }
++                }
+                 crate::core::apply_game_boy_player(&mut *opened.core, core, platform, &rom);
+                 launch("core opened");
+                 let sav = persist::read_sav(&root, platform, &stem);
