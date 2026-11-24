@@ -134,7 +134,7 @@ These are the **custom changes in the H700 build**, on top of upstream Slot and 
 
 #### Emulation and audio
 
-- **Three supported cores:** mGBA and Gambatte for GB/GBC, and mGBA and gpSP for GBA.
+- **Supported emulator cores:** Gambatte and mGBA for GB/GBC; armGBA, gpSP and mGBA for GBA. armGBA is the default GBA core from Ver. 48 onward; GBA Video continues to use mGBA.
 - **Pinned older mGBA core.** Our complete H700 build uses the older mGBA revision `c758314a639aa0066e7b65a8341448181b73c804` rather than replacing it with a newer experimental core. Its modified corresponding source is supplied as a separate asset alongside each firmware release.
 - **GB/GBC mGBA performance and audio changes.** Core-specific CPU governor selection, audio-ring overflow handling with short crossfades, buffer recovery, and pitch-neutral drift behavior. Gambatte and GBA playback are not modified by the mGBA-only audio path.
 - **SameBoy is not bundled.** Experimental SameBoy work was retired after unfavorable performance; the supported GB/GBC choices remain mGBA and Gambatte.
