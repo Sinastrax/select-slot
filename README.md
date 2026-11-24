@@ -28,10 +28,10 @@ This repository is not an official Slot release or currently a GitHub-linked for
 
 | | **Anbernic H700** | **Miyoo Mini family** |
 | --- | --- | --- |
-| Current build | **1.16.0 Ver. 47** | **1.8.1 Ver. 12** |
+| Current build | **1.16.0 Ver. 57** | **1.8.1 Ver. 12** |
 | Handhelds | RG SP / RG34XXSP / RG35XX H and other compatible H700 models | Miyoo Mini, Mini Plus and Mini Flip, subject to firmware support |
 | Rendering | GPU, including Authentic and custom LCD styles | Software rendering; no H700 LCD shaders |
-| Game cores | GB/GBC: Gambatte or mGBA; GBA: gpSP or mGBA | GB/GBC: mGBA; GBA: gpSP or mGBA |
+| Game cores | GB/GBC: Gambatte or mGBA; GBA: armGBA (default), gpSP or mGBA | GB/GBC: mGBA; GBA: gpSP or mGBA |
 | Updates | Wi-Fi / in-app OTA updates | Manual SD-card installation only |
 | Current build hardware tests | **Tested** on RG SP, RG34XXSP and RG35XX H | **Tested** on original Miyoo Mini with OnionOS |
 | Download | [**Latest H700 release**](https://github.com/Sinastrax/select-slot/releases/latest) | [**Miyoo Ver. 12 release**](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver12) |
@@ -162,7 +162,7 @@ These are the **custom changes in the H700 build**, on top of upstream Slot and 
 - **Independent shader and scale settings:** verified Pocket Color/SGB and GBA Authentic Fit optimizations with the intended color-correction options.
 - **Reliable distribution (Ver. 36):** pinned source patches, automated regression checks, and complete OTA builds with a separate mGBA source archive. Earlier public versions were curated to preserve meaningful rollback points.
 
-For detailed per-version history and links to confirmed milestones, see the [changelog](CHANGELOG.md). Ver. 41 adds one-shot Shift and Caps Lock to the H700 keyboard. Press Shift or SELECT once for one character, twice for Caps Lock, and again to unlock. The Shift key has a white background behind the arrow after one press and displays **CAPS** while locked. Ver. 40 was tested on all three regular H700 devices.
+For detailed per-version history and links to confirmed milestones, see the [changelog](CHANGELOG.md). Ver. 41 adds one-shot Shift and Caps Lock to the H700 keyboard. Press Shift or SELECT once for one character, twice for Caps Lock, and again to unlock. The Shift key has a white background behind the arrow after one press and displays **CAPS** while locked. Ver. 57 is the current H700 build and has been tested on all three regular H700 devices.
 
 Choose **Deutsch** under **Settings → General → Language**, then restart Slot. The German interface includes settings, controls, help, dialogs and status messages. To switch back, choose **English** under **Einstellungen → Allgemein → Sprache** and restart. Game content and user-entered names keep their original language.
 
@@ -298,7 +298,7 @@ H700 firmware updates use a **complete manifest-controlled System update** with 
 
 ## Release versions and update cadence
 
-- **Anbernic H700:** [1.16.0 Ver. 47](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.47) keeps the RetroAchievements header in view. [Ver. 36](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.36) is a tested fallback; other retained milestone releases are catalogued in the [changelog](CHANGELOG.md).
+- **Anbernic H700:** [1.16.0 Ver. 57](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.57) improves Authentic Pocket Color/SGB color-correction performance. [Ver. 36](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.36) is a tested fallback; other retained milestone releases are catalogued in the [changelog](CHANGELOG.md).
 - **Miyoo:** [1.8.1 Ver. 12](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver12) shuts down the original Mini with one long POWER hold on OnionOS. [Ver. 6](https://github.com/Sinastrax/select-slot/releases/tag/miyoo-v1.8.1-ver6) is a tested rollback.
 - **Technical version labels** (such as `v1.16.0-rgsp.40`) remain for compatibility with earlier H700 update installations. The public firmware name is **select. slot.**.
 - **Release cadence:** unlike pvaibhav's automated upstream sync, select. slot. does not claim a daily automatic upstream release schedule. New firmware versions are kept separate from documentation-only edits.
