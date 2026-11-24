@@ -13,6 +13,15 @@ def replace_once(path: str, old: str, new: str, label: str) -> None:
     file.write_text(source.replace(old, new, 1))
 
 
+def replace_all(path: str, old: str, new: str, expected: int, label: str) -> None:
+    file = Path(path)
+    source = file.read_text()
+    count = source.count(old)
+    if count != expected:
+        raise AssertionError(f"{label}: expected {expected} matches in {path}, found {count}")
+    file.write_text(source.replace(old, new))
+
+
 store = "crates/slot-store/src/slot_state.rs"
 replace_once(store, "    pub gb_model_mgba: GbModel,\n    pub blending_gbc: Blending,", "    pub gb_model_mgba: GbModel,\n    /// Authentic LCD model used by native Game Boy Color games.\n    pub gbc_model: GbModel,\n    pub blending_gbc: Blending,", "GBC model state field")
 replace_once(store, "            gb_model_mgba: GbModel::PocketSgb,\n            blending_gbc: Blending::Off,", "            gb_model_mgba: GbModel::PocketSgb,\n            gbc_model: GbModel::Gbc,\n            blending_gbc: Blending::Off,", "GBC model default")
@@ -36,8 +45,7 @@ replace_once(app, "            QuickRow::GbModel | QuickRow::Model => Some(match
 replace_once(app, "    fn step_gb_model(&mut self, right: bool) -> GbModel {\n        let to = self.gb_model().step(right);", "    fn step_gb_model(&mut self, right: bool) -> GbModel {\n        if self.playing_platform() == Platform::Gbc {\n            self.state.gbc_model = self.state.gbc_model.step(right);\n            return self.state.gbc_model;\n        }\n        let to = self.gb_model().step(right);", "GBC model action routing")
 replace_once(app, "        if let QuickRow::GbModel | QuickRow::Model = row {\n            self.step_gb_model(right);\n            self.palette_pending = Some(self.state.gb_colors());\n            self.persist();\n            return;\n        }", "        if row == QuickRow::GbcModel {\n            self.state.gbc_model = self.state.gbc_model.step(right);\n            self.persist();\n            return;\n        }\n        if let QuickRow::GbModel | QuickRow::Model = row {\n            self.step_gb_model(right);\n            self.palette_pending = Some(self.state.gb_colors());\n            self.persist();\n            return;\n        }", "GBC model action row")
 replace_once(app, "        if !self.authentic(Platform::Gb) {\n            hidden.push(QuickRow::GbModel);\n        }", "        if !self.authentic(Platform::Gb) {\n            hidden.push(QuickRow::GbModel);\n        }\n        if !self.authentic(Platform::Gbc) {\n            hidden.push(QuickRow::GbcModel);\n        }", "GBC model settings visibility")
-replace_once(app, "            | QuickRow::GbModel\n            | QuickRow::Model", "            | QuickRow::GbModel\n            | QuickRow::GbcModel\n            | QuickRow::Model", "GBC model input dispatch")
-replace_once(app, "            | QuickRow::GbModel\n            | QuickRow::Model", "            | QuickRow::GbModel\n            | QuickRow::GbcModel\n            | QuickRow::Model", "GBC model action handling")
+replace_all(app, "            | QuickRow::GbModel\n            | QuickRow::Model", "            | QuickRow::GbModel\n            | QuickRow::GbcModel\n            | QuickRow::Model", 2, "GBC model input and action routing")
 replace_once(app, "    /// The GB Authentic model is selected per running emulator core, not globally.\n    /// Existing saved gb_model continues to belong to Gambatte.\n    pub fn gb_model(&self) -> GbModel {", "    /// Authentic model selected for native Game Boy Color games.\n    pub fn gbc_model(&self) -> GbModel {\n        self.state.gbc_model\n    }\n\n    /// The GB Authentic model is selected per running emulator core, not globally.\n    /// Existing saved gb_model continues to belong to Gambatte.\n    pub fn gb_model(&self) -> GbModel {", "GBC model accessor")
 
 replace_once("crates/slot/src/frontend.rs", "        Console::Gbc => slot_gfx::Screen::Gbc,", "        Console::Gbc => match app.gbc_model() {\n            slot_store::GbModel::Dmg => slot_gfx::Screen::Dmg,\n            slot_store::GbModel::Pocket => slot_gfx::Screen::Pocket,\n            slot_store::GbModel::PocketColor => slot_gfx::Screen::PocketColor,\n            slot_store::GbModel::PocketSgb => slot_gfx::Screen::PocketSgb,\n            slot_store::GbModel::Light => slot_gfx::Screen::Light,\n            slot_store::GbModel::Gbc => slot_gfx::Screen::Gbc,\n        },", "GBC model rendering")
