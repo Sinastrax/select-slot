@@ -4,7 +4,7 @@ This page provides an expanded technical reference for the H700 features also su
 
 For how the game-focused frontend works in general, use the [official Slot guide](https://slot-cfw.fyi/). For original pvaibhav behavior and screenshots, see the [pvaibhav wiki](https://github.com/pvaibhav/slot/wiki). For the current supported version and release milestones, see the [changelog](../CHANGELOG.md).
 
-The build deliberately preserves upstream behavior while making extra configuration and visual changes. Hardware-dependent features, such as higher panel refresh rates and analogue button mappings, are **not universal**. **Testing coverage:** Every H700 update and reported successful result is tested on all compatible regular H700 devices — **Anbernic RG SP, RG34XXSP and RG35XX H** — unless the maintainer explicitly states otherwise. Hardware-specific features are tested wherever supported. The separate ARMv7 releases are tested on the original Miyoo Mini. Current stable H700 release: [Ver. 40](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.40).
+The build deliberately preserves upstream behavior while making extra configuration and visual changes. Hardware-dependent features, such as higher panel refresh rates and analogue button mappings, are **not universal**. **Testing coverage:** Every H700 update and reported successful result is tested on all compatible regular H700 devices — **Anbernic RG SP, RG34XXSP and RG35XX H** — unless the maintainer explicitly states otherwise. Hardware-specific features are tested wherever supported. The separate ARMv7 releases are tested on the original Miyoo Mini. Current stable H700 release: [Ver. 57](https://github.com/Sinastrax/select-slot/releases/tag/v1.16.0-rgsp.57).
 
 ---
 
@@ -46,7 +46,7 @@ These are the **custom changes in the H700 build**, on top of upstream Slot and 
 
 ### Emulation and audio
 
-- **Three supported cores:** mGBA and Gambatte for GB/GBC, and mGBA and gpSP for GBA.
+- **Supported emulator cores:** Gambatte and mGBA for GB/GBC; armGBA, gpSP and mGBA for GBA. armGBA is the default GBA core in Ver. 48 and later; GBA Video continues to use mGBA.
 - **Pinned older mGBA core.** Our complete H700 build uses the older mGBA revision `c758314a639aa0066e7b65a8341448181b73c804` rather than replacing it with a newer experimental core. Its modified corresponding source is supplied as a separate asset alongside each firmware release.
 - **GB/GBC mGBA performance and audio changes.** Core-specific CPU governor selection, audio-ring overflow handling with short crossfades, buffer recovery, and pitch-neutral drift behavior. Gambatte and GBA playback are not modified by the mGBA-only audio path.
 - **SameBoy is not bundled.** Experimental SameBoy work was retired after unfavorable performance; the supported GB/GBC choices remain mGBA and Gambatte.
@@ -73,7 +73,7 @@ These are the **custom changes in the H700 build**, on top of upstream Slot and 
 - **Independent shader and scale settings:** verified Pocket Color/SGB and GBA Authentic Fit optimizations with the intended color-correction options.
 - **Reliable distribution (Ver. 36):** pinned source patches, automated regression checks, and complete OTA builds with a separate mGBA source archive. Earlier public versions were curated to preserve meaningful rollback points.
 
-For detailed per-version history and links to confirmed milestones, see the [changelog](../CHANGELOG.md). The current stable H700 build is **Ver. 40**, tested on all three compatible devices in the regular H700 lineup.
+For detailed per-version history and links to confirmed milestones, see the [changelog](../CHANGELOG.md). The current stable H700 build is **Ver. 57**, tested on all three compatible devices in the regular H700 lineup.
 
 ### Online updates
 
