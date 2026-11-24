@@ -121,6 +121,7 @@ These are the **custom changes in the H700 build**, on top of upstream Slot and 
 #### Game Boy visuals and color
 
 - **Authentic GB/GBC/GBA shaders.** Extended Authentic rendering with model-specific LCD pixel separation, shadowing, ghosting and reflector response.
+- **Separate Authentic GBC screen models (Ver. 58).** Choose Game Boy, Pocket, Pocket Color, Pocket SGB, Light or Game Boy Color for GBC games without changing the independently saved GB core settings. The lower glass shade is also softer and less pronounced to reduce diagonal gradient banding.
 - **Game Boy Color appearance for original Game Boy games.** Additional Authentic color presentation beyond the original monochrome models.
 - **Pocket Color.** Pocket-style LCD dot spacing and shadows with Game Boy Color-style color output.
 - **Pocket Color & Pocket SGB (mGBA).** Both use the **same entire Pocket Color LCD display profile**: dot separation, glass, pixel shadows, persistence, reflector and, with **Color Correction On**, its calibrated olive-gray white point (RGB approximately 134/140/122) and GBC LCD color response. Their *emulated color sources* stay distinct: Pocket Color uses mGBA in Game Boy Color mode with automatic GBC palettes; Pocket SGB uses mGBA in Super Game Boy mode with actual SGB palettes. **Color Correction Off** retains each emulator's original source RGB (including neutral whites) while preserving the LCD dot shader. This models **SGB game colors through the Pocket Color screen**, intentionally not an authentic SNES television response.
