@@ -121,6 +121,7 @@ These are the **custom changes in the H700 build**, on top of upstream Slot and 
 #### Game Boy visuals and color
 
 - **Authentic GB/GBC/GBA shaders.** Extended Authentic rendering with model-specific LCD pixel separation, shadowing, ghosting and reflector response.
+- **Game Boy Color startup (Ver. 60).** The Authentic Game Boy Color model plays the GBC boot animation on fresh launches, including original GB games, with the same BIOS file as Pocket Color.
 - **Pocket Color startup (Ver. 59).** Place your Game Boy Color boot ROM in `BIOS/gbc_bios.bin` to see its startup animation on a fresh Pocket Color launch.
 - **Separate Authentic GBC screen models (Ver. 58).** Choose Game Boy, Pocket, Pocket Color, Pocket SGB, Light or Game Boy Color for GBC games without changing the independently saved GB core settings. The lower glass shade is also softer and less pronounced to reduce diagonal gradient banding.
 - **Game Boy Color appearance for original Game Boy games.** Additional Authentic color presentation beyond the original monochrome models.
