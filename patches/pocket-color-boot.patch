@@ -4,11 +4,11 @@
          let stem = stem.to_owned();
          let clean = self.app.starting_clean() || switched;
          let player = self.app.link_player();
-+        let pocket_color_boot = player.is_none()
++        let gbc_boot = player.is_none()
 +            && self.app.authentic(platform)
 +            && match platform {
-+                Platform::Gb => self.app.gb_model() == slot_store::GbModel::PocketColor,
-+                Platform::Gbc => self.app.gbc_model() == slot_store::GbModel::PocketColor,
++                Platform::Gb => matches!(self.app.gb_model(), slot_store::GbModel::PocketColor | slot_store::GbModel::Gbc),
++                Platform::Gbc => matches!(self.app.gbc_model(), slot_store::GbModel::PocketColor | slot_store::GbModel::Gbc),
 +                _ => false,
 +            };
          let chosen = self.app.core_gb_colors();
@@ -18,7 +18,7 @@
                  launch("resume state read");
                  let palette = crate::core::palette_for(chosen, platform, &rom, player);
                  let mut opened = open_core(&root, core, platform, serial, colour, palette, player);
-+                if pocket_color_boot {
++                if gbc_boot {
 +                    // Select the boot hardware before retro_load_game, independently of the palette.
 +                    match core {
 +                        Core::Gambatte => opened.core.set_option("gambatte_gb_hwmode", "GBC"),
