@@ -1,3 +1,4 @@
-# select. slot. 1.16.0 Ver. 57
+# select. slot. 1.16.0 Ver. 58
 
-- Speed up Authentic color correction for Game Boy Pocket Color and Pocket SGB by precomputing the measured LCD colors once at startup.
+- Add an independent Authentic screen-model selector for Game Boy Color games.
+- Soften and reduce the lower Authentic glass shade that caused diagonal gradient banding.
